@@ -18,7 +18,7 @@ make benchmark
 
 결과는 `docs/reports/bench-<UTC 시각>-<이미지>/`에 저장됩니다.
 
-- `summary.md`, `summary.csv`: 동시성별 처리량, TTFT와 응답 지연
+- `summary.md`, `summary.csv`, `summary.jsonl`: 동시성별 처리량, TTFT, ITL, 디코드·프리필과 응답 지연
 - `run.json`, `inference.json`, `nodes.json`: 이미지 ID, 실행 상태와 환경
 - `c1/`, `c2/`, `c4/`, `c8/`: 새 추론 Pod UID, Job 설정, AIPerf 로그와 원본 결과
 

@@ -1,0 +1,16 @@
+# Benchmark results: track summaries and reproduction manifests only.
+# Bulky per-request and resource time-series stay local.
+*
+!*/
+!.gitignore
+!README.md
+!summary.md
+!summary.csv
+!summary.jsonl
+!run.json
+!inference.json
+!nodes.json
+!job.json
+!*pod*.json
+!**/artifacts/profile_export_aiperf.json
+!**/artifacts/profile_export_console.txt

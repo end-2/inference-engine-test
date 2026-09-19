@@ -254,6 +254,11 @@ def collect_summary(path, concurrency):
             "requests_per_second": metric(data, "request_throughput"),
             "ttft_avg_ms": metric(data, "time_to_first_token"),
             "ttft_p95_ms": metric(data, "time_to_first_token", "p95"),
+            "itl_avg_ms": metric(data, "inter_token_latency"),
+            "itl_p95_ms": metric(data, "inter_token_latency", "p95"),
+            "decode_avg_ms": metric(data, "decode_duration"),
+            "decode_p95_ms": metric(data, "decode_duration", "p95"),
+            "prefill_tokens_per_second_per_user": metric(data, "prefill_throughput_per_user"),
             "latency_avg_ms": metric(data, "request_latency"),
             "latency_p95_ms": metric(data, "request_latency", "p95")}
 
@@ -283,15 +288,20 @@ def save_summary(report, metadata, rows):
         writer = csv.DictWriter(output, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
+    with (report / "summary.jsonl").open("w") as output:
+        for row in rows:
+            output.write(json.dumps(row, ensure_ascii=False) + "\n")
     lines = ["# AIPerf CPU benchmark", "", f"- Image: `{metadata['inference']['image']}`",
              f"- Image ID: `{metadata['inference']['id']}`", f"- Started (UTC): {metadata['started_at']}",
              f"- Status: {metadata['status']}",
              "- Each condition starts after a fresh inference Pod becomes ready, followed by the configured warmup.", "",
-             "| Concurrency | Requests | Output tok/s | TTFT avg (ms) | TTFT p95 (ms) | Latency avg (ms) |",
-             "| --- | --- | --- | --- | --- | --- |"]
+             "| Concurrency | Requests | Output tok/s | TTFT avg (ms) | TTFT p95 (ms) | ITL avg (ms) | ITL p95 (ms) | Decode avg (ms) | Decode p95 (ms) | Prefill tok/s/user | Latency avg (ms) |",
+             "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
     for row in rows:
         values = [row[key] for key in ("concurrency", "requests", "output_tokens_per_second",
-                  "ttft_avg_ms", "ttft_p95_ms", "latency_avg_ms")]
+                  "ttft_avg_ms", "ttft_p95_ms", "itl_avg_ms", "itl_p95_ms",
+                  "decode_avg_ms", "decode_p95_ms", "prefill_tokens_per_second_per_user",
+                  "latency_avg_ms")]
         lines.append("| " + " | ".join(f"{value:.2f}" if isinstance(value, float) else str(value)
                                       for value in values) + " |")
     lines += ["", "Raw AIPerf exports, request CSV, resource JSONL/CSV, and logs are under each `c<concurrency>/` directory.",
