@@ -4,6 +4,7 @@
 !*/
 !.gitignore
 !README.md
+!/history.md
 !summary.md
 !summary.csv
 !summary.jsonl
@@ -14,3 +15,7 @@
 !*pod*.json
 !**/artifacts/profile_export_aiperf.json
 !**/artifacts/profile_export_console.txt
+
+analyze-*
+compare-*
+history.md

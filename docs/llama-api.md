@@ -1,5 +1,7 @@
 # CPU 추론 API
 
+배칭과 계층형 KV 캐시 구현의 배포·설정은 [확장 구현 가이드](llama-enhanced.md)를 참고하세요.
+
 [README](../README.md)의 배포 절차를 완료한 뒤 서버 준비를 기다리고 포트를 연결합니다.
 
 ```sh
@@ -21,7 +23,7 @@ curl http://127.0.0.1:8000/v1/chat/completions \
 
 ## 실행과 길이 제한
 
-서버 옵션은 `python src/base/server.py --help`, 배포 값은 [Deployment](../k8s/llama-base/deployment.yaml)를 참고하세요. 프롬프트는 GGUF 채팅 템플릿을 적용한 뒤 토큰화합니다. 입력 제한, 출력 제한 또는 입력과 요청 출력의 합이 컨텍스트 크기를 넘으면 HTTP 400을 반환하며 길이를 자동으로 줄이지 않습니다.
+서버 옵션은 `PYTHONPATH=src python -m base.server --help`, 배포 값은 [Deployment](../k8s/llama-base/deployment.yaml)를 참고하세요. 프롬프트는 GGUF 채팅 템플릿을 적용한 뒤 토큰화합니다. 입력 제한, 출력 제한 또는 입력과 요청 출력의 합이 컨텍스트 크기를 넘으면 HTTP 400을 반환하며 길이를 자동으로 줄이지 않습니다.
 
 토큰 사용량은 실제 입력과 생성된 토큰 ID를 기준으로 계산합니다. `ignore_eos: true`는 종료 토큰을 억제해 지정 길이 측정에 사용합니다. 모델 접근은 단일 스레드로 직렬화되며, 연결 종료 시 진행 중인 생성은 다음 중단 검사에서 멈춥니다. 프롬프트 처리 중에는 중단까지 시간이 걸릴 수 있습니다.
 

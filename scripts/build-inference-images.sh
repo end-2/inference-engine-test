@@ -5,12 +5,15 @@ set -eu
 umask 022
 
 die() { printf 'Error: %s\n' "$*" >&2; exit 1; }
-[ "$#" -le 1 ] || die "Usage: $0 [base]"
+[ "$#" -le 1 ] || die "Usage: $0 [base|enhanced-batch|enhanced-cache]"
 variant=${1:-base}
-[ "$variant" = "base" ] || die "Unknown variant: $variant (only 'base' exists)."
+case "$variant" in
+  base|enhanced-batch|enhanced-cache) ;;
+  *) die "Unknown variant: $variant" ;;
+esac
 command -v docker >/dev/null 2>&1 || die "Missing docker."
 
 ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 tag=${IMAGE_TAG:-0.1.0}
-docker build --no-cache -t "local/llama-base:$tag" "$ROOT/src/base"
-printf 'Image ready: local/llama-base:%s\n' "$tag"
+docker build --no-cache --target "$variant" -t "local/llama-$variant:$tag" "$ROOT/src"
+printf 'Image ready: local/llama-%s:%s\n' "$variant" "$tag"

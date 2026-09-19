@@ -39,8 +39,10 @@ def write_json(path, value):
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n")
 
 
-def source_hash(context):
+def source_hash(context, target=None):
     digest = hashlib.sha256()
+    if target:
+        digest.update(b"target\0" + target.encode() + b"\0")
     for path in sorted(context.rglob("*")):
         if any(part in {".git", "__pycache__"} for part in path.relative_to(context).parts):
             continue
@@ -59,43 +61,44 @@ def image_loaded(node, image, info):
     try:
         data = json.loads(inspected.stdout)
         status = data.get("status", data)
-        # With Docker's containerd snapshotter, host Id is an image index digest
-        # while node stores manifest/config digests. Tag existence is sufficient
-        # after a fresh build+load; strict Id/digest equality fails in this mode.
-        repo_tags = status.get("repoTags") or []
-        # crictl may prefix with docker.io/; normalize comparison
-        normalized = image if image.startswith("docker.io/") else f"docker.io/{image}"
-        if image in repo_tags or normalized in repo_tags or any(image in tag for tag in repo_tags):
-            return True
         if status.get("id") == info["Id"]:
             return True
-    except Exception:
-        # If parsing fails but crictl succeeded, assume image is present
-        return True
-    # Docker's containerd store exposes a manifest ID, while CRI reports
-    # the config ID. Compare containerd's tag target for this store.
-    digest = (info.get("Descriptor") or {}).get("digest")
+    except (ValueError, AttributeError, KeyError):
+        return False
+    descriptor = info.get("Descriptor") or {}
+    # kind imports the platform manifest, which can differ from Docker's index ID.
+    if descriptor.get("mediaType") in {
+        "application/vnd.oci.image.index.v1+json",
+        "application/vnd.docker.distribution.manifest.list.v2+json",
+    }:
+        platform = "/".join(info[key] for key in ("Os", "Architecture", "Variant") if info.get(key))
+        selected = json.loads(run("docker", "image", "inspect", "--platform", platform,
+                                  image, capture=True).stdout)[0]
+        descriptor = selected.get("Descriptor") or {}
+        if status.get("id") == selected["Id"]:
+            return True
+    digest = descriptor.get("digest")
     if not digest:
         return False
     images = run("docker", "exec", node, "ctr", "-n", "k8s.io", "images", "ls", capture=True).stdout
-    # Fallback: check tag existence via ctr as well (covers index vs manifest mismatch)
+    references = {image, image if image.startswith("docker.io/") else f"docker.io/{image}"}
     for line in images.splitlines():
         fields = line.split()
-        if len(fields) >= 3 and (fields[0] == image or fields[0] == f"docker.io/{image}" or image in fields[0]):
-            return True
-        if len(fields) >= 3 and fields[0] in (status.get("repoTags") or []) and fields[2] == digest:
+        if len(fields) >= 3 and fields[0] in references and fields[2] == digest:
             return True
     return False
 
 
-def ensure_image(image, context):
+def ensure_image(image, context, target=None):
     inspected = run("docker", "image", "inspect", image, capture=True, check=False)
     info = json.loads(inspected.stdout)[0] if inspected.returncode == 0 else None
-    fingerprint = source_hash(context) if context else None
+    fingerprint = source_hash(context, target) if context else None
     labels = ((info or {}).get("Config") or {}).get("Labels") or {}
     if context and (not info or labels.get(SOURCE_LABEL) != fingerprint):
         print(f"Building {image} from {context}", flush=True)
-        run("docker", "build", "--no-cache", "--label", f"{SOURCE_LABEL}={fingerprint}", "-t", image, context)
+        target_args = ("--target", target) if target else ()
+        run("docker", "build", "--no-cache", *target_args,
+            "--label", f"{SOURCE_LABEL}={fingerprint}", "-t", image, context)
         info = json.loads(run("docker", "image", "inspect", image, capture=True).stdout)[0]
     elif not info:
         raise RuntimeError(f"Local image missing: {image}. Pull/build it first, or supply --build-context.")
@@ -119,7 +122,8 @@ def ensure_image(image, context):
     else:
         print(f"Reusing loaded image on every node: {image}", flush=True)
     return {"image": image, "id": info["Id"], "source_sha256": fingerprint,
-            "build_context": str(context) if context else None}
+            "build_context": str(context) if context else None,
+            "build_target": target if context else None}
 
 
 def render(path):
@@ -335,8 +339,10 @@ def save_summary(report, metadata, rows):
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--image", default=os.environ.get("INFERENCE_IMAGE", "local/llama-base:0.1.0"))
-    parser.add_argument("--build-context", default=os.environ.get("INFERENCE_CONTEXT", str(ROOT / "src/base")),
+    parser.add_argument("--build-context", default=os.environ.get("INFERENCE_CONTEXT", str(ROOT / "src")),
                         help="Empty string reuses a prebuilt local image without building")
+    parser.add_argument("--build-target", default=os.environ.get("INFERENCE_TARGET"),
+                        help="Docker build stage; defaults to base for the shared src context")
     parser.add_argument("--manifests", default=os.environ.get("INFERENCE_MANIFESTS", str(ROOT / "k8s/llama-base")))
     parser.add_argument("--deployment", default=os.environ.get("INFERENCE_DEPLOYMENT", "llama-base"))
     parser.add_argument("--container", default=os.environ.get("INFERENCE_CONTAINER", "api"))
@@ -361,6 +367,8 @@ def parse_args():
     if not 0 < args.sample_interval <= 60:
         parser.error("sample interval must be between 0 and 60 seconds")
     args.build_context = Path(args.build_context).resolve() if args.build_context else None
+    if args.build_target is None and args.build_context == ROOT / "src":
+        args.build_target = "base"
     if args.build_context and not (args.build_context / "Dockerfile").is_file():
         parser.error("build context must contain a Dockerfile")
     args.manifests = Path(args.manifests).resolve()
@@ -399,7 +407,7 @@ def main():
         active = kube_json("get", "jobs", "-l", "benchmark=aiperf-cpu")["items"]
         if any(item.get("status", {}).get("active", 0) for item in active):
             raise RuntimeError("An AIPerf Job is already active; wait for it before restarting the server.")
-        metadata["inference"] = ensure_image(args.image, args.build_context)
+        metadata["inference"] = ensure_image(args.image, args.build_context, args.build_target)
         metadata["benchmark"] = ensure_image(args.benchmark_image, ROOT / "src/aiperf")
         nodes = kube_json("get", "nodes")
         write_json(report / "nodes.json", nodes)

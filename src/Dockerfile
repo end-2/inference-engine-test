@@ -14,13 +14,13 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
-COPY requirements.txt /build/requirements.txt
+COPY base/requirements.txt /build/requirements.txt
 RUN python -m venv /opt/venv \
     && /opt/venv/bin/pip install --no-cache-dir -r /build/requirements.txt \
     && /opt/venv/bin/pip check \
     && /opt/venv/bin/python -c "import fastapi, uvicorn, llama_cpp"
 
-FROM ${BASE_IMAGE}
+FROM ${BASE_IMAGE} AS runtime
 
 USER 0
 
@@ -38,7 +38,19 @@ RUN apt-get update \
 COPY --from=builder /opt/venv /opt/venv
 
 WORKDIR /app
-COPY engine.py server.py /app/
+COPY base/*.py /app/base/
 USER 1000:1000
 EXPOSE 8000
-ENTRYPOINT ["python", "/app/server.py"]
+ENTRYPOINT ["python", "-m", "base.server"]
+
+FROM runtime AS enhanced-batch
+COPY enhanced/__init__.py /app/enhanced/
+COPY enhanced/batch/*.py /app/enhanced/batch/
+ENTRYPOINT ["python", "-m", "enhanced.batch.server"]
+
+FROM runtime AS enhanced-cache
+COPY enhanced/__init__.py /app/enhanced/
+COPY enhanced/cache/*.py /app/enhanced/cache/
+ENTRYPOINT ["python", "-m", "enhanced.cache.server"]
+
+FROM runtime AS base

@@ -22,15 +22,21 @@ class LlamaEngine:
         if not settings.model_path.is_file():
             raise ValueError(f"Model file does not exist: {settings.model_path}")
 
+        engine = self
+
         class CountingLlama(Llama):
             # Streaming completions omit usage. Count sampled token IDs instead
             # of retokenizing text, which can merge tokens or lose special tokens.
-            def generate(self, *args, **kwargs):
+            def generate(self, tokens, *args, **kwargs):
                 self.completion_tokens = 0
-                for token in super().generate(*args, **kwargs):
-                    if token not in self.eog_tokens:
-                        self.completion_tokens += 1
-                    yield token
+                source = engine._generate(super().generate, tokens, *args, **kwargs)
+                try:
+                    for token in source:
+                        if token not in self.eog_tokens:
+                            self.completion_tokens += 1
+                        yield token
+                finally:
+                    source.close()
 
         self.llama = CountingLlama(
             model_path=str(settings.model_path),
@@ -56,6 +62,10 @@ class LlamaEngine:
             self.llama.close()
             raise
         self.stopping_criteria = StoppingCriteriaList
+
+    def _generate(self, generate, tokens, *args, **kwargs):
+        """Allow extensions around native generation while sharing token accounting."""
+        return generate(tokens, *args, **kwargs)
 
     def _special_token(self, token: int) -> str:
         if token < 0:

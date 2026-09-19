@@ -19,7 +19,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from engine import EngineSettings, LlamaEngine
+from .engine import EngineSettings, LlamaEngine
 
 
 class APIModel(BaseModel):
@@ -79,6 +79,17 @@ class Settings:
                 raise ValueError(f"{name} must be greater than zero")
         if self.default_output_tokens > self.max_output_tokens:
             raise ValueError("default_output_tokens must not exceed max_output_tokens")
+        self.engine_settings()
+
+    def engine_settings(self):
+        return EngineSettings(
+            model_path=self.model, n_ctx=self.n_ctx,
+            n_batch=self.n_batch, n_threads=self.n_threads,
+        )
+
+    def create_executor(self):
+        # Cancellation does not stop a native worker; serialize until it exits.
+        return ThreadPoolExecutor(max_workers=1, thread_name_prefix="llama")
 
 
 def error_body(message, error_type="invalid_request_error"):
@@ -114,13 +125,8 @@ def create_app(settings=None, engine_factory=LlamaEngine):
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        engine_settings = EngineSettings(
-            model_path=settings.model,
-            n_ctx=settings.n_ctx,
-            n_batch=settings.n_batch,
-            n_threads=settings.n_threads,
-        )
-        executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="llama")
+        engine_settings = settings.engine_settings()
+        executor = settings.create_executor()
         app.state.executor = executor
         try:
             app.state.engine = await run_engine(engine_factory, engine_settings)
@@ -135,8 +141,6 @@ def create_app(settings=None, engine_factory=LlamaEngine):
     app = FastAPI(title="llama.cpp CPU inference API", lifespan=lifespan)
 
     def run_engine(function, *args):
-        # Cancelling an asyncio future does not stop its native worker. One
-        # executor keeps model access serialized until that worker exits.
         return asyncio.get_running_loop().run_in_executor(
             app.state.executor, partial(function, *args)
         )
@@ -147,10 +151,14 @@ def create_app(settings=None, engine_factory=LlamaEngine):
 
     @app.get("/healthz")
     async def health():
+        if not getattr(app.state.engine, "healthy", True):
+            return JSONResponse({"status": "failed"}, status_code=503)
         return {"status": "ok"}
 
     @app.get("/readyz")
     async def ready():
+        if not getattr(app.state.engine, "healthy", True):
+            return JSONResponse({"status": "failed"}, status_code=503)
         return {"status": "ready"}
 
     @app.get("/v1/models")
@@ -323,8 +331,8 @@ def positive_int(value):
     return number
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+def create_parser(description=__doc__):
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument("--model", type=Path, default=Path("/model/model.gguf"))
     parser.add_argument("--served-model-name", default="Qwen/Qwen2.5-0.5B-Instruct")
     parser.add_argument("--host", default="0.0.0.0")
@@ -335,22 +343,24 @@ def main():
     parser.add_argument("--max-input-tokens", type=positive_int, default=2048)
     parser.add_argument("--max-output-tokens", type=positive_int, default=1024)
     parser.add_argument("--default-output-tokens", type=positive_int, default=128)
+    return parser
+
+
+def run_server(parser, settings_type=Settings, engine_factory=LlamaEngine):
     args = parser.parse_args()
-    if args.default_output_tokens > args.max_output_tokens:
-        parser.error("--default-output-tokens must not exceed --max-output-tokens")
+    options = vars(args).copy()
+    host, port = options.pop("host"), options.pop("port")
+    try:
+        settings = settings_type(**options)
+    except ValueError as exc:
+        parser.error(str(exc))
     import uvicorn
 
-    settings = Settings(
-        model=args.model,
-        served_model_name=args.served_model_name,
-        n_ctx=args.n_ctx,
-        n_batch=args.n_batch,
-        n_threads=args.n_threads,
-        max_input_tokens=args.max_input_tokens,
-        max_output_tokens=args.max_output_tokens,
-        default_output_tokens=args.default_output_tokens,
-    )
-    uvicorn.run(create_app(settings), host=args.host, port=args.port, workers=1)
+    uvicorn.run(create_app(settings, engine_factory), host=host, port=port, workers=1)
+
+
+def main():
+    run_server(create_parser())
 
 
 if __name__ == "__main__":

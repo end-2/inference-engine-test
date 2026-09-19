@@ -6,8 +6,8 @@ import sys
 import threading
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src/base"))
-from engine import EngineSettings, LlamaEngine
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from base.engine import EngineSettings, LlamaEngine
 
 
 @unittest.skipUnless(os.environ.get("TEST_MODEL_PATH"), "TEST_MODEL_PATH is not set")

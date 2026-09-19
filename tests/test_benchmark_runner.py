@@ -3,6 +3,7 @@
 import importlib.util
 import csv
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -21,9 +22,9 @@ class BenchmarkTests(unittest.TestCase):
         self.context = Path(self.temp.name)
         (self.context / "Dockerfile").write_text("FROM scratch\n")
 
-    def check_image(self, matching_source=True, matching_node=True, context=True):
+    def check_image(self, matching_source=True, matching_node=True, context=True, target=None):
         commands = []
-        fingerprint = benchmark.source_hash(self.context)
+        fingerprint = benchmark.source_hash(self.context, target)
         def execute(*args, **kwargs):
             nonlocal matching_node
             commands.append(args)
@@ -40,7 +41,7 @@ class BenchmarkTests(unittest.TestCase):
         with patch.object(benchmark, "run", side_effect=execute), patch.object(
             benchmark, "kube_json", return_value={"items": [{"metadata": {"name": "node"}}]}
         ):
-            benchmark.ensure_image("local/test:1", self.context if context else None)
+            benchmark.ensure_image("local/test:1", self.context if context else None, target)
         return commands
 
     def test_identical_image_skips_build_and_load(self):
@@ -65,6 +66,42 @@ class BenchmarkTests(unittest.TestCase):
         (self.context / "Dockerfile").write_text("FROM busybox\n")
         self.assertNotEqual(previous, benchmark.source_hash(self.context))
 
+    def test_build_selects_requested_inference_target(self):
+        commands = self.check_image(matching_source=False, target="enhanced-cache")
+        build = next(command for command in commands if command[:2] == ("docker", "build"))
+        self.assertEqual(build[build.index("--target") + 1], "enhanced-cache")
+        self.assertEqual(build[-1], self.context)
+
+    def test_shared_source_fingerprint_includes_target_and_base_code(self):
+        base = self.context / "base"
+        base.mkdir()
+        source = base / "server.py"
+        source.write_text("version = 1\n")
+        targets = ("base", "enhanced-batch", "enhanced-cache")
+        previous = {target: benchmark.source_hash(self.context, target) for target in targets}
+        self.assertEqual(len(set(previous.values())), len(targets))
+        source.write_text("version = 2\n")
+        for target in targets:
+            self.assertNotEqual(previous[target], benchmark.source_hash(self.context, target))
+
+    def test_matching_target_reuses_image(self):
+        commands = self.check_image(target="enhanced-batch")
+        self.assertFalse(any(command[:2] == ("docker", "build") for command in commands))
+
+    def test_default_and_custom_build_contexts_select_targets(self):
+        for options, context, target in [
+            ([], benchmark.ROOT / "src", "base"),
+            (["--build-target", "enhanced-cache"], benchmark.ROOT / "src", "enhanced-cache"),
+            (["--build-context", str(self.context)], self.context, None),
+            (["--build-context", ""], None, None),
+        ]:
+            with self.subTest(options=options), patch.dict(os.environ, {}, clear=True), patch(
+                "sys.argv", ["run-benchmark.py", *options]
+            ):
+                args = benchmark.parse_args()
+                self.assertEqual(args.build_context, context.resolve() if context else None)
+                self.assertEqual(args.build_target, target)
+
     def test_render_handles_multiple_kubectl_json_documents(self):
         result = subprocess.CompletedProcess([], 0, '{"kind":"Deployment"}\n{"kind":"Service"}\n', "")
         with patch.object(benchmark, "kube", return_value=result):
@@ -78,6 +115,31 @@ class BenchmarkTests(unittest.TestCase):
         info = {"Id": "sha256:manifest", "Descriptor": {"digest": "sha256:manifest"}}
         with patch.object(benchmark, "run", side_effect=responses):
             self.assertTrue(benchmark.image_loaded("node", "local/test:1", info))
+
+    def test_existing_tag_with_stale_manifest_is_not_reused(self):
+        inspected = {"status": {"id": "sha256:old-config", "repoTags": ["docker.io/local/test:1"]}}
+        responses = [subprocess.CompletedProcess([], 0, json.dumps(inspected), ""),
+                     subprocess.CompletedProcess([], 0, "docker.io/local/test:1 manifest sha256:old 123\n", "")]
+        info = {"Id": "sha256:new", "Descriptor": {"digest": "sha256:new"}}
+        with patch.object(benchmark, "run", side_effect=responses):
+            self.assertFalse(benchmark.image_loaded("node", "local/test:1", info))
+
+    def test_image_index_resolves_to_platform_manifest(self):
+        inspected = {"status": {"id": "sha256:config", "repoTags": ["docker.io/local/test:1"]}}
+        selected = {"Id": "sha256:manifest", "Descriptor": {"digest": "sha256:manifest"}}
+        responses = [subprocess.CompletedProcess([], 0, json.dumps(inspected), ""),
+                     subprocess.CompletedProcess([], 0, json.dumps([selected]), ""),
+                     subprocess.CompletedProcess([], 0, "docker.io/local/test:1 manifest sha256:manifest 123\n", "")]
+        info = {"Id": "sha256:index", "Os": "linux", "Architecture": "arm64",
+                "Descriptor": {"digest": "sha256:index", "mediaType": "application/vnd.oci.image.index.v1+json"}}
+        with patch.object(benchmark, "run", side_effect=responses) as execute:
+            self.assertTrue(benchmark.image_loaded("node", "local/test:1", info))
+        self.assertEqual(execute.call_args_list[1].args,
+                         ("docker", "image", "inspect", "--platform", "linux/arm64", "local/test:1"))
+
+    def test_invalid_node_image_metadata_is_not_reused(self):
+        with patch.object(benchmark, "run", return_value=subprocess.CompletedProcess([], 0, "invalid", "")):
+            self.assertFalse(benchmark.image_loaded("node", "local/test:1", {"Id": "sha256:new"}))
 
     def test_job_failure_is_not_waited_until_timeout(self):
         state = {"status": {"conditions": [{"type": "Failed", "status": "True", "reason": "DeadlineExceeded"}]}}

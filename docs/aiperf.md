@@ -14,7 +14,7 @@ make benchmark
 
 모델·토크나이저 다운로드와 검증, 클러스터 준비, 추론 및 AIPerf 이미지 빌드·로드, 배포를 자동 수행합니다. 빌드 경로의 내용이 이미지에 기록한 해시와 같으면 빌드를 생략하고, 모든 노드의 이미지 ID가 호스트와 같으면 로드를 생략합니다. 태그만 같고 내용이 다르면 다시 준비합니다. 해시 기록이 없는 이미지는 최초 한 번 빌드합니다.
 
-각 동시성 `1,2,4,8`에 대해 추론 Deployment를 재시작하고 새 Pod의 준비를 기다린 뒤 워밍업 8회와 본 측정 100회를 수행합니다. `ignore_eos`를 사용해 지정한 출력 길이 전에 종료되지 않도록 하고, 결과의 성공 요청 수와 출력 길이를 검증합니다. 조건마다 별도 Job을 순차 실행합니다. 실행 중인 다른 AIPerf Job이 있으면 중단합니다. 완료 후 추론 서버와 클러스터는 유지합니다.
+각 동시성 `1,2,4,8`에 대해 추론 Deployment를 재시작하고 새 Pod의 준비를 기다린 뒤 [공통 Job](../k8s/aiperf/job.yaml)에 설정된 워밍업과 본 측정을 수행합니다. `ignore_eos`를 사용해 지정한 출력 길이 전에 종료되지 않도록 하고, 결과의 성공 요청 수와 출력 길이를 검증합니다. 조건마다 별도 Job을 순차 실행합니다. 실행 중인 다른 AIPerf Job이 있으면 중단합니다. 완료 후 추론 서버와 클러스터는 유지합니다.
 
 결과는 `docs/reports/bench-<UTC 시각>-<이미지>/`에 저장됩니다.
 
@@ -43,10 +43,12 @@ make benchmark
 동일한 API·실행 옵션을 지원하는 다른 구현은 이미지와 빌드 경로를 바꿉니다.
 
 ```sh
-make benchmark INFERENCE_IMAGE=local/llama-custom:0.1.0 INFERENCE_CONTEXT=src/custom
+make benchmark INFERENCE_IMAGE=local/llama-custom:0.1.0 INFERENCE_CONTEXT=src/custom INFERENCE_TARGET=
 ```
 
 이미 빌드하거나 pull한 이미지는 `INFERENCE_CONTEXT=`로 빌드를 생략합니다. 실행 인자나 Service가 다르면 해당 매니페스트와 대상을 지정합니다. 사용자 지정 매니페스트에도 모델 마운트와 동일한 자원 requests/limits를 설정하세요.
+
+기본 추론 이미지는 `src/`의 공통 Dockerfile에서 `VARIANT`에 해당하는 타깃을 빌드합니다. 직접 실행할 때는 `--build-target enhanced-batch` 또는 `--build-target enhanced-cache`를 지정합니다. 빌드 재사용 해시는 공통 소스와 선택한 타깃을 포함합니다. 사용자 지정 Dockerfile은 `INFERENCE_TARGET` 또는 `--build-target`으로 타깃을 선택하며, 빈 값은 Dockerfile의 마지막 단계를 사용합니다.
 
 ```sh
 ./scripts/run-benchmark.py --image local/custom:0.1.0 --build-context '' \

@@ -9,12 +9,13 @@ import unittest
 
 import httpx
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src/base"))
-from server import Settings, create_app
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from base.server import Settings, create_app
 
 
 class FakeEngine:
     def __init__(self, settings):
+        self.settings = settings
         self.prompt = list(range(8))
         self.messages = None
         self.closed = False
