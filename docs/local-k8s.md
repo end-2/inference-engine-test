@@ -103,6 +103,7 @@ Docker가 containerd 이미지 저장소를 사용하고 `docker image save --pl
 ```sh
 sh tests/test-local-k8s.sh
 sh tests/test-install-tools.sh
+sh tests/test-download-model.sh
 
 # 선택 사항: 다른 셸과 정적 분석
 TEST_SHELL=bash sh tests/test-local-k8s.sh
