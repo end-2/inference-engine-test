@@ -46,6 +46,15 @@ case "$*" in
             previous=$arg
         done
         ;;
+    'inspect '*)
+        # Report the expected read-only /models mount unless disabled.
+        case "$*" in
+            *-worker2) [ ! -f "$MOCK_ROOT/no-worker-mount" ] || exit 0 ;;
+        esac
+        if [ ! -f "$MOCK_ROOT/no-models-mount" ]; then
+            printf '%s:false\n' "${LOCAL_K8S_MODELS_DIR:-}"
+        fi
+        ;;
     *) exit 2 ;;
 esac
 EOF
@@ -152,6 +161,9 @@ rm "$isolated"
 ok up
 [ "$(grep -c '<create> <cluster>' "$MOCK_TRACE")" -eq 1 ] || fail 'up recreated an existing cluster'
 [ -s "$isolated" ] || fail 'up did not recover kubeconfig'
+touch "$MOCK_ROOT/no-models-mount"
+reject up
+rm "$MOCK_ROOT/no-models-mount"
 ok status
 ok kubectl get pods -l 'app in (a,b)'
 contains '<--kubeconfig> <'"$isolated"'> <--context> <kind-local-k8s> <get> <pods> <-l> <app in (a,b)>' "$MOCK_TRACE"
@@ -217,6 +229,9 @@ export KIND_CONFIG="$project/config/cluster/kind-multi-node.yaml"; ok up
 if [ "$saved_kind_config" = unset ]; then unset KIND_CONFIG; else KIND_CONFIG=$saved_kind_config; fi
 contains 'docker' "$LOCAL_K8S_STATE_DIR/$CLUSTER_NAME/provider"
 contains '<--config> <'"$project"'/config/cluster/kind-multi-node.yaml>' "$MOCK_TRACE"
+touch "$MOCK_ROOT/no-worker-mount"
+reject up
+rm "$MOCK_ROOT/no-worker-mount"
 ok down
 touch "$MOCK_ROOT/offline-docker"
 reject doctor

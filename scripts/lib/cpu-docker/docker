@@ -1,0 +1,26 @@
+#!/bin/sh
+set -eu
+
+: "${LOCAL_K8S_DOCKER:?Use scripts/local-k8s.sh to configure the Docker executable}"
+: "${CLUSTER_NAME:?Missing cluster name}"
+
+# kind has no models flag. This wrapper bind mounts the host model
+# directory read-only at /models on every node of this cluster.
+command=${1:-}
+if [ "$command" = run ] || [ "$command" = create ]; then
+    cluster=false
+    previous=
+    for argument in "$@"; do
+        if [ "$previous" = --label ] && [ "$argument" = "io.x-k8s.kind.cluster=$CLUSTER_NAME" ]; then
+            cluster=true
+        fi
+        previous=$argument
+    done
+    if [ "$cluster" = true ]; then
+        : "${LOCAL_K8S_MODELS_DIR:?Use scripts/local-k8s.sh to configure the model directory}"
+        shift
+        exec "$LOCAL_K8S_DOCKER" "$command" \
+            --volume "$LOCAL_K8S_MODELS_DIR:/models:ro" "$@"
+    fi
+fi
+exec "$LOCAL_K8S_DOCKER" "$@"

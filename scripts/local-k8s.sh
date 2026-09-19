@@ -37,6 +37,7 @@ Environment:
   WAIT_TIMEOUT                 Default: 180s per readiness check
   LOCAL_K8S_STATE_DIR           Default: .local-k8s in this repository
   LOCAL_K8S_BIN_DIR             Default: .bin in this repository
+  LOCAL_K8S_MODELS_DIR          Default: .models, mounted read-only at /models on the nodes
 EOF
 }
 
@@ -99,6 +100,24 @@ require_kubeconfig() {
 
 kube() {
     kubectl --kubeconfig "$KUBECONFIG" --context "kind-$CLUSTER_NAME" "$@"
+}
+
+prepare_models_dir() {
+    LOCAL_K8S_MODELS_DIR=${LOCAL_K8S_MODELS_DIR:-$ROOT/.models}
+    case $LOCAL_K8S_MODELS_DIR in *:*) die "LOCAL_K8S_MODELS_DIR must not contain a colon." ;; esac
+    (umask 022; mkdir -p "$LOCAL_K8S_MODELS_DIR")
+    LOCAL_K8S_MODELS_DIR=$(CDPATH='' cd -- "$LOCAL_K8S_MODELS_DIR" && pwd)
+    export LOCAL_K8S_MODELS_DIR
+}
+
+check_models_mount() {
+    nodes=$(kind get nodes --name "$CLUSTER_NAME") || die "Failed to list cluster nodes."
+    [ -n "$nodes" ] || die "Cluster $CLUSTER_NAME has no nodes."
+    for node in $nodes; do
+        mounted_models=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/models"}}{{.Source}}:{{.RW}}{{end}}{{end}}' "$node")
+        [ "$mounted_models" = "$LOCAL_K8S_MODELS_DIR:false" ] || \
+            die "Node $node needs a read-only mount from $LOCAL_K8S_MODELS_DIR to /models. Back up node data, then run down and up. See docs/models.md."
+    done
 }
 
 load_images() {
@@ -168,9 +187,11 @@ case $command in
     up)
         require kubectl
         [ -r "$KIND_CONFIG" ] || die "Cannot read config: $KIND_CONFIG"
+        prepare_models_dir
         exists=false
         if cluster_exists; then
             exists=true
+            check_models_mount
         fi
         mkdir -p "$STATE_DIR"
         printf '%s\n' "$provider" > "$STATE_DIR/provider"
@@ -178,20 +199,24 @@ case $command in
             printf 'Reusing cluster %s; creation settings are not reapplied.\n' "$CLUSTER_NAME"
             kind export kubeconfig --name "$CLUSTER_NAME" --kubeconfig "$KUBECONFIG"
         else
-            if ! kind create cluster --name "$CLUSTER_NAME" --config "$KIND_CONFIG" \
+            LOCAL_K8S_DOCKER=$(command -v docker)
+            export LOCAL_K8S_DOCKER
+            if ! PATH="$ROOT/scripts/lib/cpu-docker:$PATH" kind create cluster --name "$CLUSTER_NAME" --config "$KIND_CONFIG" \
                 --image "$KIND_NODE_IMAGE" --kubeconfig "$KUBECONFIG" --wait "$WAIT_TIMEOUT" --retain; then
                 die "Cluster creation failed. Use logs to inspect retained nodes, then down before retrying."
             fi
+            check_models_mount
         fi
         chmod 600 "$KUBECONFIG"
         kube wait --for=condition=Ready nodes --all --timeout="$WAIT_TIMEOUT"
         kube -n kube-system rollout status deployment/coredns --timeout="$WAIT_TIMEOUT"
+        printf 'Models: %s -> %s:/models (read-only)\n' "$LOCAL_K8S_MODELS_DIR" "$CLUSTER_NAME-control-plane"
         printf 'Cluster %s is ready. Kubeconfig: %s\n' "$CLUSTER_NAME" "$KUBECONFIG"
         ;;
     down)
         kind delete cluster --name "$CLUSTER_NAME" --kubeconfig "$KUBECONFIG"
         rm -f "$KUBECONFIG" "$STATE_DIR/provider"
-        printf 'Deleted cluster %s. Node data and local persistent volumes are removed.\n' "$CLUSTER_NAME"
+        printf 'Deleted cluster %s. Node data and local persistent volumes are removed; host model files are preserved.\n' "$CLUSTER_NAME"
         ;;
     load-image)
         require_cluster
