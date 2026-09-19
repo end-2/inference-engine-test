@@ -1,0 +1,113 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: aiperf
+  labels:
+    app: aiperf
+    benchmark: aiperf-cpu
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 14400
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: aiperf
+        benchmark: aiperf-cpu
+    spec:
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 60
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: aiperf
+          image: local/aiperf:0.12.0
+          imagePullPolicy: Never
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: CONCURRENCIES
+              value: "1,2,4,8"
+            # Inference Service providing the OpenAI-compatible API.
+            # It is deployed separately: kubectl apply -f k8s/llama-base/
+            - name: API_URL
+              value: http://llama-base:8000
+            - name: MODEL_ID
+              value: Qwen/Qwen2.5-0.5B-Instruct
+          args:
+            - profile
+            - --model
+            - $(MODEL_ID)
+            - --tokenizer
+            - /tokenizer
+            - --url
+            - $(API_URL)
+            - --endpoint-type
+            - chat
+            - --streaming
+            - --use-server-token-count
+            - --sequence-distribution
+            - "128,64:25;512,128:25;1024,256:25;2048,512:25"
+            - --num-dataset-entries
+            - "64"
+            - --random-seed
+            - "42"
+            - --parameter-sweep-same-seed
+            - --dataset-sampling-strategy
+            - sequential
+            - --extra-inputs
+            - ignore_eos:true
+            - --concurrency
+            - $(CONCURRENCIES)
+            - --workers-max
+            - "1"
+            - --warmup-request-count
+            - "8"
+            - --warmup-concurrency
+            - "1"
+            - --request-count
+            - "100"
+            - --request-timeout-seconds
+            - "3600"
+            - --no-server-metrics
+            - --ui
+            - none
+            - --artifact-dir
+            - /results/$(POD_NAME)
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: tokenizer
+              mountPath: /tokenizer
+              readOnly: true
+            - name: results
+              mountPath: /results
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tokenizer
+          hostPath:
+            path: /models/qwen2.5-0.5b/tokenizer
+            type: Directory
+        - name: results
+          persistentVolumeClaim:
+            claimName: aiperf-results
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi

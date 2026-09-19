@@ -21,6 +21,9 @@ These guidelines apply to documentation, code comments, and task descriptions th
 
 ## Documentation Ownership
 
-- Keep docs/aiperf.md focused on the AIPerf client: setup, load generation, measurement, results, and client troubleshooting.
 - Keep docs/transformers-api.md limited to behavior and usage shared by base and enhanced: deployment, endpoints, requests, responses, and common settings.
 - Put implementation-specific architecture, scheduling, configuration, and tests in separate guides such as docs/transformers-api-enhanced.md. Link between guides instead of duplicating their contents.
+
+## Kubernetes Manifest Guidelines
+
+- Measurement workloads use `requests` equal to `limits` so pods get the Guaranteed QoS class and results are comparable across runs.

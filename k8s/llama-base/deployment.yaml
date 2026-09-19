@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llama-base
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: llama-base
+  template:
+    metadata:
+      labels:
+        app: llama-base
+    spec:
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: api
+          image: local/llama-base:0.1.0
+          imagePullPolicy: Never
+          args:
+            - --model
+            - /model/qwen2.5-0.5b-instruct-q4_k_m.gguf
+            - --served-model-name
+            - Qwen/Qwen2.5-0.5B-Instruct
+            - --n-threads
+            - "4"
+            - --n-ctx
+            - "4096"
+            - --max-input-tokens
+            - "3072"
+          ports:
+            - name: http
+              containerPort: 8000
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: "4"
+              memory: 4Gi
+            limits:
+              cpu: "4"
+              memory: 4Gi
+          volumeMounts:
+            - name: model
+              mountPath: /model
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: model
+          hostPath:
+            path: /models/qwen2.5-0.5b
+            type: Directory
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi
