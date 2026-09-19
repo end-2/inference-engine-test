@@ -37,5 +37,6 @@ context="$ROOT/src/aiperf"
 [ -f "$context/Dockerfile" ] || die "Missing Dockerfile: $context/Dockerfile"
 printf 'Building %s from %s...\n' "$image" "$context"
 # --network=host is used for package downloads during the build.
-docker build --network=host -t "$image" "$@" "$context"
+# --no-cache ensures a clean rebuild to avoid stale layer mismatches with kind.
+docker build --no-cache --network=host -t "$image" "$@" "$context"
 docker image inspect "$image" --format 'Built {{.RepoTags}} ({{.Id}})\n'

@@ -12,5 +12,5 @@ command -v docker >/dev/null 2>&1 || die "Missing docker."
 
 ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 tag=${IMAGE_TAG:-0.1.0}
-docker build -t "local/llama-base:$tag" "$ROOT/src/base"
+docker build --no-cache -t "local/llama-base:$tag" "$ROOT/src/base"
 printf 'Image ready: local/llama-base:%s\n' "$tag"

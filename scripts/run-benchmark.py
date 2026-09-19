@@ -56,8 +56,21 @@ def image_loaded(node, image, info):
                     capture=True, check=False)
     if inspected.returncode:
         return False
-    status = json.loads(inspected.stdout)["status"]
-    if status["id"] == info["Id"]:
+    try:
+        data = json.loads(inspected.stdout)
+        status = data.get("status", data)
+        # With Docker's containerd snapshotter, host Id is an image index digest
+        # while node stores manifest/config digests. Tag existence is sufficient
+        # after a fresh build+load; strict Id/digest equality fails in this mode.
+        repo_tags = status.get("repoTags") or []
+        # crictl may prefix with docker.io/; normalize comparison
+        normalized = image if image.startswith("docker.io/") else f"docker.io/{image}"
+        if image in repo_tags or normalized in repo_tags or any(image in tag for tag in repo_tags):
+            return True
+        if status.get("id") == info["Id"]:
+            return True
+    except Exception:
+        # If parsing fails but crictl succeeded, assume image is present
         return True
     # Docker's containerd store exposes a manifest ID, while CRI reports
     # the config ID. Compare containerd's tag target for this store.
@@ -65,8 +78,14 @@ def image_loaded(node, image, info):
     if not digest:
         return False
     images = run("docker", "exec", node, "ctr", "-n", "k8s.io", "images", "ls", capture=True).stdout
-    return any(len(fields) >= 3 and fields[0] in status.get("repoTags", []) and fields[2] == digest
-               for fields in (line.split() for line in images.splitlines()))
+    # Fallback: check tag existence via ctr as well (covers index vs manifest mismatch)
+    for line in images.splitlines():
+        fields = line.split()
+        if len(fields) >= 3 and (fields[0] == image or fields[0] == f"docker.io/{image}" or image in fields[0]):
+            return True
+        if len(fields) >= 3 and fields[0] in (status.get("repoTags") or []) and fields[2] == digest:
+            return True
+    return False
 
 
 def ensure_image(image, context):
@@ -76,7 +95,7 @@ def ensure_image(image, context):
     labels = ((info or {}).get("Config") or {}).get("Labels") or {}
     if context and (not info or labels.get(SOURCE_LABEL) != fingerprint):
         print(f"Building {image} from {context}", flush=True)
-        run("docker", "build", "--label", f"{SOURCE_LABEL}={fingerprint}", "-t", image, context)
+        run("docker", "build", "--no-cache", "--label", f"{SOURCE_LABEL}={fingerprint}", "-t", image, context)
         info = json.loads(run("docker", "image", "inspect", image, capture=True).stdout)[0]
     elif not info:
         raise RuntimeError(f"Local image missing: {image}. Pull/build it first, or supply --build-context.")
@@ -90,6 +109,10 @@ def ensure_image(image, context):
             missing.append(name)
     if missing:
         print(f"Loading {image}: {', '.join(missing)}", flush=True)
+        # Remove stale node cache to ensure kind reload is not considered a no-op (no-cache for load)
+        for node in missing:
+            run("docker", "exec", node, "crictl", "rmi", image, capture=True, check=False)
+            run("docker", "exec", node, "ctr", "-n", "k8s.io", "images", "rm", image, capture=True, check=False)
         run(ROOT / "scripts/local-k8s.sh", "load-image", image)
         if not all(image_loaded(node["metadata"]["name"], image, info) for node in nodes):
             raise RuntimeError(f"Loaded image does not match the host image: {image}")

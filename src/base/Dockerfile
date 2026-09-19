@@ -7,7 +7,7 @@ FROM ${BASE_IMAGE} AS builder
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     CMAKE_ARGS="-DGGML_NATIVE=OFF" \
-    CMAKE_BUILD_PARALLEL_LEVEL=4
+    CMAKE_BUILD_PARALLEL_LEVEL=12
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential cmake \

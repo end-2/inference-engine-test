@@ -65,12 +65,12 @@ class ChatRequest(APIModel):
 class Settings:
     model: Path = Path("/model/model.gguf")
     served_model_name: str = "Qwen/Qwen2.5-0.5B-Instruct"
-    n_ctx: int = 2048
+    n_ctx: int = 1024
     n_batch: int = 512
     n_threads: int = 4
-    max_input_tokens: int = 2048
-    max_output_tokens: int = 1024
-    default_output_tokens: int = 128
+    max_input_tokens: int = 768
+    max_output_tokens: int = 128
+    default_output_tokens: int = 32
 
     def __post_init__(self):
         for name in ("n_ctx", "n_batch", "n_threads", "max_input_tokens",

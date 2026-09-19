@@ -53,9 +53,9 @@ spec:
             - --streaming
             - --use-server-token-count
             - --sequence-distribution
-            - "128,64:25;512,128:25;1024,256:25;2048,512:25"
+            - "64,32:50;256,64:50"
             - --num-dataset-entries
-            - "64"
+            - "16"
             - --random-seed
             - "42"
             - --parameter-sweep-same-seed
@@ -68,7 +68,7 @@ spec:
             - --workers-max
             - "1"
             - --warmup-request-count
-            - "8"
+            - "2"
             - --warmup-concurrency
             - "1"
             - --request-count

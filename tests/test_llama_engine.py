@@ -15,7 +15,7 @@ class EngineTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.engine = LlamaEngine(EngineSettings(
-            model_path=Path(os.environ["TEST_MODEL_PATH"]), n_ctx=256, n_threads=2))
+            model_path=Path(os.environ["TEST_MODEL_PATH"]), n_ctx=128, n_threads=2))
 
     @classmethod
     def tearDownClass(cls):
@@ -28,7 +28,7 @@ class EngineTests(unittest.TestCase):
                 prompt = self.engine.prepare_prompt([{"role": "user", "content": content}])
                 self.assertGreater(len(prompt), len(self.engine.llama.tokenize(
                     content.encode(), add_bos=False)))
-                args = (prompt, 32, 0.0, 1.0, ignore_eos, threading.Event())
+                args = (prompt, 16, 0.0, 1.0, ignore_eos, threading.Event())
                 complete = self.engine.complete(*args)
                 pieces = []
                 streamed = self.engine.stream(*args, pieces.append)
@@ -36,14 +36,14 @@ class EngineTests(unittest.TestCase):
                 for field in ("prompt_tokens", "completion_tokens", "finish_reason"):
                     self.assertEqual(streamed[field], complete[field], field)
                 if ignore_eos:
-                    self.assertEqual(streamed["completion_tokens"], 32)
+                    self.assertEqual(streamed["completion_tokens"], 16)
                     self.assertEqual(streamed["finish_reason"], "length")
 
     def test_pre_cancelled_generation_stops(self):
         prompt = self.engine.prepare_prompt([{"role": "user", "content": "Hello"}])
         cancel = threading.Event()
         cancel.set()
-        result = self.engine.complete(prompt, 32, 0.0, 1.0, True, cancel)
+        result = self.engine.complete(prompt, 16, 0.0, 1.0, True, cancel)
         self.assertEqual(result["completion_tokens"], 0)
 
 

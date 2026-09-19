@@ -37,6 +37,12 @@ command -v docker >/dev/null 2>&1 || die "Missing docker."
 docker image inspect "$image" >/dev/null 2>&1 || \
     die "Missing local image: $image. Build it first with ./scripts/build-benchmark-images.sh."
 
+# no-cache for load: remove stale image from nodes before kind load
+for node in $(kind get nodes --name "${CLUSTER_NAME:-local-k8s}" 2>/dev/null); do
+  docker exec "$node" crictl rmi "$image" >/dev/null 2>&1 || true
+  docker exec "$node" ctr -n k8s.io images rm "$image" >/dev/null 2>&1 || true
+done
+
 # local-k8s.sh load-image stages a temporary archive under TMPDIR.
 case ${TMPDIR:-} in
     '') TMPDIR="$ROOT/.local-k8s/image-tmp" ;;

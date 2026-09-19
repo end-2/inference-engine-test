@@ -7,7 +7,7 @@ from pathlib import Path
 @dataclass(frozen=True)
 class EngineSettings:
     model_path: Path
-    n_ctx: int = 2048
+    n_ctx: int = 1024
     n_batch: int = 512
     n_threads: int = 4
 

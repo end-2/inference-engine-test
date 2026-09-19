@@ -29,11 +29,15 @@ spec:
             - --served-model-name
             - Qwen/Qwen2.5-0.5B-Instruct
             - --n-threads
-            - "4"
+            - "12"
             - --n-ctx
-            - "4096"
+            - "1024"
             - --max-input-tokens
-            - "3072"
+            - "768"
+            - --max-output-tokens
+            - "128"
+            - --default-output-tokens
+            - "32"
           ports:
             - name: http
               containerPort: 8000
@@ -59,11 +63,11 @@ spec:
               drop: [ALL]
           resources:
             requests:
-              cpu: "4"
-              memory: 4Gi
+              cpu: "12"
+              memory: 16Gi
             limits:
-              cpu: "4"
-              memory: 4Gi
+              cpu: "12"
+              memory: 16Gi
           volumeMounts:
             - name: model
               mountPath: /model
