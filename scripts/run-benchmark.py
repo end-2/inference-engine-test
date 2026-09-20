@@ -8,7 +8,7 @@ import fcntl
 import hashlib
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import subprocess
 import sys
@@ -16,6 +16,30 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_LABEL = "io.local.inference.source-sha256"
+CACHE_POLICIES = ("preserve", "clear-before-sweep", "clear-per-concurrency")
+CLEAR_CACHE_SCRIPT = """
+import json
+from pathlib import Path
+import shutil
+import sys
+
+root = Path(sys.argv[1])
+if not root.is_mount() or root.is_symlink() or root == Path('/'):
+    raise RuntimeError('Cache directory must be a mounted PVC root')
+entries = list(root.iterdir())
+files = [path for path in root.rglob('*') if path.is_file() and not path.is_symlink()]
+result = {'directory': str(root), 'removed_entries': len(entries),
+          'removed_files': len(files), 'removed_bytes': sum(path.stat().st_size for path in files)}
+for path in entries:
+    if path.is_dir() and not path.is_symlink():
+        shutil.rmtree(path)
+    else:
+        path.unlink()
+result['remaining_entries'] = len(list(root.iterdir()))
+if result['remaining_entries']:
+    raise RuntimeError('Cache directory is not empty after cleanup')
+print(json.dumps(result), flush=True)
+"""
 
 
 def run(*args, capture=False, check=True):
@@ -146,6 +170,87 @@ def deployment_pods(deployment):
         raise RuntimeError("Benchmark deployment must use a matchLabels selector.")
     labels = ",".join(f"{key}={value}" for key, value in sorted(selector["matchLabels"].items()))
     return kube_json("get", "pods", "-l", labels)["items"]
+
+
+def cache_volume(deployment, container):
+    arguments = container.get("args", [])
+    paths = [arguments[index + 1] for index, value in enumerate(arguments[:-1])
+             if value == "--cache-dir"]
+    paths += [value.split("=", 1)[1] for value in arguments if value.startswith("--cache-dir=")]
+    if len(paths) != 1:
+        raise RuntimeError("Cache clearing requires one explicit --cache-dir in the inference arguments.")
+    directory = paths[0]
+    path = PurePosixPath(directory)
+    if not path.is_absolute() or path == PurePosixPath("/") or ".." in path.parts:
+        raise RuntimeError("Cache directory must be an absolute non-root path without '..'.")
+    mounts = [mount for mount in container.get("volumeMounts", []) if mount["mountPath"] == directory]
+    if len(mounts) != 1 or any(mounts[0].get(key) for key in ("readOnly", "subPath", "subPathExpr")):
+        raise RuntimeError("Cache directory must equal a writable, dedicated PVC mount root.")
+    mount = mounts[0]
+    volume = next(item for item in deployment["spec"]["template"]["spec"].get("volumes", [])
+                  if item["name"] == mount["name"])
+    if "persistentVolumeClaim" not in volume or volume["persistentVolumeClaim"].get("readOnly"):
+        raise RuntimeError("Cache clearing requires a writable PVC volume.")
+    return {"directory": directory, "mount": mount, "volume": volume,
+            "pvc": volume["persistentVolumeClaim"]["claimName"]}
+
+
+def clears_cache(policy, condition_index):
+    return policy == "clear-per-concurrency" or (policy == "clear-before-sweep" and condition_index == 0)
+
+
+def clear_pvc_cache(deployment, container, cache, name, directory, timeout):
+    """Stop the writer before deleting cache files, including its shutdown flush."""
+    target = f"deployment/{deployment['metadata']['name']}"
+    pod_spec = deployment["spec"]["template"]["spec"]
+    cleaner_spec = {"restartPolicy": "Never", "automountServiceAccountToken": False,
+                    "securityContext": pod_spec.get("securityContext", {}),
+                    "containers": [{"name": "clear-cache", "image": container["image"],
+                                    "imagePullPolicy": container.get("imagePullPolicy", "IfNotPresent"),
+                                    "command": ["python", "-c", CLEAR_CACHE_SCRIPT, cache["directory"]],
+                                    "securityContext": container.get("securityContext", {}),
+                                    "resources": {"requests": {"cpu": "100m", "memory": "128Mi"},
+                                                  "limits": {"cpu": "100m", "memory": "128Mi"}},
+                                    "volumeMounts": [cache["mount"]]}],
+                    "volumes": [cache["volume"]]}
+    for key in ("nodeSelector", "affinity", "tolerations", "imagePullSecrets", "runtimeClassName"):
+        if key in pod_spec:
+            cleaner_spec[key] = pod_spec[key]
+    job = {"apiVersion": "batch/v1", "kind": "Job", "metadata": {"name": name},
+           "spec": {"backoffLimit": 0, "activeDeadlineSeconds": timeout,
+                    "template": {"spec": cleaner_spec}}}
+    manifest = directory / "cache-clear-job.json"
+    write_json(manifest, job)
+    created = False
+    kube("scale", target, "--replicas=0")
+    try:
+        deadline = time.monotonic() + timeout
+        while deployment_pods(deployment):
+            if time.monotonic() >= deadline:
+                raise RuntimeError("Inference Pods did not terminate before cache clearing.")
+            time.sleep(1)
+        consumers = [pod["metadata"]["name"] for pod in kube_json("get", "pods")["items"]
+                     if pod.get("status", {}).get("phase") not in {"Succeeded", "Failed"}
+                     and any(volume.get("persistentVolumeClaim", {}).get("claimName") == cache["pvc"]
+                             for volume in pod["spec"].get("volumes", []))]
+        if consumers:
+            raise RuntimeError(f"Cache PVC is still used by Pods: {', '.join(consumers)}")
+        kube("create", "-f", manifest)
+        created = True
+        wait_job(name, timeout)
+        result = json.loads(kube("logs", f"job/{name}", capture=True).stdout)
+        if result["remaining_entries"] != 0 or result["directory"] != cache["directory"]:
+            raise RuntimeError("Cache cleanup did not confirm an empty cache directory.")
+        result.update(pvc=cache["pvc"], completed_at=datetime.now(timezone.utc).isoformat())
+        write_json(directory / "cache-clear.json", result)
+        return result
+    finally:
+        if created:
+            logs = kube("logs", f"job/{name}", capture=True, check=False)
+            (directory / "cache-clear.log").write_text(logs.stdout + logs.stderr)
+            # Wait for the cleaner to exit before allowing a cache writer to start.
+            kube("delete", "job", name, "--cascade=foreground", "--wait=true", f"--timeout={timeout}s")
+        kube("scale", target, "--replicas=1")
 
 
 class ResourceSampler:
@@ -321,6 +426,7 @@ def save_summary(report, metadata, rows):
     lines = ["# AIPerf CPU benchmark", "", f"- Image: `{metadata['inference']['image']}`",
              f"- Image ID: `{metadata['inference']['id']}`", f"- Started (UTC): {metadata['started_at']}",
              f"- Status: {metadata['status']}",
+             f"- PVC cache policy: `{metadata.get('cache_policy', 'preserve')}` (before each condition's warmup).",
              "- Each condition starts after a fresh inference Pod becomes ready, followed by the configured warmup.", "",
              "| Concurrency | Requests | Output tok/s | TTFT avg (ms) | TTFT p95 (ms) | ITL avg (ms) | ITL p95 (ms) | Decode avg (ms) | Decode p95 (ms) | Prefill tok/s/user | Latency avg (ms) |",
              "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
@@ -349,6 +455,11 @@ def parse_args():
     parser.add_argument("--api-url", default=os.environ.get("API_URL", "http://llama-base:8000"))
     parser.add_argument("--model", default=os.environ.get("SERVED_MODEL_NAME", "Qwen/Qwen2.5-0.5B-Instruct"))
     parser.add_argument("--concurrencies", default="1,2,4,8")
+    parser.add_argument("--cache-policy", choices=CACHE_POLICIES,
+                        default=os.environ.get("BENCHMARK_CACHE_POLICY", "preserve"),
+                        help="Preserve PVC cache, clear once before the sweep, or clear before every condition's warmup")
+    parser.add_argument("--inference-node", help="Pin inference and cache cleanup to this Kubernetes node")
+    parser.add_argument("--benchmark-node", help="Pin AIPerf to this Kubernetes node")
     parser.add_argument("--benchmark-image", default=f"local/aiperf:{os.environ.get('AIPERF_IMAGE_TAG', '0.12.0')}")
     parser.add_argument("--job-timeout", type=int, default=3600)
     parser.add_argument("--ready-timeout", type=int, default=300)
@@ -356,6 +467,8 @@ def parse_args():
                         help="Seconds between resource samples (plus collection time)")
     parser.add_argument("--reports-dir", type=Path, default=ROOT / "docs/reports")
     args = parser.parse_args()
+    if args.cache_policy not in CACHE_POLICIES:
+        parser.error(f"cache policy must be one of {', '.join(CACHE_POLICIES)}")
     try:
         args.concurrencies = [int(value) for value in args.concurrencies.split(",")]
         if not args.concurrencies or min(args.concurrencies) < 1 or len(set(args.concurrencies)) != len(args.concurrencies):
@@ -395,6 +508,8 @@ def main():
     report.mkdir(parents=True)
     metadata = {"run_id": run_id, "started_at": started.isoformat(), "status": "running",
                 "concurrencies": args.concurrencies, "sample_interval_seconds": args.sample_interval,
+                "cache_policy": args.cache_policy,
+                "inference_node": args.inference_node, "benchmark_node": args.benchmark_node,
                 "conditions": []}
     rows = []
     job_name = None
@@ -410,6 +525,9 @@ def main():
         metadata["inference"] = ensure_image(args.image, args.build_context, args.build_target)
         metadata["benchmark"] = ensure_image(args.benchmark_image, ROOT / "src/aiperf")
         nodes = kube_json("get", "nodes")
+        node_names = {node["metadata"]["name"] for node in nodes["items"]}
+        if any(name and name not in node_names for name in (args.inference_node, args.benchmark_node)):
+            raise RuntimeError("Requested benchmark or inference node does not exist.")
         write_json(report / "nodes.json", nodes)
         manifests = render(args.manifests)
         items = manifests.get("items", [manifests])
@@ -420,6 +538,10 @@ def main():
         container = next(item for item in deployment["spec"]["template"]["spec"]["containers"]
                          if item["name"] == args.container)
         container["image"] = args.image
+        if args.inference_node:
+            deployment["spec"]["template"]["spec"].setdefault("nodeSelector", {})[
+                "kubernetes.io/hostname"] = args.inference_node
+        cache = cache_volume(deployment, container) if args.cache_policy != "preserve" else None
         path = report / "inference.json"
         write_json(path, manifests)
         kube("apply", "-f", path)
@@ -427,20 +549,29 @@ def main():
         kube("apply", "-f", ROOT / "k8s/aiperf/results.yaml")
         kube("wait", "--for=condition=Ready", "pod/aiperf-results", f"--timeout={args.ready_timeout}s")
         template = render(ROOT / "k8s/aiperf/job.yaml")
-        for concurrency in args.concurrencies:
+        if args.benchmark_node:
+            template["spec"]["template"]["spec"].setdefault("nodeSelector", {})[
+                "kubernetes.io/hostname"] = args.benchmark_node
+        for condition_index, concurrency in enumerate(args.concurrencies):
             case_dir = report / f"c{concurrency}"
             case_dir.mkdir()
             before = {pod["metadata"]["uid"] for pod in deployment_pods(deployment)}
-            print(f"Restarting {args.deployment} before concurrency={concurrency}", flush=True)
-            kube("rollout", "restart", f"deployment/{args.deployment}")
+            condition = {"concurrency": concurrency, "status": "running"}
+            metadata["conditions"].append(condition)
+            save_summary(report, metadata, rows)
+            if clears_cache(args.cache_policy, condition_index):
+                print(f"Clearing PVC {cache['pvc']} before concurrency={concurrency}", flush=True)
+                condition["cache_clear"] = clear_pvc_cache(
+                    deployment, container, cache, f"{run_id}-clear-c{concurrency}", case_dir, args.ready_timeout)
+            else:
+                print(f"Restarting {args.deployment} before concurrency={concurrency}", flush=True)
+                kube("rollout", "restart", f"deployment/{args.deployment}")
             kube("rollout", "status", f"deployment/{args.deployment}", f"--timeout={args.ready_timeout}s")
             pods = [pod for pod in deployment_pods(deployment) if not pod["metadata"].get("deletionTimestamp")]
             if len(pods) != 1 or pods[0]["metadata"]["uid"] in before:
                 raise RuntimeError("Expected exactly one newly restarted inference Pod.")
             write_json(case_dir / "inference-pod.json", pods[0])
-            condition = {"concurrency": concurrency, "pod_uid": pods[0]["metadata"]["uid"],
-                         "pod_name": pods[0]["metadata"]["name"], "status": "running"}
-            metadata["conditions"].append(condition)
+            condition.update(pod_uid=pods[0]["metadata"]["uid"], pod_name=pods[0]["metadata"]["name"])
             job = json.loads(json.dumps(template))
             job_name = f"{run_id}-c{concurrency}"
             job["metadata"]["name"] = job_name

@@ -1,0 +1,336 @@
+{
+  "apiVersion": "v1",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "creationTimestamp": "2026-09-20T09:49:34Z",
+        "generateName": "bench-20260920-094800-747005-c2-",
+        "generation": 1,
+        "labels": {
+          "app": "aiperf",
+          "batch.kubernetes.io/controller-uid": "4c07559e-713f-4668-b670-b5ea7e216ad9",
+          "batch.kubernetes.io/job-name": "bench-20260920-094800-747005-c2",
+          "benchmark": "aiperf-cpu",
+          "controller-uid": "4c07559e-713f-4668-b670-b5ea7e216ad9",
+          "job-name": "bench-20260920-094800-747005-c2"
+        },
+        "name": "bench-20260920-094800-747005-c2-r22bk",
+        "namespace": "default",
+        "ownerReferences": [
+          {
+            "apiVersion": "batch/v1",
+            "blockOwnerDeletion": true,
+            "controller": true,
+            "kind": "Job",
+            "name": "bench-20260920-094800-747005-c2",
+            "uid": "4c07559e-713f-4668-b670-b5ea7e216ad9"
+          }
+        ],
+        "resourceVersion": "37372",
+        "uid": "f0adb372-cdde-40ac-bd47-cb43d7384133"
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "containers": [
+          {
+            "args": [
+              "profile",
+              "--model",
+              "$(MODEL_ID)",
+              "--tokenizer",
+              "/tokenizer",
+              "--url",
+              "$(API_URL)",
+              "--endpoint-type",
+              "chat",
+              "--streaming",
+              "--use-server-token-count",
+              "--sequence-distribution",
+              "64,32:50;256,64:50",
+              "--num-dataset-entries",
+              "16",
+              "--random-seed",
+              "42",
+              "--parameter-sweep-same-seed",
+              "--dataset-sampling-strategy",
+              "sequential",
+              "--extra-inputs",
+              "ignore_eos:true",
+              "--concurrency",
+              "$(CONCURRENCIES)",
+              "--workers-max",
+              "1",
+              "--warmup-request-count",
+              "2",
+              "--warmup-concurrency",
+              "1",
+              "--request-count",
+              "100",
+              "--request-timeout-seconds",
+              "3600",
+              "--no-server-metrics",
+              "--ui",
+              "none",
+              "--artifact-dir",
+              "/results/bench-20260920-094800-747005/c2"
+            ],
+            "env": [
+              {
+                "name": "POD_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "apiVersion": "v1",
+                    "fieldPath": "metadata.name"
+                  }
+                }
+              },
+              {
+                "name": "CONCURRENCIES",
+                "value": "2"
+              },
+              {
+                "name": "API_URL",
+                "value": "http://llama-base:8000"
+              },
+              {
+                "name": "MODEL_ID",
+                "value": "Qwen/Qwen2.5-0.5B-Instruct"
+              }
+            ],
+            "image": "local/aiperf:0.12.0",
+            "imagePullPolicy": "Never",
+            "name": "aiperf",
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "1Gi"
+              },
+              "requests": {
+                "cpu": "1",
+                "memory": "1Gi"
+              }
+            },
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              },
+              "readOnlyRootFilesystem": true
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "volumeMounts": [
+              {
+                "mountPath": "/tokenizer",
+                "name": "tokenizer",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/results",
+                "name": "results"
+              },
+              {
+                "mountPath": "/tmp",
+                "name": "tmp"
+              }
+            ]
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "enableServiceLinks": true,
+        "nodeName": "local-k8s-worker2",
+        "nodeSelector": {
+          "kubernetes.io/hostname": "local-k8s-worker2"
+        },
+        "preemptionPolicy": "PreemptLowerPriority",
+        "priority": 0,
+        "restartPolicy": "Never",
+        "schedulerName": "default-scheduler",
+        "securityContext": {
+          "fsGroup": 1000,
+          "runAsGroup": 1000,
+          "runAsNonRoot": true,
+          "runAsUser": 1000
+        },
+        "serviceAccount": "default",
+        "serviceAccountName": "default",
+        "terminationGracePeriodSeconds": 60,
+        "tolerations": [
+          {
+            "effect": "NoExecute",
+            "key": "node.kubernetes.io/not-ready",
+            "operator": "Exists",
+            "tolerationSeconds": 300
+          },
+          {
+            "effect": "NoExecute",
+            "key": "node.kubernetes.io/unreachable",
+            "operator": "Exists",
+            "tolerationSeconds": 300
+          }
+        ],
+        "volumes": [
+          {
+            "hostPath": {
+              "path": "/models/qwen2.5-0.5b/tokenizer",
+              "type": "Directory"
+            },
+            "name": "tokenizer"
+          },
+          {
+            "name": "results",
+            "persistentVolumeClaim": {
+              "claimName": "aiperf-results"
+            }
+          },
+          {
+            "emptyDir": {
+              "sizeLimit": "1Gi"
+            },
+            "name": "tmp"
+          }
+        ]
+      },
+      "status": {
+        "allocatedResources": {
+          "cpu": "1",
+          "memory": "1Gi"
+        },
+        "conditions": [
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2026-09-20T09:50:28Z",
+            "observedGeneration": 1,
+            "status": "False",
+            "type": "PodReadyToStartContainers"
+          },
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2026-09-20T09:49:34Z",
+            "observedGeneration": 1,
+            "reason": "PodCompleted",
+            "status": "True",
+            "type": "Initialized"
+          },
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2026-09-20T09:50:27Z",
+            "observedGeneration": 1,
+            "reason": "PodCompleted",
+            "status": "False",
+            "type": "Ready"
+          },
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2026-09-20T09:50:27Z",
+            "observedGeneration": 1,
+            "reason": "PodCompleted",
+            "status": "False",
+            "type": "ContainersReady"
+          },
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2026-09-20T09:49:34Z",
+            "observedGeneration": 1,
+            "status": "True",
+            "type": "PodScheduled"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "allocatedResources": {
+              "cpu": "1",
+              "memory": "1Gi"
+            },
+            "containerID": "containerd://208abc564d935aaa711509be57fcd42f7667713cd6f0f8bf52b6d0dc32d158d8",
+            "image": "docker.io/local/aiperf:0.12.0",
+            "imageID": "docker.io/library/import-2026-09-20@sha256:236a4c3010bcdd8dc8a871d97283150a708a148ed1ea5e6a79c980b2034e2e95",
+            "lastState": {},
+            "name": "aiperf",
+            "ready": false,
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "1Gi"
+              },
+              "requests": {
+                "cpu": "1",
+                "memory": "1Gi"
+              }
+            },
+            "restartCount": 0,
+            "started": false,
+            "state": {
+              "terminated": {
+                "containerID": "containerd://208abc564d935aaa711509be57fcd42f7667713cd6f0f8bf52b6d0dc32d158d8",
+                "exitCode": 0,
+                "finishedAt": "2026-09-20T09:50:27Z",
+                "reason": "Completed",
+                "startedAt": "2026-09-20T09:49:34Z"
+              }
+            },
+            "user": {
+              "linux": {
+                "gid": 1000,
+                "supplementalGroups": [
+                  1000
+                ],
+                "uid": 1000
+              }
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/tokenizer",
+                "name": "tokenizer",
+                "readOnly": true,
+                "recursiveReadOnly": "Disabled"
+              },
+              {
+                "mountPath": "/results",
+                "name": "results"
+              },
+              {
+                "mountPath": "/tmp",
+                "name": "tmp"
+              }
+            ]
+          }
+        ],
+        "hostIP": "172.18.0.2",
+        "hostIPs": [
+          {
+            "ip": "172.18.0.2"
+          }
+        ],
+        "observedGeneration": 1,
+        "phase": "Succeeded",
+        "podIP": "10.244.4.38",
+        "podIPs": [
+          {
+            "ip": "10.244.4.38"
+          }
+        ],
+        "qosClass": "Guaranteed",
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "975m",
+            "memory": "1Gi"
+          }
+        },
+        "startTime": "2026-09-20T09:49:34Z"
+      }
+    }
+  ],
+  "kind": "List",
+  "metadata": {
+    "resourceVersion": ""
+  }
+}

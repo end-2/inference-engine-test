@@ -18,6 +18,40 @@ make benchmark
 
 결과는 `docs/reports/bench-<UTC 시각>-<이미지>/`에 저장됩니다.
 
+### 동시성별 PVC cache 초기화
+
+기본 `CACHE_POLICY=preserve`는 PVC cache를 유지합니다. `enhanced-cache`의 각 동시성 측정 전에 cache를 비우려면 다음과 같이 실행합니다.
+
+```sh
+make benchmark VARIANT=enhanced-cache CACHE_POLICY=clear-per-concurrency
+# runner 직접 실행 시: --cache-policy clear-per-concurrency
+```
+
+첫 조건을 포함해 매번 추론 Deployment를 0개로 축소하고 Pod 종료·cache flush가 끝날 때까지 기다립니다. 별도 Job이 `--cache-dir`에 마운트된 전용 PVC의 내용을 삭제하고 빈 디렉터리를 확인한 뒤 추론 Pod를 다시 시작합니다. PVC 자체와 모델·측정 결과는 유지합니다. `--cache-dir`은 쓰기 가능한 PVC 마운트 루트여야 하며 subPath는 지원하지 않습니다. 다른 Pod가 같은 PVC를 사용하면 측정을 중단합니다.
+
+초기화는 워밍업 **전**에 수행합니다. 워밍업과 같은 조건 안의 반복 요청은 cache를 채우고 재사용하므로, 모든 요청의 cache miss를 측정하는 설정은 아닙니다. `run.json`과 `summary.md`에 cache 정책을, 각 조건의 `cache-clear.json`과 `run.json`에 삭제 파일 수·크기와 삭제 후 항목 수를 기록합니다. `cache-clear-job.json`과 `cache-clear.log`에는 초기화 설정과 실행 로그를 저장합니다.
+
+`CACHE_POLICY=clear-before-sweep`는 첫 동시성의 워밍업 전에만 삭제하고 이후 동시성 사이에는 보존합니다. 독립된 sweep을 반복하면서 이전 sweep의 cache가 섞이지 않게 할 때 사용합니다.
+
+### 전체 구현 반복 측정
+
+[반복 측정 runner](../scripts/run-benchmark-suite.py)는 base, enhanced-batch, enhanced-cache 초기화·보존의 네 조건을 각각 3회 실행합니다. 기존 로컬 이미지를 재사용하며 모든 회차에서 이미지 ID와 배치 노드를 검증합니다. 먼저 필요한 이미지를 빌드·로드하고, PVC가 바인딩된 노드와 자원 여유를 확인해 노드를 지정합니다.
+
+```sh
+python3 scripts/run-benchmark-suite.py --repetitions 3 \
+  --inference-node local-k8s-worker --benchmark-node local-k8s-worker2
+```
+
+각 회차에서 네 조건을 순차 실행하며 순서를 한 칸씩 순환합니다. cache 초기화 조건은 `clear-per-concurrency`, 보존 조건은 `clear-before-sweep`를 사용합니다. 두 조건 모두 sweep 시작은 빈 cache이며, 동시성 사이의 보존 여부만 다릅니다. 각 동시성에서 Pod 재시작과 공통 Job의 warmup·본 측정을 수행합니다.
+
+`docs/reports/benchmark-suite-<UTC 시각>/`에 개별 실행과 집계를 저장합니다. `summary.md`는 평균·표본 표준편차와 개별 보고서 링크, `summary.csv`는 지표별 평균·표준편차·최솟값·최댓값, `runs.csv`와 `summary.jsonl`은 실행별 지표를 담습니다. p95 집계는 실행별 p95의 평균이며 요청을 합친 p95가 아닙니다. 실패한 suite는 다음 명령으로 완료된 sweep을 유지하며 재개합니다.
+
+```sh
+python3 scripts/run-benchmark-suite.py --resume docs/reports/benchmark-suite-<UTC 시각>
+```
+
+### 결과 파일
+
 - `summary.md`, `summary.csv`, `summary.jsonl`: 동시성별 처리량, TTFT, ITL, 디코드·프리필과 응답 지연
 - `run.json`, `inference.json`, `nodes.json`: 이미지 ID, 실행 상태와 환경
 - `c1/`, `c2/`, `c4/`, `c8/`: 새 추론 Pod UID, Job 설정, AIPerf 로그와 원본 결과
@@ -120,7 +154,7 @@ AIPerf의 `--model`은 API 모델 이름, `--tokenizer`는 로컬 경로입니�
 ```sh
 sh tests/test-aiperf-manifests.sh
 sh tests/test-download-tokenizer.sh
-python3 -m unittest discover -s tests -p test_benchmark_runner.py
+python3 -m unittest discover -s tests -p 'test_benchmark*.py'
 ```
 
 실제 AIPerf 실행 검증은 AIPerf 이미지와 동일한 버전을 설치한 별도 Python 환경에서 실행합니다. 로컬 테스트 API에 짧은 sweep을 실행하며, 외부 네트워크를 차단하고 빈 Hugging Face 캐시에서 토크나이저 재사용을 확인합니다. 다른 토크나이저 경로는 `TEST_TOKENIZER_PATH`로 지정합니다.

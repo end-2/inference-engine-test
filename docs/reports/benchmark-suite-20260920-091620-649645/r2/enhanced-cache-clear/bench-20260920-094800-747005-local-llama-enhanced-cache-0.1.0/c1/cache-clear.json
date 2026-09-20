@@ -1,0 +1,9 @@
+{
+  "directory": "/cache",
+  "removed_entries": 1,
+  "removed_files": 19,
+  "removed_bytes": 34441887,
+  "remaining_entries": 0,
+  "pvc": "llama-enhanced-cache",
+  "completed_at": "2026-09-20T09:48:19.564869+00:00"
+}

@@ -1,0 +1,121 @@
+{
+  "run_id": "bench-20260920-101020-699662",
+  "started_at": "2026-09-20T10:10:20.699662+00:00",
+  "status": "complete",
+  "concurrencies": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "sample_interval_seconds": 5,
+  "cache_policy": "clear-before-sweep",
+  "inference_node": "local-k8s-worker",
+  "benchmark_node": "local-k8s-worker2",
+  "conditions": [
+    {
+      "concurrency": 1,
+      "status": "complete",
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 19,
+        "removed_bytes": 34441887,
+        "remaining_entries": 0,
+        "pvc": "llama-enhanced-cache",
+        "completed_at": "2026-09-20T10:10:30.976740+00:00"
+      },
+      "pod_uid": "2720fbe4-ddb7-4fe4-bc96-5a509c033cca",
+      "pod_name": "llama-base-6c66557875-7mzhf",
+      "started_at": "2026-09-20T10:10:37.222811+00:00",
+      "resource_collection": {
+        "node_samples": 52,
+        "pod_cpu_samples": {
+          "inference": 13,
+          "aiperf": 9
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-20T10:11:37.913866+00:00"
+    },
+    {
+      "concurrency": 2,
+      "status": "complete",
+      "pod_uid": "197b7e01-b6e3-4989-814f-fd99f6891fd7",
+      "pod_name": "llama-base-665c8cdb86-g65l2",
+      "started_at": "2026-09-20T10:11:44.385375+00:00",
+      "resource_collection": {
+        "node_samples": 44,
+        "pod_cpu_samples": {
+          "inference": 11,
+          "aiperf": 7
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-20T10:12:33.255677+00:00"
+    },
+    {
+      "concurrency": 4,
+      "status": "complete",
+      "pod_uid": "4f4c3eab-0afb-45a8-aece-7a9c4760dea6",
+      "pod_name": "llama-base-556bccb575-vfn5c",
+      "started_at": "2026-09-20T10:12:39.526952+00:00",
+      "resource_collection": {
+        "node_samples": 44,
+        "pod_cpu_samples": {
+          "inference": 11,
+          "aiperf": 7
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-20T10:13:28.438872+00:00"
+    },
+    {
+      "concurrency": 8,
+      "status": "complete",
+      "pod_uid": "d7ee471f-546c-4903-85de-67eede77b69a",
+      "pod_name": "llama-base-574c4dd96d-g4qnv",
+      "started_at": "2026-09-20T10:13:34.620449+00:00",
+      "resource_collection": {
+        "node_samples": 40,
+        "pod_cpu_samples": {
+          "inference": 10,
+          "aiperf": 7
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-20T10:14:18.128672+00:00"
+    }
+  ],
+  "inference": {
+    "image": "local/llama-enhanced-cache:0.1.0",
+    "id": "sha256:0bf4b86be3de5000cb50eb88d18752978a95525f7291a2f46a9c7370e2a55f3f",
+    "source_sha256": null,
+    "build_context": null,
+    "build_target": null
+  },
+  "benchmark": {
+    "image": "local/aiperf:0.12.0",
+    "id": "sha256:e916ca4e164739cd9a0d334faf73ea02dbb5f98aa77000ead84ab50ac7df8371",
+    "source_sha256": "6afce96c6785f584c2d420f6be9ee7483ae201f432cf246e450d8bca2eb51298",
+    "build_context": "/Users/sejong/workspace/inference-engine-test/src/aiperf",
+    "build_target": null
+  },
+  "finished_at": "2026-09-20T10:14:18.129110+00:00"
+}

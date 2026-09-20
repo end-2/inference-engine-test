@@ -8,10 +8,13 @@
 !summary.md
 !summary.csv
 !summary.jsonl
+!runs.csv
 !run.json
 !inference.json
 !nodes.json
 !job.json
+!cache-clear-job.json
+!cache-clear.json
 !*pod*.json
 !**/artifacts/profile_export_aiperf.json
 !**/artifacts/profile_export_console.txt
@@ -19,6 +22,9 @@
 !availability-*/figures/observed-timeline.png
 # Grafana panels embedded in HPA summaries.
 !hpa-*/figures/grafana-*.png
+!benchmark-suite-*/figures/benchmark-comparison.png
+!benchmark-suite-*/verification.json
+!benchmark-suite-*/environment.json
 
 # Availability: raw evidence and unreferenced data not in summary.md — keep local only.
 availability-*/evidence/

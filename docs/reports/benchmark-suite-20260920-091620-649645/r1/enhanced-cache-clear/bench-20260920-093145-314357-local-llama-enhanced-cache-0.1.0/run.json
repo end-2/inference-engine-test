@@ -1,0 +1,148 @@
+{
+  "run_id": "bench-20260920-093145-314357",
+  "started_at": "2026-09-20T09:31:45.314357+00:00",
+  "status": "complete",
+  "concurrencies": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "sample_interval_seconds": 5,
+  "cache_policy": "clear-per-concurrency",
+  "inference_node": "local-k8s-worker",
+  "benchmark_node": "local-k8s-worker2",
+  "conditions": [
+    {
+      "concurrency": 1,
+      "status": "complete",
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 19,
+        "removed_bytes": 34441887,
+        "remaining_entries": 0,
+        "pvc": "llama-enhanced-cache",
+        "completed_at": "2026-09-20T09:32:04.482942+00:00"
+      },
+      "pod_uid": "22adb66a-9a46-4278-981c-e1165c70ad56",
+      "pod_name": "llama-base-5fc47dc59b-lf7mw",
+      "started_at": "2026-09-20T09:32:11.285688+00:00",
+      "resource_collection": {
+        "node_samples": 48,
+        "pod_cpu_samples": {
+          "inference": 12,
+          "aiperf": 9
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-20T09:33:06.308064+00:00"
+    },
+    {
+      "concurrency": 2,
+      "status": "complete",
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 19,
+        "removed_bytes": 34441887,
+        "remaining_entries": 0,
+        "pvc": "llama-enhanced-cache",
+        "completed_at": "2026-09-20T09:33:13.017304+00:00"
+      },
+      "pod_uid": "f1f002dd-89fb-41c4-b642-f5e490b64c9b",
+      "pod_name": "llama-base-5fc47dc59b-dz8j9",
+      "started_at": "2026-09-20T09:33:19.443810+00:00",
+      "resource_collection": {
+        "node_samples": 52,
+        "pod_cpu_samples": {
+          "inference": 13,
+          "aiperf": 9
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-20T09:34:19.727511+00:00"
+    },
+    {
+      "concurrency": 4,
+      "status": "complete",
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 19,
+        "removed_bytes": 34441887,
+        "remaining_entries": 0,
+        "pvc": "llama-enhanced-cache",
+        "completed_at": "2026-09-20T09:34:26.521522+00:00"
+      },
+      "pod_uid": "40b32645-bd46-4188-8d24-2b86cd742a80",
+      "pod_name": "llama-base-5fc47dc59b-8p4lw",
+      "started_at": "2026-09-20T09:34:32.579038+00:00",
+      "resource_collection": {
+        "node_samples": 52,
+        "pod_cpu_samples": {
+          "inference": 13,
+          "aiperf": 9
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-20T09:35:32.906018+00:00"
+    },
+    {
+      "concurrency": 8,
+      "status": "complete",
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 19,
+        "removed_bytes": 34441887,
+        "remaining_entries": 0,
+        "pvc": "llama-enhanced-cache",
+        "completed_at": "2026-09-20T09:35:39.641235+00:00"
+      },
+      "pod_uid": "08166f19-234a-4978-9487-412012fc815c",
+      "pod_name": "llama-base-5fc47dc59b-vnx6g",
+      "started_at": "2026-09-20T09:35:45.751593+00:00",
+      "resource_collection": {
+        "node_samples": 52,
+        "pod_cpu_samples": {
+          "inference": 13,
+          "aiperf": 9
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-20T09:36:46.215919+00:00"
+    }
+  ],
+  "inference": {
+    "image": "local/llama-enhanced-cache:0.1.0",
+    "id": "sha256:0bf4b86be3de5000cb50eb88d18752978a95525f7291a2f46a9c7370e2a55f3f",
+    "source_sha256": null,
+    "build_context": null,
+    "build_target": null
+  },
+  "benchmark": {
+    "image": "local/aiperf:0.12.0",
+    "id": "sha256:e916ca4e164739cd9a0d334faf73ea02dbb5f98aa77000ead84ab50ac7df8371",
+    "source_sha256": "6afce96c6785f584c2d420f6be9ee7483ae201f432cf246e450d8bca2eb51298",
+    "build_context": "/Users/sejong/workspace/inference-engine-test/src/aiperf",
+    "build_target": null
+  },
+  "finished_at": "2026-09-20T09:36:46.216363+00:00"
+}

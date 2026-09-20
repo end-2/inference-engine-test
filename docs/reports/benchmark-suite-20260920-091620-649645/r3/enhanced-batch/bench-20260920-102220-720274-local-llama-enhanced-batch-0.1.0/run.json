@@ -1,0 +1,112 @@
+{
+  "run_id": "bench-20260920-102220-720274",
+  "started_at": "2026-09-20T10:22:20.720274+00:00",
+  "status": "complete",
+  "concurrencies": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "sample_interval_seconds": 5,
+  "cache_policy": "preserve",
+  "inference_node": "local-k8s-worker",
+  "benchmark_node": "local-k8s-worker2",
+  "conditions": [
+    {
+      "concurrency": 1,
+      "status": "complete",
+      "pod_uid": "5d36bf86-a1b7-4bc0-acb6-681b0d47bbb4",
+      "pod_name": "llama-base-7f49cc647d-sdqq6",
+      "started_at": "2026-09-20T10:22:38.745253+00:00",
+      "resource_collection": {
+        "node_samples": 80,
+        "pod_cpu_samples": {
+          "inference": 20,
+          "aiperf": 17
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-20T10:24:17.803330+00:00"
+    },
+    {
+      "concurrency": 2,
+      "status": "complete",
+      "pod_uid": "aef3c33d-c69a-4e74-b7c8-dc808da50de9",
+      "pod_name": "llama-base-7cfbf84cd7-tn2hz",
+      "started_at": "2026-09-20T10:24:23.980020+00:00",
+      "resource_collection": {
+        "node_samples": 80,
+        "pod_cpu_samples": {
+          "inference": 20,
+          "aiperf": 16
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-20T10:26:02.601073+00:00"
+    },
+    {
+      "concurrency": 4,
+      "status": "complete",
+      "pod_uid": "c9e34377-9220-4763-a8fe-36c22c7087bf",
+      "pod_name": "llama-base-869694b95-796p8",
+      "started_at": "2026-09-20T10:26:09.209091+00:00",
+      "resource_collection": {
+        "node_samples": 80,
+        "pod_cpu_samples": {
+          "inference": 20,
+          "aiperf": 17
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-20T10:27:48.116120+00:00"
+    },
+    {
+      "concurrency": 8,
+      "status": "complete",
+      "pod_uid": "7a1d6680-1d89-45e7-8615-8272ad8fb3bf",
+      "pod_name": "llama-base-57467f4cd4-jtlk7",
+      "started_at": "2026-09-20T10:27:54.387379+00:00",
+      "resource_collection": {
+        "node_samples": 80,
+        "pod_cpu_samples": {
+          "inference": 20,
+          "aiperf": 16
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-20T10:29:33.019893+00:00"
+    }
+  ],
+  "inference": {
+    "image": "local/llama-enhanced-batch:0.1.0",
+    "id": "sha256:1629cba22fdf7a84938cf5d5a278c1421a5da7733223edbc2c7ad061b6922860",
+    "source_sha256": null,
+    "build_context": null,
+    "build_target": null
+  },
+  "benchmark": {
+    "image": "local/aiperf:0.12.0",
+    "id": "sha256:e916ca4e164739cd9a0d334faf73ea02dbb5f98aa77000ead84ab50ac7df8371",
+    "source_sha256": "6afce96c6785f584c2d420f6be9ee7483ae201f432cf246e450d8bca2eb51298",
+    "build_context": "/Users/sejong/workspace/inference-engine-test/src/aiperf",
+    "build_target": null
+  },
+  "finished_at": "2026-09-20T10:29:33.020411+00:00"
+}

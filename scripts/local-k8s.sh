@@ -115,6 +115,11 @@ check_models_mount() {
     [ -n "$nodes" ] || die "Cluster $CLUSTER_NAME has no nodes."
     for node in $nodes; do
         mounted_models=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/models"}}{{.Source}}:{{.RW}}{{end}}{{end}}' "$node")
+        # Docker Desktop can expose the host bind path through its VM prefix.
+        if [ "$mounted_models" = "/host_mnt$LOCAL_K8S_MODELS_DIR:false" ] &&
+            [ "$(docker info --format '{{.OperatingSystem}}')" = 'Docker Desktop' ]; then
+            mounted_models="$LOCAL_K8S_MODELS_DIR:false"
+        fi
         [ "$mounted_models" = "$LOCAL_K8S_MODELS_DIR:false" ] || \
             die "Node $node needs a read-only mount from $LOCAL_K8S_MODELS_DIR to /models. Back up node data, then run down and up. See docs/models.md."
     done

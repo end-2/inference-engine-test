@@ -1,0 +1,12 @@
+{
+  "sweeps": 12,
+  "conditions": 48,
+  "distinct_inference_pods": 48,
+  "warmup": 96,
+  "profiling": 4800,
+  "cache_clears": 15,
+  "output_shortfalls": 0,
+  "output_overruns": 0,
+  "input_dataset_sha256": "1abbd63b87393a123e58ac17bea9f63599e92890df32532149bc74fe80cb91d6",
+  "identical_normalized_client_configuration": true
+}

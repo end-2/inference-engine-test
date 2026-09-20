@@ -84,7 +84,7 @@ RAM 예산에는 Python 인덱스·컨테이너와 복원 중 임시 버퍼가 �
 
 배칭은 동시성별 전체 처리량과 TTFT·ITL p95를 함께 비교합니다. 캐시는 신규 입력, 반복 입력, 공통 prefix 입력을 구분합니다. 기존 AIPerf의 짧은 입력 집합은 RAM에 모두 들어갈 수 있으므로 디스크 경로를 측정할 때 RAM 예산을 낮추거나 입력 집합을 늘립니다.
 
-캐시 버전의 Pod 재시작은 디스크 캐시를 비우지 않습니다. 조건마다 cold cache가 필요하면 별도의 `--cache-dir`을 지정하고, warm cache와 분리해 결과에 기록합니다. 배포 기본 디렉터리로 연속 측정하면 이전 조건의 디스크 항목이 재사용될 수 있습니다.
+캐시 버전의 Pod 재시작은 디스크 캐시를 비우지 않습니다. `make benchmark VARIANT=enhanced-cache CACHE_POLICY=clear-per-concurrency`는 첫 조건을 포함해 각 동시성의 워밍업 전에 PVC cache를 삭제합니다. 기본값은 cache 보존입니다. 초기화 순서와 결과 기록은 [AIPerf 가이드](aiperf.md#동시성별-pvc-cache-초기화)를 참고하세요.
 
 ## 검증
 

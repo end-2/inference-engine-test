@@ -1,0 +1,164 @@
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "labels": {
+      "app": "aiperf",
+      "benchmark": "aiperf-cpu"
+    },
+    "name": "bench-20260920-093646-261612-c4",
+    "namespace": "default"
+  },
+  "spec": {
+    "activeDeadlineSeconds": 3600,
+    "backoffLimit": 0,
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "aiperf",
+          "benchmark": "aiperf-cpu"
+        }
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "containers": [
+          {
+            "args": [
+              "profile",
+              "--model",
+              "$(MODEL_ID)",
+              "--tokenizer",
+              "/tokenizer",
+              "--url",
+              "$(API_URL)",
+              "--endpoint-type",
+              "chat",
+              "--streaming",
+              "--use-server-token-count",
+              "--sequence-distribution",
+              "64,32:50;256,64:50",
+              "--num-dataset-entries",
+              "16",
+              "--random-seed",
+              "42",
+              "--parameter-sweep-same-seed",
+              "--dataset-sampling-strategy",
+              "sequential",
+              "--extra-inputs",
+              "ignore_eos:true",
+              "--concurrency",
+              "$(CONCURRENCIES)",
+              "--workers-max",
+              "1",
+              "--warmup-request-count",
+              "2",
+              "--warmup-concurrency",
+              "1",
+              "--request-count",
+              "100",
+              "--request-timeout-seconds",
+              "3600",
+              "--no-server-metrics",
+              "--ui",
+              "none",
+              "--artifact-dir",
+              "/results/bench-20260920-093646-261612/c4"
+            ],
+            "env": [
+              {
+                "name": "POD_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.name"
+                  }
+                }
+              },
+              {
+                "name": "CONCURRENCIES",
+                "value": "4"
+              },
+              {
+                "name": "API_URL",
+                "value": "http://llama-base:8000"
+              },
+              {
+                "name": "MODEL_ID",
+                "value": "Qwen/Qwen2.5-0.5B-Instruct"
+              }
+            ],
+            "image": "local/aiperf:0.12.0",
+            "imagePullPolicy": "Never",
+            "name": "aiperf",
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "1Gi"
+              },
+              "requests": {
+                "cpu": "1",
+                "memory": "1Gi"
+              }
+            },
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              },
+              "readOnlyRootFilesystem": true
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/tokenizer",
+                "name": "tokenizer",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/results",
+                "name": "results"
+              },
+              {
+                "mountPath": "/tmp",
+                "name": "tmp"
+              }
+            ]
+          }
+        ],
+        "restartPolicy": "Never",
+        "securityContext": {
+          "fsGroup": 1000,
+          "runAsGroup": 1000,
+          "runAsNonRoot": true,
+          "runAsUser": 1000
+        },
+        "terminationGracePeriodSeconds": 60,
+        "volumes": [
+          {
+            "hostPath": {
+              "path": "/models/qwen2.5-0.5b/tokenizer",
+              "type": "Directory"
+            },
+            "name": "tokenizer"
+          },
+          {
+            "name": "results",
+            "persistentVolumeClaim": {
+              "claimName": "aiperf-results"
+            }
+          },
+          {
+            "emptyDir": {
+              "sizeLimit": "1Gi"
+            },
+            "name": "tmp"
+          }
+        ],
+        "nodeSelector": {
+          "kubernetes.io/hostname": "local-k8s-worker2"
+        }
+      }
+    },
+    "ttlSecondsAfterFinished": 3600
+  }
+}

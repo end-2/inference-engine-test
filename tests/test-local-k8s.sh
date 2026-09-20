@@ -37,6 +37,7 @@ case "$*" in
         if [ -f "$MOCK_ROOT/containerd-store" ]; then printf 'io.containerd.snapshotter.v1\n'; fi
         ;;
     'info --format {{.Architecture}}') printf '%s\n' "${MOCK_RUNTIME_ARCH:-x86_64}" ;;
+    'info --format {{.OperatingSystem}}') printf '%s\n' "${MOCK_RUNTIME_OS:-Docker Desktop}" ;;
     'image save --help') printf '%s\n' '--platform' ;;
     'image save '*)
         [ ! -f "$MOCK_ROOT/fail-save" ] || exit 1
@@ -52,7 +53,7 @@ case "$*" in
             *-worker2) [ ! -f "$MOCK_ROOT/no-worker-mount" ] || exit 0 ;;
         esac
         if [ ! -f "$MOCK_ROOT/no-models-mount" ]; then
-            printf '%s:false\n' "${LOCAL_K8S_MODELS_DIR:-}"
+            printf '%s%s:%s\n' "${MOCK_MOUNT_PREFIX:-}" "${LOCAL_K8S_MODELS_DIR:-}" "${MOCK_MOUNT_WRITABLE:-false}"
         fi
         ;;
     *) exit 2 ;;
@@ -164,6 +165,14 @@ ok up
 touch "$MOCK_ROOT/no-models-mount"
 reject up
 rm "$MOCK_ROOT/no-models-mount"
+export MOCK_MOUNT_PREFIX=/host_mnt
+ok up
+export MOCK_MOUNT_WRITABLE=true
+reject up
+unset MOCK_MOUNT_WRITABLE
+export MOCK_RUNTIME_OS=Linux
+reject up
+unset MOCK_RUNTIME_OS MOCK_MOUNT_PREFIX
 ok status
 ok kubectl get pods -l 'app in (a,b)'
 contains '<--kubeconfig> <'"$isolated"'> <--context> <kind-local-k8s> <get> <pods> <-l> <app in (a,b)>' "$MOCK_TRACE"

@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -107,6 +108,130 @@ class BenchmarkTests(unittest.TestCase):
         with patch.object(benchmark, "kube", return_value=result):
             rendered = benchmark.render(self.context)
         self.assertEqual([item["kind"] for item in rendered["items"]], ["Deployment", "Service"])
+
+    def cache_deployment(self):
+        container = {"name": "api", "image": "local/cache:1", "args": ["--cache-dir", "/cache"],
+                     "volumeMounts": [{"name": "cache", "mountPath": "/cache"}]}
+        deployment = {"metadata": {"name": "inference"}, "spec": {"template": {"spec": {
+            "containers": [container], "volumes": [
+                {"name": "cache", "persistentVolumeClaim": {"claimName": "cache-pvc"}}]}}}}
+        return deployment, container
+
+    def test_cache_policy_defaults_and_overrides(self):
+        for environment, options, expected in [
+            ({}, [], "preserve"),
+            ({}, ["--cache-policy", "clear-before-sweep"], "clear-before-sweep"),
+            ({"BENCHMARK_CACHE_POLICY": "clear-per-concurrency"}, [], "clear-per-concurrency"),
+            ({"BENCHMARK_CACHE_POLICY": "clear-per-concurrency"}, ["--cache-policy", "preserve"], "preserve"),
+        ]:
+            with self.subTest(options=options, environment=environment), patch.dict(
+                os.environ, environment, clear=True
+            ), patch("sys.argv", ["run-benchmark.py", *options]):
+                self.assertEqual(benchmark.parse_args().cache_policy, expected)
+
+    def test_cache_clear_schedule_separates_sweeps_and_concurrency_steps(self):
+        for policy, expected in [("preserve", [False] * 4),
+                                 ("clear-before-sweep", [True, False, False, False]),
+                                 ("clear-per-concurrency", [True] * 4)]:
+            with self.subTest(policy=policy):
+                self.assertEqual([benchmark.clears_cache(policy, i) for i in range(4)], expected)
+
+    def test_cache_clearing_requires_explicit_dedicated_pvc_mount(self):
+        deployment, container = self.cache_deployment()
+        self.assertEqual(benchmark.cache_volume(deployment, container)["pvc"], "cache-pvc")
+        for arguments in ([], ["--cache-dir", "/"], ["--cache-dir", "/cache/subdirectory"],
+                          ["--cache-dir", "/cache/../model"]):
+            with self.subTest(arguments=arguments), patch.dict(container, args=arguments):
+                with self.assertRaises(RuntimeError):
+                    benchmark.cache_volume(deployment, container)
+        for setting in ({"readOnly": True}, {"subPath": "cache"}, {"subPathExpr": "$(CACHE)"}):
+            with self.subTest(setting=setting), patch.dict(container["volumeMounts"][0], setting):
+                with self.assertRaises(RuntimeError):
+                    benchmark.cache_volume(deployment, container)
+        deployment["spec"]["template"]["spec"]["volumes"][0] = {
+            "name": "cache", "hostPath": {"path": "/cache"}}
+        with self.assertRaisesRegex(RuntimeError, "PVC"):
+            benchmark.cache_volume(deployment, container)
+
+    def test_cache_script_removes_hidden_files_without_following_symlinks(self):
+        cache = self.context / "cache"
+        namespace = cache / "namespace"
+        namespace.mkdir(parents=True)
+        (namespace / ".lock").write_text("")
+        (namespace / "state.bin").write_bytes(b"cached KV")
+        outside = self.context / "outside"
+        outside.mkdir()
+        (outside / "model.gguf").write_bytes(b"keep model")
+        (cache / "external").symlink_to(outside, target_is_directory=True)
+        script = "from pathlib import Path\nPath.is_mount = lambda self: True\n" + benchmark.CLEAR_CACHE_SCRIPT
+        result = subprocess.run([sys.executable, "-c", script, str(cache)],
+                                text=True, capture_output=True, check=True)
+        record = json.loads(result.stdout)
+        self.assertEqual(record["remaining_entries"], 0)
+        self.assertEqual(record["removed_files"], 2)
+        self.assertEqual(record["removed_bytes"], 9)
+        self.assertEqual(list(cache.iterdir()), [])
+        self.assertEqual((outside / "model.gguf").read_bytes(), b"keep model")
+
+    def test_cache_script_rejects_an_unmounted_directory(self):
+        result = subprocess.run([sys.executable, "-c", benchmark.CLEAR_CACHE_SCRIPT, str(self.context)],
+                                text=True, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertTrue((self.context / "Dockerfile").exists())
+
+    def run_cache_cleanup(self, *, wait_error=None, consumers=()):
+        deployment, container = self.cache_deployment()
+        cache = benchmark.cache_volume(deployment, container)
+        events = []
+        responses = iter([[{"metadata": {"name": "terminating"}}], []])
+        def pods(_):
+            response = next(responses)
+            events.append(("pods", len(response)))
+            return response
+        def kube(*args, **kwargs):
+            events.append(args)
+            return subprocess.CompletedProcess(args, 0, json.dumps({
+                "remaining_entries": 0, "directory": "/cache", "removed_files": 5}), "")
+        with patch.object(benchmark, "kube", side_effect=kube), patch.object(
+            benchmark, "deployment_pods", side_effect=pods
+        ), patch.object(benchmark, "kube_json", return_value={"items": list(consumers)}), patch.object(
+            benchmark, "wait_job", side_effect=wait_error
+        ), patch.object(benchmark.time, "sleep"):
+            try:
+                result = benchmark.clear_pvc_cache(deployment, container, cache, "clean", self.context, 60)
+            except RuntimeError as exc:
+                result = exc
+        return events, result
+
+    def test_cache_clearing_waits_for_shutdown_and_removes_cleaner_before_restart(self):
+        events, result = self.run_cache_cleanup()
+        create = next(event for event in events if event[0] == "create")
+        delete = next(event for event in events if event[0] == "delete")
+        self.assertEqual(events[0], ("scale", "deployment/inference", "--replicas=0"))
+        self.assertLess(events.index(("pods", 0)), events.index(create))
+        self.assertLess(events.index(delete), events.index(("scale", "deployment/inference", "--replicas=1")))
+        self.assertIn("--cascade=foreground", delete)
+        self.assertEqual(result["pvc"], "cache-pvc")
+        self.assertEqual(json.loads((self.context / "cache-clear.json").read_text())["remaining_entries"], 0)
+        spec = json.loads((self.context / "cache-clear-job.json").read_text())["spec"]["template"]["spec"]
+        self.assertEqual(len(spec["volumes"]), 1)
+        resources = spec["containers"][0]["resources"]
+        self.assertEqual(resources["requests"], resources["limits"])
+
+    def test_cache_cleanup_failure_stops_job_before_restoring_inference(self):
+        events, result = self.run_cache_cleanup(wait_error=RuntimeError("cleanup failed"))
+        self.assertIsInstance(result, RuntimeError)
+        self.assertEqual(events[-2][0], "delete")
+        self.assertEqual(events[-1], ("scale", "deployment/inference", "--replicas=1"))
+        self.assertFalse((self.context / "cache-clear.json").exists())
+
+    def test_cache_cleanup_refuses_a_pvc_used_by_another_pod(self):
+        consumer = {"metadata": {"name": "other"}, "status": {"phase": "Running"},
+                    "spec": {"volumes": [{"persistentVolumeClaim": {"claimName": "cache-pvc"}}]}}
+        events, result = self.run_cache_cleanup(consumers=[consumer])
+        self.assertRegex(str(result), "still used by Pods: other")
+        self.assertFalse(any(event[0] == "create" for event in events))
+        self.assertEqual(events[-1], ("scale", "deployment/inference", "--replicas=1"))
 
     def test_containerd_manifest_id_is_compared_to_tag_target(self):
         inspected = {"status": {"id": "sha256:config", "repoTags": ["docker.io/local/test:1"]}}

@@ -1,0 +1,259 @@
+{
+  "docker_before": {
+    "cpus": 15,
+    "memory_bytes": 25688301568,
+    "operating_system": "Docker Desktop"
+  },
+  "docker_after": {
+    "cpus": 15,
+    "memory_bytes": 25688301568,
+    "operating_system": "Docker Desktop"
+  },
+  "background_before": [
+    {
+      "namespace": "availability-test",
+      "name": "aiperf",
+      "replicas": 0,
+      "images": [
+        "local/aiperf:0.12.0"
+      ]
+    },
+    {
+      "namespace": "availability-test",
+      "name": "grafana",
+      "replicas": 1,
+      "images": [
+        "grafana/grafana:12.1.0"
+      ]
+    },
+    {
+      "namespace": "availability-test",
+      "name": "grafana-renderer",
+      "replicas": 0,
+      "images": [
+        "grafana/grafana-image-renderer:v5.12.3"
+      ]
+    },
+    {
+      "namespace": "availability-test",
+      "name": "kube-state-metrics",
+      "replicas": 1,
+      "images": [
+        "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.18.0"
+      ]
+    },
+    {
+      "namespace": "availability-test",
+      "name": "llama-base-metric",
+      "replicas": 2,
+      "images": [
+        "local/llama-base-metric:0.1.0"
+      ]
+    },
+    {
+      "namespace": "availability-test",
+      "name": "prometheus",
+      "replicas": 1,
+      "images": [
+        "prom/prometheus:v3.5.0"
+      ]
+    },
+    {
+      "namespace": "hpa-test",
+      "name": "aiperf",
+      "replicas": 0,
+      "images": [
+        "local/aiperf:0.12.0"
+      ]
+    },
+    {
+      "namespace": "hpa-test",
+      "name": "grafana",
+      "replicas": 1,
+      "images": [
+        "grafana/grafana:12.1.0"
+      ]
+    },
+    {
+      "namespace": "hpa-test",
+      "name": "grafana-renderer",
+      "replicas": 0,
+      "images": [
+        "grafana/grafana-image-renderer:v5.12.3"
+      ]
+    },
+    {
+      "namespace": "hpa-test",
+      "name": "kube-state-metrics",
+      "replicas": 1,
+      "images": [
+        "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.18.0"
+      ]
+    },
+    {
+      "namespace": "hpa-test",
+      "name": "llama-base-metric",
+      "replicas": 1,
+      "images": [
+        "local/llama-base-metric:0.1.0"
+      ]
+    },
+    {
+      "namespace": "hpa-test",
+      "name": "prometheus",
+      "replicas": 1,
+      "images": [
+        "prom/prometheus:v3.5.0"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "name": "coredns",
+      "replicas": 2,
+      "images": [
+        "registry.k8s.io/coredns/coredns:v1.14.2"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "name": "metrics-server",
+      "replicas": 1,
+      "images": [
+        "registry.k8s.io/metrics-server/metrics-server:v0.8.1"
+      ]
+    },
+    {
+      "namespace": "local-path-storage",
+      "name": "local-path-provisioner",
+      "replicas": 1,
+      "images": [
+        "docker.io/kindest/local-path-provisioner:v20260820-69b56db7"
+      ]
+    }
+  ],
+  "background_after": [
+    {
+      "namespace": "availability-test",
+      "name": "aiperf",
+      "replicas": 0,
+      "images": [
+        "local/aiperf:0.12.0"
+      ]
+    },
+    {
+      "namespace": "availability-test",
+      "name": "grafana",
+      "replicas": 1,
+      "images": [
+        "grafana/grafana:12.1.0"
+      ]
+    },
+    {
+      "namespace": "availability-test",
+      "name": "grafana-renderer",
+      "replicas": 0,
+      "images": [
+        "grafana/grafana-image-renderer:v5.12.3"
+      ]
+    },
+    {
+      "namespace": "availability-test",
+      "name": "kube-state-metrics",
+      "replicas": 1,
+      "images": [
+        "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.18.0"
+      ]
+    },
+    {
+      "namespace": "availability-test",
+      "name": "llama-base-metric",
+      "replicas": 2,
+      "images": [
+        "local/llama-base-metric:0.1.0"
+      ]
+    },
+    {
+      "namespace": "availability-test",
+      "name": "prometheus",
+      "replicas": 1,
+      "images": [
+        "prom/prometheus:v3.5.0"
+      ]
+    },
+    {
+      "namespace": "hpa-test",
+      "name": "aiperf",
+      "replicas": 0,
+      "images": [
+        "local/aiperf:0.12.0"
+      ]
+    },
+    {
+      "namespace": "hpa-test",
+      "name": "grafana",
+      "replicas": 1,
+      "images": [
+        "grafana/grafana:12.1.0"
+      ]
+    },
+    {
+      "namespace": "hpa-test",
+      "name": "grafana-renderer",
+      "replicas": 0,
+      "images": [
+        "grafana/grafana-image-renderer:v5.12.3"
+      ]
+    },
+    {
+      "namespace": "hpa-test",
+      "name": "kube-state-metrics",
+      "replicas": 1,
+      "images": [
+        "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.18.0"
+      ]
+    },
+    {
+      "namespace": "hpa-test",
+      "name": "llama-base-metric",
+      "replicas": 1,
+      "images": [
+        "local/llama-base-metric:0.1.0"
+      ]
+    },
+    {
+      "namespace": "hpa-test",
+      "name": "prometheus",
+      "replicas": 1,
+      "images": [
+        "prom/prometheus:v3.5.0"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "name": "coredns",
+      "replicas": 2,
+      "images": [
+        "registry.k8s.io/coredns/coredns:v1.14.2"
+      ]
+    },
+    {
+      "namespace": "kube-system",
+      "name": "metrics-server",
+      "replicas": 1,
+      "images": [
+        "registry.k8s.io/metrics-server/metrics-server:v0.8.1"
+      ]
+    },
+    {
+      "namespace": "local-path-storage",
+      "name": "local-path-provisioner",
+      "replicas": 1,
+      "images": [
+        "docker.io/kindest/local-path-provisioner:v20260820-69b56db7"
+      ]
+    }
+  ],
+  "final_inference_image": "local/llama-enhanced-batch:0.1.0",
+  "final_inference_ready_replicas": 1,
+  "background_deployments_unchanged": true
+}

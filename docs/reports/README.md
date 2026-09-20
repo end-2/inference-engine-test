@@ -4,6 +4,15 @@
 
 실행 방법과 결과 구성은 [AIPerf 가이드](../aiperf.md)를 참고하세요. 각 실행의 `summary.md`에서 측정 결과를 확인하고 `run.json`의 `status`가 `complete`인지 확인합니다.
 
+base, enhanced-batch, enhanced-cache 초기화·보존을 각각 3회 측정한 결과는 [전체 구현 반복 측정 보고서](benchmark-suite-20260920-091620-649645/summary.md)에 있습니다. 실행별 결과와 동시성별 평균·표본 표준편차를 함께 제공합니다.
+
+`llama-enhanced-cache`의 PVC 정책별 결과입니다. 초기화 보고서에 삭제 검증과 이전 실행 대비 결과·환경 차이를 기록했습니다.
+
+| PVC cache 정책 | 보고서 |
+| --- | --- |
+| 동시성 간 보존 | [보존 결과](bench-20260919-172027-036026-local-llama-enhanced-cache-0.1.0/summary.md) |
+| 동시성별 워밍업 전 초기화 | [초기화 결과와 비교](bench-20260920-090017-970694-local-llama-enhanced-cache-0.1.0/summary.md) |
+
 서비스 안정성 보고서는 각 실험의 요약·환경·관찰·해석을 독립적으로 담습니다. [실행 가이드](../availability-test.md#네-가지-실험-재실행)에서 같은 조건을 재실행할 수 있습니다.
 
 | 장애 주입 | NoExecute toleration | 보고서 |
