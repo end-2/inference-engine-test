@@ -37,4 +37,4 @@ IMAGE_TAG=0.1.0 ./scripts/load-inference-images.sh base
 
 사용 후 `./scripts/local-k8s.sh down`으로 클러스터를 삭제합니다.
 
-상세 내용은 [최소 요구사항](docs/requirements.md), [클러스터 사용](docs/local-k8s.md), [모델 관리](docs/models.md), [추론 API](docs/llama-api.md), [AIPerf 측정](docs/aiperf.md), [서비스 안정성 테스트](docs/availability-test.md)를 참고하세요.
+상세 내용은 [최소 요구사항](docs/requirements.md), [클러스터 사용](docs/local-k8s.md), [모델 관리](docs/models.md), [추론 API](docs/llama-api.md), [AIPerf 측정](docs/aiperf.md), [서비스 안정성 테스트](docs/availability-test.md), [CPU HPA 테스트](docs/hpa-test.md)를 참고하세요.

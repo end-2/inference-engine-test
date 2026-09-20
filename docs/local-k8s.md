@@ -39,7 +39,7 @@
 
 기본 경로는 저장소 기준이며, 사용자 지정 상대 경로는 명령을 실행한 디렉터리 기준입니다. 클러스터 이름에는 소문자, 숫자와 하이픈을 사용하고 다른 클러스터와 겹치지 않게 지정합니다.
 
-control-plane 1개와 worker 3개를 사용하려면 [멀티 노드 설정](../config/cluster/kind-multi-node.yaml)을 선택합니다. worker는 `workload=monitor` 1개와 `workload=engine` 2개로 구성합니다. [서비스 안정성 테스트](availability-test.md)는 이 라벨로 워크로드를 배치합니다.
+control-plane 1개와 worker 3개를 사용하려면 [멀티 노드 설정](../config/cluster/kind-multi-node.yaml)을 선택합니다. worker는 `workload=monitor` 1개와 `workload=engine` 2개로 구성합니다. [서비스 안정성 테스트](availability-test.md)와 [CPU HPA 테스트](hpa-test.md)는 이 라벨로 워크로드를 배치합니다.
 
 ```sh
 KIND_CONFIG=config/cluster/kind-multi-node.yaml ./scripts/local-k8s.sh up

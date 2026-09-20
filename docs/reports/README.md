@@ -12,3 +12,10 @@
 | Docker SIGKILL | 300초 | [실험 보고서](availability-sigkill-20260920-053546/summary.md) |
 | Docker pause | 60초 | [실험 보고서](availability-pause-60s-20260920-061021/summary.md) |
 | Docker SIGKILL | 60초 | [실험 보고서](availability-sigkill-60s-20260920-061946/summary.md) |
+
+CPU HPA 실험은 [HPA 실행 가이드](../hpa-test.md)에 따라 준비한 뒤 각 전용 스크립트로 재현합니다.
+
+| 시나리오 | 보고서 | 재현 스크립트 |
+| --- | --- | --- |
+| 스케일 아웃 전용, 1→4 | [증가 보고서](hpa-20260920-073006-837104/summary.md) | [run-hpa-scale-out.py](../../scripts/run-hpa-scale-out.py) |
+| 스케일 아웃→인, 1→4→1 | [증가·축소 보고서](hpa-20260920-081357-206946/summary.md) | [run-hpa-scale-out-in.py](../../scripts/run-hpa-scale-out-in.py) |

@@ -2,6 +2,8 @@
 
 engine worker 하나가 응답하지 않을 때 요청 실패, 지연, EndpointSlice 변경과 Pod 복구를 관찰합니다. [매니페스트](../k8s/availability-test/kustomization.yaml)는 `availability-test` 네임스페이스에 설치합니다. API 요청 형식은 [공통 API 가이드](llama-api.md)를 따릅니다.
 
+같은 관측 구성으로 CPU 부하 변화에 따른 replica 증가·축소를 확인하려면 [CPU HPA 테스트](hpa-test.md)를 사용합니다.
+
 ## 배치와 준비
 
 | 노드 라벨 | 워크로드 |
