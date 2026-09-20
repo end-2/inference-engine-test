@@ -15,6 +15,12 @@
 !*pod*.json
 !**/artifacts/profile_export_aiperf.json
 !**/artifacts/profile_export_console.txt
+# Embedded availability figures are part of the reports (only those referenced in summary.md).
+!availability-*/figures/observed-timeline.png
+
+# Availability: raw evidence and unreferenced data not in summary.md — keep local only.
+availability-*/evidence/
+availability-*/summary.json
 
 analyze-*
 compare-*
