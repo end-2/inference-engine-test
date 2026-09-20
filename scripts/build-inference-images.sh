@@ -5,10 +5,10 @@ set -eu
 umask 022
 
 die() { printf 'Error: %s\n' "$*" >&2; exit 1; }
-[ "$#" -le 1 ] || die "Usage: $0 [base|enhanced-batch|enhanced-cache]"
+[ "$#" -le 1 ] || die "Usage: $0 [base|base-metric|enhanced-batch|enhanced-cache]"
 variant=${1:-base}
 case "$variant" in
-  base|enhanced-batch|enhanced-cache) ;;
+  base|base-metric|enhanced-batch|enhanced-cache) ;;
   *) die "Unknown variant: $variant" ;;
 esac
 command -v docker >/dev/null 2>&1 || die "Missing docker."

@@ -16,7 +16,7 @@ help:
 	@echo "  status   Show nodes and pods"
 	@echo "  download-model  Download the pinned GGUF model file"
 	@echo "  download-tokenizer  Download the pinned tokenizer for AIPerf"
-	@echo "  build-image     Build VARIANT=base|enhanced-batch|enhanced-cache"
+	@echo "  build-image     Build VARIANT=base|base-metric|enhanced-batch|enhanced-cache"
 	@echo "  load-image      Load the selected inference image into the cluster nodes"
 	@echo "  build-benchmark-image  Build the AIPerf benchmark image"
 	@echo "  load-benchmark-image   Load the AIPerf benchmark image into the cluster nodes"

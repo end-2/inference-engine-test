@@ -53,4 +53,12 @@ COPY enhanced/__init__.py /app/enhanced/
 COPY enhanced/cache/*.py /app/enhanced/cache/
 ENTRYPOINT ["python", "-m", "enhanced.cache.server"]
 
+FROM runtime AS base-metric
+USER 0
+COPY base-metric/requirements.txt /tmp/metric-requirements.txt
+RUN pip install --no-cache-dir -r /tmp/metric-requirements.txt && pip check
+COPY base-metric/*.py /app/base_metric/
+USER 1000:1000
+ENTRYPOINT ["python", "-m", "base_metric.server"]
+
 FROM runtime AS base

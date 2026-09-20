@@ -6,10 +6,10 @@ umask 022
 ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 
 die() { printf 'Error: %s\n' "$*" >&2; exit 1; }
-[ "$#" -le 1 ] || die "Usage: $0 [base|enhanced-batch|enhanced-cache]"
+[ "$#" -le 1 ] || die "Usage: $0 [base|base-metric|enhanced-batch|enhanced-cache]"
 variant=${1:-base}
 case "$variant" in
-  base|enhanced-batch|enhanced-cache) ;;
+  base|base-metric|enhanced-batch|enhanced-cache) ;;
   *) die "Unknown variant: $variant" ;;
 esac
 
