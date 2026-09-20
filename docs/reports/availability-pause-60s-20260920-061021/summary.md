@@ -1,4 +1,4 @@
-# Engine 노드 동결(pause) · NoExecute toleration 60초
+# Engine 노드 동결(pause), NoExecute toleration 60초
 
 ## 1. 실험 요약
 
@@ -12,15 +12,15 @@ engine 노드 하나에 동결(pause) 장애를 주입했다. 장애 후 **54.0�
 | --- | --- |
 | 관찰 구간 | 2026-09-20 06:11:58.791–06:19:41.980 UTC (KST=UTC+9) |
 | 클러스터 | kind `local-k8s`, Kubernetes v1.36.4, control-plane 1개 + worker 3개 |
-| 배치 | monitor worker 1개에 AIPerf·Prometheus·Grafana·kube-state-metrics, engine worker 2개에 추론 Pod 각 1개 |
+| 배치 | monitor worker 1개에 AIPerf, Prometheus, Grafana, kube-state-metrics, engine worker 2개에 추론 Pod 각 1개 |
 | 추론 | `local/llama-base-metric:0.1.0`, 모델 `Qwen/Qwen2.5-0.5B-Instruct`, replica 2, Pod별 CPU 2 / 2Gi, thread 2 |
 | 부하 | `local/aiperf:0.12.0`, concurrency 4, streaming, 요청별 새 연결, timeout 30초, 입력/출력 분포 `64,32:50;256,64:50` |
-| toleration | Pod의 `not-ready`·`unreachable` 모두 `NoExecute`, `tolerationSeconds: 60` |
-| 스케줄링·종료 | hostname preferred pod anti-affinity, `terminationGracePeriodSeconds: 60` |
+| toleration | Pod의 `not-ready`, `unreachable` 모두 `NoExecute`, `tolerationSeconds: 60` |
+| 스케줄링과 종료 | hostname preferred pod anti-affinity, `terminationGracePeriodSeconds: 60` |
 | 장애 대상 | `local-k8s-worker2` |
-| 수집 주기 | Kubernetes 객체·Docker 상태 약 2초, Prometheus 5초, kubelet 자원 약 10초; Docker 이벤트·타임스탬프 로그 |
+| 수집 주기 | Kubernetes 객체, Docker 상태 약 2초, Prometheus 5초, kubelet 자원 약 10초; Docker 이벤트, 타임스탬프 로그 |
 
-CPU·메모리 requests와 limits는 동일했다. 추론 이미지와 모델은 engine 노드에 준비돼 있었다.
+CPU와 메모리 requests와 limits는 동일했다. 추론 이미지와 모델은 engine 노드에 준비돼 있었다.
 
 `docker pause`로 장애를 주입했으며, 장애 중 Docker 상태는 `Running=true, Paused=true`였다.
 
@@ -28,7 +28,7 @@ CPU·메모리 requests와 limits는 동일했다. 추론 이미지와 모델은
 
 ### 재스케줄링 시간표
 
-상대 시간은 `docker pause` 완료 기준이다. 조건·객체 시각은 초 단위이며, “확인” 시각에는 객체 수집 주기에 따른 지연이 포함된다.
+상대 시간은 `docker pause` 완료 기준이다. 조건, 객체 시각은 초 단위이며, “확인” 시각에는 객체 수집 주기에 따른 지연이 포함된다.
 
 | UTC 시각 | 장애 후 | 관찰 |
 | --- | ---: | --- |
@@ -54,13 +54,13 @@ NoExecute taint 기록부터 controller 삭제 요청까지 약 60.7초였다. �
 | --- | --- | --- | --- | --- |
 | A: 장애 | `llama-base-metric-7c6d46685b-xqtm8` | local-k8s-worker2, Ready | Ready=False → Terminating | 삭제 |
 | B: 생존 | `llama-base-metric-7c6d46685b-2kn9h` | local-k8s-worker3, Ready | 계속 처리 | 같은 노드 유지 |
-| C: 대체 | `llama-base-metric-7c6d46685b-dtgkg` | 없음 | local-k8s-worker3에 새로 생성·Ready | 같은 노드 유지 |
+| C: 대체 | `llama-base-metric-7c6d46685b-dtgkg` | 없음 | local-k8s-worker3에 새로 생성 후 Ready | 같은 노드 유지 |
 
 대체 Pod C의 UID는 `8d5454cc-9103-4417-8462-d2077d45d64b`다. Pod C는 생존 노드에 새로 생성됐다.
 
 ### 클라이언트 영향
 
-성공은 AIPerf 요청 완료 시각, 오류는 ERROR 로그 시각으로 구간을 나눴다. 지연·TTFT는 성공 요청만의 분포이며 실패율 분모는 구간 내 성공 완료와 오류의 합이다.
+성공은 AIPerf 요청 완료 시각, 오류는 ERROR 로그 시각으로 구간을 나눴다. 지연과 TTFT는 성공 요청만의 분포이며 실패율 분모는 구간 내 성공 완료와 오류의 합이다.
 
 | 구간 | 길이 | 성공 / 오류 | 실패율 | 성공 req/s | 지연 p50 / p95 | TTFT p50 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -74,15 +74,15 @@ NoExecute taint 기록부터 controller 삭제 요청까지 약 60.7초였다. �
 | --- | ---: |
 | `TimeoutError` | 7 |
 
-전체 AIPerf 실행은 성공 186건·오류 7건으로, 예열과 종료 처리까지 포함해 고정 관찰 구간과 범위가 다르다. 성공 응답 완료 사이 최대 간격은 **18.79초**였다.
+전체 AIPerf 실행은 성공 186건, 오류 7건으로, 예열과 종료 처리까지 포함해 고정 관찰 구간과 범위가 다르다. 성공 응답 완료 사이 최대 간격은 **18.79초**였다.
 
-아래 그래프는 이 실험의 AIPerf 요청별 결과·오류 로그, Prometheus EndpointSlice, kubelet CPU를 같은 시간축에 정렬한 것이다. 파란 점은 성공 요청 지연, 주황 점은 성공 요청 TTFT이며 x축은 장애 주입 기준 초다. 빨간 ×는 실제 오류 로그 시각이고, **표시 높이 32는 지연값이 아니다**. CPU는 중복 캐시 표본을 제거했다.
+아래 그래프는 이 실험의 AIPerf 요청별 결과, 오류 로그, Prometheus EndpointSlice, kubelet CPU를 같은 시간축에 정렬한 것이다. 파란 점은 성공 요청 지연, 주황 점은 성공 요청 TTFT이며 x축은 장애 주입 기준 초다. 빨간 ×는 실제 오류 로그 시각이고, **표시 높이 32는 지연값이 아니다**. CPU는 중복 캐시 표본을 제거했다.
 
-![AIPerf 요청 지연·TTFT·오류 시점과 EndpointSlice·CPU](figures/observed-timeline.png)
+![AIPerf 요청 지연, TTFT, 오류 시점과 EndpointSlice, CPU](figures/observed-timeline.png)
 
 ### 대표 로그
 
-반복 probe·scrape 로그를 제외하고 오류, eviction, 대체 서버 시작을 발췌했다. 긴 오류 메시지는 줄였다.
+반복 probe, scrape 로그를 제외하고 오류, eviction, 대체 서버 시작을 발췌했다. 긴 오류 메시지는 줄였다.
 
 ```text
 06:14:52.692  AIPerf      TimeoutError()

@@ -4,7 +4,7 @@
 - Image ID: `sha256:0bf4b86be3de5000cb50eb88d18752978a95525f7291a2f46a9c7370e2a55f3f`
 - Started (UTC): 2026-09-20T09:00:17.970694+00:00
 - Status: complete
-- PVC cache policy: `clear-per-concurrency` (before each condition's warmup).
+- PVC cache policy: `clear-per-concurrency` (clear before each condition's warmup).
 - Each condition starts after a fresh inference Pod becomes ready, followed by the configured warmup.
 
 | Concurrency | Requests | Output tok/s | TTFT avg (ms) | TTFT p95 (ms) | ITL avg (ms) | ITL p95 (ms) | Decode avg (ms) | Decode p95 (ms) | Prefill tok/s/user | Latency avg (ms) |
@@ -14,7 +14,7 @@
 | 4 | 100.00 | 96.44 | 1400.32 | 3388.12 | 7.83 | 9.40 | 323.22 | 543.32 | 140.38 | 1723.54 |
 | 8 | 100.00 | 97.35 | 3039.13 | 6970.53 | 7.87 | 9.41 | 319.83 | 535.43 | 60.79 | 3358.96 |
 
-Raw AIPerf exports, request CSV, resource JSONL/CSV, and logs are under each `c<concurrency>/` directory.
+Full AIPerf exports, request CSV, resource JSONL/CSV, and logs are saved locally under each `c<concurrency>/` directory; per-request data, resource time series, and logs are excluded from Git.
 `run.json` and the saved manifests record image IDs, Pod UIDs, and workload settings.
 
 ## 실행 조건
@@ -23,9 +23,9 @@ Raw AIPerf exports, request CSV, resource JSONL/CSV, and logs are under each `c<
 make benchmark VARIANT=enhanced-cache CACHE_POLICY=clear-per-concurrency INFERENCE_CONTEXT=
 ```
 
-`INFERENCE_CONTEXT=`로 기존 추론 이미지를 재사용했습니다. Concurrency 1·2·4·8마다 워밍업 2회와 본 측정 100회를 실행했으며, 본 측정 400회 모두 성공했고 출력 길이 부족·초과는 없었습니다. 추론 Pod 4개의 UID는 모두 다르고 QoS는 Guaranteed입니다.
+`INFERENCE_CONTEXT=`로 기존 추론 이미지를 재사용했습니다. Concurrency 1, 2, 4, 8마다 워밍업 2회와 본 측정 100회를 실행했으며, 본 측정 400회 모두 성공했고 출력 길이 부족이나 초과는 없었습니다. 추론 Pod 4개의 UID는 모두 다르고 QoS는 Guaranteed입니다.
 
-입출력 분포, 데이터셋 16개, seed 42, warmup, 요청 수와 CPU·메모리 설정은 이전 실행과 같습니다. 추론 Pod는 12 CPU·16 GiB, AIPerf는 1 CPU·1 GiB이며 requests와 limits가 같습니다.
+입출력 분포, 데이터셋 16개, seed 42, warmup, 요청 수, CPU 및 메모리 설정은 이전 실행과 같습니다. 추론 Pod는 12 CPU, 16 GiB, AIPerf는 1 CPU, 1 GiB이며 requests와 limits가 같습니다.
 
 ## PVC cache 초기화 검증
 
@@ -51,7 +51,7 @@ make benchmark VARIANT=enhanced-cache CACHE_POLICY=clear-per-concurrency INFEREN
 | 4 | 144.59 | 96.44 | -33.3% | 865.25 | 1400.32 |
 | 8 | 142.90 | 97.35 | -31.9% | 1985.35 | 3039.13 |
 
-이 실행에서는 concurrency 2·4·8의 처리량이 이전보다 약 31~33% 낮고 TTFT 평균이 높았습니다. 단, 이전은 1노드이고 이번은 4노드이며 기존 availability/HPA 워크로드가 함께 배포된 상태입니다. 이번 추론 Pod는 `local-k8s-worker`, AIPerf는 `local-k8s-worker2`에 배치됐습니다. 같은 Docker VM의 15 CPU·약 24 GiB를 공유하며 노드가 늘었다고 물리 자원이 늘어난 것은 아닙니다.
+이 실행에서는 concurrency 2, 4, 8의 처리량이 이전보다 약 31~33% 낮고 TTFT 평균이 높았습니다. 단, 이전은 1노드이고 이번은 4노드이며 기존 availability/HPA 워크로드가 함께 배포된 상태입니다. 이번 추론 Pod는 `local-k8s-worker`, AIPerf는 `local-k8s-worker2`에 배치됐습니다. 같은 Docker VM의 15 CPU, 약 24 GiB를 공유하며 노드가 늘었다고 물리 자원이 늘어난 것은 아닙니다.
 
 추론 이미지 ID는 이전과 동일합니다. AIPerf는 같은 0.12.0 버전과 같은 Dockerfile 소스 해시로 재빌드되어 이미지 ID가 다릅니다. 각 실행은 1회이므로 위 차이를 PVC cache 초기화만의 효과로 단정할 수 없습니다.
 

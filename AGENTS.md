@@ -10,6 +10,8 @@ These guidelines apply to documentation, code comments, and task descriptions th
 - Consolidate repeated explanations in one place and reference them where needed.
 - Record change history in commit messages rather than documentation or comments.
 - State the main point directly, using phrases such as "is," "does," and "supports."
+- Do not use middle dots in documentation. Use commas or conjunctions instead.
+- Omit glossary-style explanations of standard technical terms in documentation. Keep project-specific behavior, measurement conditions, and aggregation rules.
 
 ## README Scope
 
@@ -21,8 +23,8 @@ These guidelines apply to documentation, code comments, and task descriptions th
 
 ## Documentation Ownership
 
-- Keep docs/transformers-api.md limited to behavior and usage shared by base and enhanced: deployment, endpoints, requests, responses, and common settings.
-- Put implementation-specific architecture, scheduling, configuration, and tests in separate guides such as docs/transformers-api-enhanced.md. Link between guides instead of duplicating their contents.
+- Keep docs/llama-api.md limited to behavior and usage shared by base and enhanced: deployment, endpoints, requests, responses, and common settings.
+- Put implementation-specific architecture, scheduling, configuration, and tests in separate guides such as docs/llama-enhanced.md. Link between guides instead of duplicating their contents.
 
 ## Kubernetes Manifest Guidelines
 

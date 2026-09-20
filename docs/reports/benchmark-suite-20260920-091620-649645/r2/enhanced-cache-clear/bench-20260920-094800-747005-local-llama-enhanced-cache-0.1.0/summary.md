@@ -4,7 +4,7 @@
 - Image ID: `sha256:0bf4b86be3de5000cb50eb88d18752978a95525f7291a2f46a9c7370e2a55f3f`
 - Started (UTC): 2026-09-20T09:48:00.747005+00:00
 - Status: complete
-- PVC cache policy: `clear-per-concurrency` (before each condition's warmup).
+- PVC cache policy: `clear-per-concurrency` (clear before each condition's warmup).
 - Each condition starts after a fresh inference Pod becomes ready, followed by the configured warmup.
 
 | Concurrency | Requests | Output tok/s | TTFT avg (ms) | TTFT p95 (ms) | ITL avg (ms) | ITL p95 (ms) | Decode avg (ms) | Decode p95 (ms) | Prefill tok/s/user | Latency avg (ms) |
@@ -14,5 +14,5 @@
 | 4 | 100.00 | 95.18 | 1416.63 | 3409.80 | 8.02 | 9.48 | 329.99 | 577.81 | 139.10 | 1746.62 |
 | 8 | 100.00 | 97.47 | 3037.38 | 6922.33 | 7.75 | 9.50 | 319.59 | 562.21 | 61.58 | 3356.97 |
 
-Raw AIPerf exports, request CSV, resource JSONL/CSV, and logs are under each `c<concurrency>/` directory.
+Full AIPerf exports, request CSV, resource JSONL/CSV, and logs are saved locally under each `c<concurrency>/` directory; per-request data, resource time series, and logs are excluded from Git.
 `run.json` and the saved manifests record image IDs, Pod UIDs, and workload settings.

@@ -125,7 +125,7 @@ def save_suite(directory, metadata, rows):
         link = f"[summary]({case['report']}/summary.md)" if case.get("report") else ""
         lines.append(f"| {index} | {case['repetition']} | {case['condition']} | {case['status']} | {link} |")
     lines += ["", "`runs.csv` and `summary.jsonl` contain the individual sweep metrics; `summary.csv` includes mean, standard deviation, minimum, and maximum for every metric.",
-              "Image IDs, commands, and execution order are recorded in `run.json`. Per-request exports and resource time series are retained under each sweep report."]
+              "Image IDs, commands, and execution order are recorded in `run.json`. Per-request exports and resource time series are saved locally under each sweep report and are excluded from Git."]
     (directory / "summary.md").write_text("\n".join(lines) + "\n")
 
 

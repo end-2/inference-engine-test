@@ -423,10 +423,16 @@ def save_summary(report, metadata, rows):
     with (report / "summary.jsonl").open("w") as output:
         for row in rows:
             output.write(json.dumps(row, ensure_ascii=False) + "\n")
+    cache_policy = metadata.get("cache_policy", "preserve")
+    cache_description = {
+        "preserve": "no PVC cache deletion",
+        "clear-before-sweep": "clear once before the first condition's warmup",
+        "clear-per-concurrency": "clear before each condition's warmup",
+    }[cache_policy]
     lines = ["# AIPerf CPU benchmark", "", f"- Image: `{metadata['inference']['image']}`",
              f"- Image ID: `{metadata['inference']['id']}`", f"- Started (UTC): {metadata['started_at']}",
              f"- Status: {metadata['status']}",
-             f"- PVC cache policy: `{metadata.get('cache_policy', 'preserve')}` (before each condition's warmup).",
+             f"- PVC cache policy: `{cache_policy}` ({cache_description}).",
              "- Each condition starts after a fresh inference Pod becomes ready, followed by the configured warmup.", "",
              "| Concurrency | Requests | Output tok/s | TTFT avg (ms) | TTFT p95 (ms) | ITL avg (ms) | ITL p95 (ms) | Decode avg (ms) | Decode p95 (ms) | Prefill tok/s/user | Latency avg (ms) |",
              "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
@@ -437,7 +443,7 @@ def save_summary(report, metadata, rows):
                   "latency_avg_ms")]
         lines.append("| " + " | ".join(f"{value:.2f}" if isinstance(value, float) else str(value)
                                       for value in values) + " |")
-    lines += ["", "Raw AIPerf exports, request CSV, resource JSONL/CSV, and logs are under each `c<concurrency>/` directory.",
+    lines += ["", "Full AIPerf exports, request CSV, resource JSONL/CSV, and logs are saved locally under each `c<concurrency>/` directory; per-request data, resource time series, and logs are excluded from Git.",
               "`run.json` and the saved manifests record image IDs, Pod UIDs, and workload settings."]
     (report / "summary.md").write_text("\n".join(lines) + "\n")
 

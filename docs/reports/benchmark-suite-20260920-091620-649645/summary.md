@@ -1,6 +1,6 @@
 # 추론 구현별 3회 반복 benchmark
 
-네 조건을 각각 3회씩 측정한 12개 sweep이 모두 완료됐습니다. 본 측정 4,800회와 warmup 96회가 성공했으며 출력 길이 부족·초과는 없습니다.
+네 조건을 각각 3회씩 측정한 12개 sweep이 모두 완료됐습니다. 본 측정 4,800회와 warmup 96회가 성공했으며 출력 길이 부족이나 초과는 없습니다.
 
 - Status: complete
 - Repetitions per condition: 3
@@ -53,27 +53,22 @@
 | 12 | 3 | enhanced-batch | complete | [summary](r3/enhanced-batch/bench-20260920-102220-720274-local-llama-enhanced-batch-0.1.0/summary.md) |
 
 `runs.csv` and `summary.jsonl` contain the individual sweep metrics; `summary.csv` includes mean, standard deviation, minimum, and maximum for every metric.
-Image IDs, commands, and execution order are recorded in `run.json`. Per-request exports and resource time series are retained under each sweep report.
+Image IDs, commands, and execution order are recorded in `run.json`. Per-request exports and resource time series are saved locally under each sweep report and are excluded from Git.
 
 ## 결과 해석
 
-- Concurrency 2·4·8에서 cache 보존의 평균 처리량은 초기화보다 30.1~33.2% 높았습니다. Concurrency 8에서는 97.64 → 130.01 tok/s이며 TTFT 평균은 27.8% 낮았습니다.
+- Concurrency 2, 4, 8에서 cache 보존의 평균 처리량은 초기화보다 30.1~33.2% 높았습니다. Concurrency 8에서는 97.64 → 130.01 tok/s이며 TTFT 평균은 27.8% 낮았습니다.
 - Concurrency 8에서 enhanced-batch의 처리량은 base보다 16.3% 높았습니다. TTFT 평균은 7009.25 → 2525.54 ms로 낮아졌지만, ITL 평균은 8.05 → 94.60 ms로 높아졌습니다.
 - 데이터셋 16개를 같은 seed 42로 반복하는 부하의 결과입니다. 두 cache 조건 모두 sweep 시작은 빈 cache이며, 차이는 concurrency 단계 사이의 보존 여부입니다. Warmup과 본 측정 안에서는 cache가 다시 채워져 재사용됩니다.
 
 ## 검증과 환경
 
-- [최종 검증 기록](verification.json): 48개 단계, 서로 다른 추론 Pod UID 48개, 본 측정 4,800회, warmup 96회, 출력 길이 부족·초과 0회.
-- 48개 단계의 입력 데이터 파일 SHA-256이 동일합니다. 결과 경로·concurrency 값 외의 AIPerf 컨테이너 설정도 동일합니다. Cache 초기화 15회 모두 삭제 후 잔여 항목 0을 확인했습니다.
-- 추론은 12 CPU·16 GiB, AIPerf는 1 CPU·1 GiB이며 requests와 limits가 같습니다. 저장된 추론·AIPerf Pod는 모두 지정 노드와 Guaranteed QoS를 검증했습니다.
-- [환경 기록](environment.json): Docker VM의 15 CPU·약 24 GiB를 kind 4개 노드가 공유합니다. 측정 전후 기존 background Deployment의 이미지·replica 수와 Docker 자원 설정은 같았습니다. 실행 중 모든 변형의 이미지 ID와 배치 노드를 고정했습니다.
-- 측정 기간(UTC): 2026-09-20 09:16:20~10:29:33. 종료 시 `llama-base` Deployment는 enhanced-batch 이미지로 1/1 Ready입니다.
+- [최종 검증 기록](verification.json): 48개 단계, 서로 다른 추론 Pod UID 48개, 본 측정 4,800회, warmup 96회, 출력 길이 부족이나 초과 0회.
+- 48개 단계의 입력 데이터 파일 SHA-256이 동일합니다. 결과 경로, concurrency 값 외의 AIPerf 컨테이너 설정도 동일합니다. Cache 초기화 15회 모두 삭제 후 잔여 항목 0을 확인했습니다.
+- 추론은 12 CPU, 16 GiB, AIPerf는 1 CPU, 1 GiB이며 requests와 limits가 같습니다. 저장된 추론, AIPerf Pod는 모두 지정 노드와 Guaranteed QoS를 검증했습니다.
+- [환경 기록](environment.json): Docker VM의 15 CPU, 약 24 GiB를 kind 4개 노드가 공유합니다. 측정 전후 기존 background Deployment의 이미지, replica 수와 Docker 자원 설정은 같았습니다. 실행 중 모든 변형의 이미지 ID와 배치 노드를 고정했습니다.
+- 측정 기간(UTC): 2026-09-20 09:16:20~10:29:33. 종료 시 `llama-base` Deployment는 enhanced-batch 이미지로 1/1 Ready였습니다.
 
-## 같은 설정으로 재실행
+## 재실행
 
-```sh
-python3 scripts/run-benchmark-suite.py --repetitions 3 \
-  --inference-node local-k8s-worker --benchmark-node local-k8s-worker2
-```
-
-기존 로컬 이미지를 재사용합니다. 이미지 ID와 실행 순서는 [run.json](run.json), 상세 사용법은 [AIPerf 가이드](../../aiperf.md#전체-구현-반복-측정)를 참고하세요.
+[AIPerf 가이드](../../aiperf.md#전체-구현-반복-측정)에 따라 클러스터, 이미지를 준비하고 실제 노드를 선택합니다. 이 보고서의 이미지 ID와 실행 순서는 [run.json](run.json)에 있습니다. 다른 환경에서 얻은 결과는 위 실험 조건과 구분해 해석합니다.

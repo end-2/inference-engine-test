@@ -12,7 +12,7 @@ make benchmark
 ./scripts/run-benchmark.py
 ```
 
-모델·토크나이저 다운로드와 검증, 클러스터 준비, 추론 및 AIPerf 이미지 빌드·로드, 배포를 자동 수행합니다. 빌드 경로의 내용이 이미지에 기록한 해시와 같으면 빌드를 생략하고, 모든 노드의 이미지 ID가 호스트와 같으면 로드를 생략합니다. 태그만 같고 내용이 다르면 다시 준비합니다. 해시 기록이 없는 이미지는 최초 한 번 빌드합니다.
+모델과 토크나이저 다운로드와 검증, 클러스터 준비, 추론 및 AIPerf 이미지 빌드와 로드, 배포를 자동 수행합니다. 빌드 경로의 내용이 이미지에 기록한 해시와 같으면 빌드를 생략하고, 모든 노드의 이미지 ID가 호스트와 같으면 로드를 생략합니다. 태그만 같고 내용이 다르면 다시 준비합니다. 해시 기록이 없는 이미지는 최초 한 번 빌드합니다.
 
 각 동시성 `1,2,4,8`에 대해 추론 Deployment를 재시작하고 새 Pod의 준비를 기다린 뒤 [공통 Job](../k8s/aiperf/job.yaml)에 설정된 워밍업과 본 측정을 수행합니다. `ignore_eos`를 사용해 지정한 출력 길이 전에 종료되지 않도록 하고, 결과의 성공 요청 수와 출력 길이를 검증합니다. 조건마다 별도 Job을 순차 실행합니다. 실행 중인 다른 AIPerf Job이 있으면 중단합니다. 완료 후 추론 서버와 클러스터는 유지합니다.
 
@@ -27,32 +27,40 @@ make benchmark VARIANT=enhanced-cache CACHE_POLICY=clear-per-concurrency
 # runner 직접 실행 시: --cache-policy clear-per-concurrency
 ```
 
-첫 조건을 포함해 매번 추론 Deployment를 0개로 축소하고 Pod 종료·cache flush가 끝날 때까지 기다립니다. 별도 Job이 `--cache-dir`에 마운트된 전용 PVC의 내용을 삭제하고 빈 디렉터리를 확인한 뒤 추론 Pod를 다시 시작합니다. PVC 자체와 모델·측정 결과는 유지합니다. `--cache-dir`은 쓰기 가능한 PVC 마운트 루트여야 하며 subPath는 지원하지 않습니다. 다른 Pod가 같은 PVC를 사용하면 측정을 중단합니다.
+첫 조건을 포함해 매번 추론 Deployment를 0개로 축소하고 Pod 종료, cache flush가 끝날 때까지 기다립니다. 별도 Job이 `--cache-dir`에 마운트된 전용 PVC의 내용을 삭제하고 빈 디렉터리를 확인한 뒤 추론 Pod를 다시 시작합니다. PVC 자체와 모델, 측정 결과는 유지합니다. `--cache-dir`은 쓰기 가능한 PVC 마운트 루트여야 하며 subPath는 지원하지 않습니다. 다른 Pod가 같은 PVC를 사용하면 측정을 중단합니다.
 
-초기화는 워밍업 **전**에 수행합니다. 워밍업과 같은 조건 안의 반복 요청은 cache를 채우고 재사용하므로, 모든 요청의 cache miss를 측정하는 설정은 아닙니다. `run.json`과 `summary.md`에 cache 정책을, 각 조건의 `cache-clear.json`과 `run.json`에 삭제 파일 수·크기와 삭제 후 항목 수를 기록합니다. `cache-clear-job.json`과 `cache-clear.log`에는 초기화 설정과 실행 로그를 저장합니다.
+초기화는 워밍업 **전**에 수행합니다. 워밍업과 같은 조건 안의 반복 요청은 cache를 채우고 재사용하므로, 모든 요청의 cache miss를 측정하는 설정은 아닙니다. `run.json`과 `summary.md`에 cache 정책을, 각 조건의 `cache-clear.json`과 `run.json`에 삭제 파일 수, 크기와 삭제 후 항목 수를 기록합니다. `cache-clear-job.json`과 `cache-clear.log`에는 초기화 설정과 실행 로그를 저장합니다.
 
 `CACHE_POLICY=clear-before-sweep`는 첫 동시성의 워밍업 전에만 삭제하고 이후 동시성 사이에는 보존합니다. 독립된 sweep을 반복하면서 이전 sweep의 cache가 섞이지 않게 할 때 사용합니다.
 
 ### 전체 구현 반복 측정
 
-[반복 측정 runner](../scripts/run-benchmark-suite.py)는 base, enhanced-batch, enhanced-cache 초기화·보존의 네 조건을 각각 3회 실행합니다. 기존 로컬 이미지를 재사용하며 모든 회차에서 이미지 ID와 배치 노드를 검증합니다. 먼저 필요한 이미지를 빌드·로드하고, PVC가 바인딩된 노드와 자원 여유를 확인해 노드를 지정합니다.
+[반복 측정 runner](../scripts/run-benchmark-suite.py)는 base, enhanced-batch, enhanced-cache 초기화와 보존의 네 조건을 각각 3회 실행합니다. 기존 로컬 이미지를 재사용하며 모든 회차에서 이미지 ID와 배치 노드를 검증합니다. 먼저 필요한 이미지를 빌드하고 로드한 뒤 PVC가 바인딩된 노드와 자원 여유를 확인해 노드를 지정합니다.
+
+아래는 추론과 AIPerf를 서로 다른 노드에 배치하는 예입니다. 먼저 [멀티 노드 클러스터](local-k8s.md#클러스터-설정)를 준비하고 모든 명령에 같은 `CLUSTER_NAME`을 사용합니다. 기본 단일 노드 구성에는 worker 노드가 없습니다. `get nodes` 결과에서 실제 이름을 골라 아래 두 변수에 넣습니다. 기존 cache PVC를 재사용할 때는 해당 PV의 `spec.nodeAffinity`에 맞는 추론 노드를 선택합니다.
 
 ```sh
+./scripts/local-k8s.sh kubectl get nodes -L workload
+./scripts/local-k8s.sh kubectl get pv -o yaml
+INFERENCE_NODE='<추론 노드 이름>'
+BENCHMARK_NODE='<AIPerf 노드 이름>'
 python3 scripts/run-benchmark-suite.py --repetitions 3 \
-  --inference-node local-k8s-worker --benchmark-node local-k8s-worker2
+  --inference-node "$INFERENCE_NODE" --benchmark-node "$BENCHMARK_NODE"
 ```
 
-각 회차에서 네 조건을 순차 실행하며 순서를 한 칸씩 순환합니다. cache 초기화 조건은 `clear-per-concurrency`, 보존 조건은 `clear-before-sweep`를 사용합니다. 두 조건 모두 sweep 시작은 빈 cache이며, 동시성 사이의 보존 여부만 다릅니다. 각 동시성에서 Pod 재시작과 공통 Job의 warmup·본 측정을 수행합니다.
+각 회차에서 네 조건을 순차 실행하며 순서를 한 칸씩 순환합니다. cache 초기화 조건은 `clear-per-concurrency`, 보존 조건은 `clear-before-sweep`를 사용합니다. 두 조건 모두 sweep 시작은 빈 cache이며, 동시성 사이의 보존 여부만 다릅니다. 각 동시성에서 Pod 재시작과 공통 Job의 warmup, 본 측정을 수행합니다.
 
-`docs/reports/benchmark-suite-<UTC 시각>/`에 개별 실행과 집계를 저장합니다. `summary.md`는 평균·표본 표준편차와 개별 보고서 링크, `summary.csv`는 지표별 평균·표준편차·최솟값·최댓값, `runs.csv`와 `summary.jsonl`은 실행별 지표를 담습니다. p95 집계는 실행별 p95의 평균이며 요청을 합친 p95가 아닙니다. 실패한 suite는 다음 명령으로 완료된 sweep을 유지하며 재개합니다.
+`docs/reports/benchmark-suite-<UTC 시각>/`에 개별 실행과 집계를 저장합니다. `summary.md`는 평균, 표본 표준편차와 개별 보고서 링크, `summary.csv`는 지표별 평균, 표준편차, 최솟값, 최댓값, `runs.csv`와 `summary.jsonl`은 실행별 지표를 담습니다. p95 집계는 실행별 p95의 평균이며 요청을 합친 p95가 아닙니다. 실패한 suite는 다음 명령으로 완료된 sweep을 유지하며 재개합니다.
 
 ```sh
-python3 scripts/run-benchmark-suite.py --resume docs/reports/benchmark-suite-<UTC 시각>
+python3 scripts/run-benchmark-suite.py --resume 'docs/reports/benchmark-suite-<UTC 시각>'
 ```
 
 ### 결과 파일
 
-- `summary.md`, `summary.csv`, `summary.jsonl`: 동시성별 처리량, TTFT, ITL, 디코드·프리필과 응답 지연
+아래는 실행한 호스트에 생성되는 파일입니다. Git에는 요약과 선택한 재현용 자료를 보관하며, 요청별 원본, 자원 시계열과 상세 로그는 실행한 호스트에만 남습니다. 파일별 포함 범위는 [보고서 제외 규칙](reports/.gitignore)을 따릅니다.
+
+- `summary.md`, `summary.csv`, `summary.jsonl`: 동시성별 처리량, TTFT, ITL, 디코드, 프리필과 응답 지연
 - `run.json`, `inference.json`, `nodes.json`: 이미지 ID, 실행 상태와 환경
 - `c1/`, `c2/`, `c4/`, `c8/`: 새 추론 Pod UID, Job 설정, AIPerf 로그와 원본 결과
 
@@ -60,21 +68,21 @@ python3 scripts/run-benchmark-suite.py --resume docs/reports/benchmark-suite-<UT
 
 | 파일 | 내용 |
 | --- | --- |
-| `resources.jsonl` | kubelet Summary API의 노드 및 해당 추론·AIPerf Pod/컨테이너 통계. CPU 누적 시간, 사용량, 메모리, 원본 통계 시각과 호스트 수집 시각 포함 |
-| `resources.csv` | 노드·Pod·컨테이너별 CPU 코어 수, 누적 CPU 시간, 구간 평균 CPU 코어 수, 메모리 사용량 |
-| `artifacts/profile_export.jsonl` | 요청 ID, 시작·종료 시각, 워밍업/본 측정 구분, TTFT, 지연, 토큰 수, 청크 간 지연 등 AIPerf 요청별 원본 |
+| `resources.jsonl` | kubelet Summary API의 노드 및 해당 추론, AIPerf Pod/컨테이너 통계. CPU 누적 시간, 사용량, 메모리, 원본 통계 시각과 호스트 수집 시각 포함 |
+| `resources.csv` | 노드, Pod, 컨테이너별 CPU 코어 수, 누적 CPU 시간, 구간 평균 CPU 코어 수, 메모리 사용량 |
+| `artifacts/profile_export.jsonl` | 요청 ID, 시작과 종료 시각, 워밍업/본 측정 구분, TTFT, 지연, 토큰 수, 청크 간 지연 등 AIPerf 요청별 원본 |
 | `requests.csv` | 요청별 메타데이터와 지표를 열로 펼친 데이터. 배열 지표는 JSON 문자열로 보존 |
 | `artifacts/inputs.json` | 생성한 입력 데이터 |
 
-자원 수집은 Job 생성 전부터 완료까지 기본 5초 간격으로 수행합니다. 실제 간격에는 API 호출 시간이 더해지며 `--sample-interval`로 변경합니다. kubelet의 갱신 주기 때문에 같은 원본 시각의 표본이 반복될 수 있습니다. `cpu_cores`는 `usageNanoCores / 1e9`, `cpu_percent_one_core`는 한 코어를 100%로 표현합니다. `cpu_interval_cores`는 원본 시각과 누적 CPU 시간의 차이로 계산하며 첫 표본·중복 시각·카운터 초기화에서는 비어 있습니다. 메모리 단위는 bytes입니다. 노드 통계에는 다른 워크로드도 포함되므로 추론 비용 분석에는 `role=inference`, `scope=pod`를 사용하고 Pod와 컨테이너 행을 중복 합산하지 마세요.
+자원 수집은 Job 생성 전부터 완료까지 기본 5초 간격으로 수행합니다. 실제 간격에는 API 호출 시간이 더해지며 `--sample-interval`로 변경합니다. kubelet의 갱신 주기 때문에 같은 원본 시각의 표본이 반복될 수 있습니다. `cpu_cores`는 `usageNanoCores / 1e9`, `cpu_percent_one_core`는 한 코어를 100%로 표현합니다. `cpu_interval_cores`는 원본 시각과 누적 CPU 시간의 차이로 계산하며 첫 표본, 중복 시각, 카운터 초기화에서는 비어 있습니다. 메모리 단위는 bytes입니다. 노드 통계에는 다른 워크로드도 포함되므로 추론 비용 분석에는 `role=inference`, `scope=pod`를 사용하고 Pod와 컨테이너 행을 중복 합산하지 마세요.
 
-요청의 `request_start_ns`/`request_end_ns`는 Unix epoch 나노초, 자원 통계의 `cpu_time`/`memory_time`과 `sampled_at`은 UTC 시각입니다. `benchmark_phase=profiling`인 요청을 선택해 같은 시간대의 CPU·메모리와 비교할 수 있습니다. CPU는 표본 구간의 합산 값이므로 동시 실행된 개별 요청의 CPU 비용을 직접 나타내지는 않습니다. 원본 JSONL은 정밀도와 모든 지표를 유지하므로 상세 분석의 기준으로 사용합니다.
+요청의 `request_start_ns`/`request_end_ns`는 Unix epoch 나노초, 자원 통계의 `cpu_time`/`memory_time`과 `sampled_at`은 UTC 시각입니다. `benchmark_phase=profiling`인 요청을 선택해 같은 시간대의 CPU 및 메모리 사용량과 비교할 수 있습니다. CPU는 표본 구간의 합산 값이므로 동시 실행된 개별 요청의 CPU 비용을 직접 나타내지는 않습니다. 원본 JSONL은 정밀도와 모든 지표를 유지하므로 상세 분석의 기준으로 사용합니다.
 
-수집에는 Kubernetes 노드 `proxy/stats/summary` 읽기 권한이 필요하며 기본 kind 관리자 설정에서는 추가 설치가 필요하지 않습니다. 수집 오류나 추론·AIPerf Pod CPU 표본 누락은 실행 실패로 기록합니다.
+수집에는 Kubernetes 노드 `proxy/stats/summary` 읽기 권한이 필요하며 기본 kind 관리자 설정에서는 추가 설치가 필요하지 않습니다. 수집 오류나 추론, AIPerf Pod CPU 표본 누락은 실행 실패로 기록합니다.
 
 측정 실패 시 다음 조건으로 진행하지 않으며 완료된 결과와 진단 로그를 남깁니다. 조건별 기본 제한은 1시간이며 `--job-timeout`으로 변경할 수 있습니다.
 
-동일한 API·실행 옵션을 지원하는 다른 구현은 이미지와 빌드 경로를 바꿉니다.
+동일한 API, 실행 옵션을 지원하는 다른 구현은 이미지와 빌드 경로를 바꿉니다.
 
 ```sh
 make benchmark INFERENCE_IMAGE=local/llama-custom:0.1.0 INFERENCE_CONTEXT=src/custom INFERENCE_TARGET=
@@ -167,5 +175,5 @@ python tests/test-aiperf-sweep.py
 - `hostPath type check failed`: 토크나이저 다운로드 완료 여부와 노드의 `/models` 마운트를 확인합니다.
 - 토크나이저 체크섬 오류: 해당 토크나이저 디렉터리를 별도로 옮기고 다시 다운로드합니다.
 - HTTP 404: Job의 `MODEL_ID`와 서버 모델 이름을 확인합니다.
-- HTTP 400: 입력·출력 제한과 채팅 템플릿을 포함한 컨텍스트 크기를 확인합니다.
-- Pending: 추론 Pod와 Job의 CPU·메모리 요청량을 수용할 수 있는지 확인합니다.
+- HTTP 400: 입력과 출력 제한과 채팅 템플릿을 포함한 컨텍스트 크기를 확인합니다.
+- Pending: 추론 Pod와 Job의 CPU와 메모리 요청량을 수용할 수 있는지 확인합니다.

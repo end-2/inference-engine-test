@@ -7,7 +7,7 @@ kind 기반 로컬 Kubernetes 환경에서 CPU inference engine을 테스트합�
 - Docker가 실행 중인 호스트, POSIX 셸
 - 도구 설치 시 `curl` 또는 `wget`, 체크섬 검증용 `sha256sum` 또는 `shasum`과 인터넷 연결
 - 모델 다운로드 시 `curl`과 인터넷 연결
-- 추론 실행 전 [CPU·메모리·디스크 요구사항](docs/requirements.md#cpu-메모리와-디스크)에 맞는 Docker 자원 확보
+- 추론 실행 전 [CPU, 메모리, 디스크 요구사항](docs/requirements.md#cpu-메모리와-디스크)에 맞는 Docker 자원 확보
 
 ## 빠른 시작
 

@@ -13,5 +13,5 @@
 | 4 | 100.00 | 144.59 | 865.25 | 1175.97 | 6.78 | 8.18 | 278.53 | 454.61 | 417.80 | 1143.78 |
 | 8 | 100.00 | 142.90 | 1985.35 | 2332.25 | 6.84 | 8.14 | 280.77 | 466.63 | 281.14 | 2266.13 |
 
-Raw AIPerf exports, request CSV, resource JSONL/CSV, and logs are under each `c<concurrency>/` directory.
+Full AIPerf exports, request CSV, resource JSONL/CSV, and logs are saved locally under each `c<concurrency>/` directory; per-request data, resource time series, and logs are excluded from Git.
 `run.json` and the saved manifests record image IDs, Pod UIDs, and workload settings.

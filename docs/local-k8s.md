@@ -2,21 +2,9 @@
 
 기본 설치와 실행 순서는 [README](../README.md)를 참고하세요. 아래 명령은 저장소 루트에서 실행합니다. 전체 명령 목록은 `./scripts/local-k8s.sh help`로 확인합니다. 이 클러스터는 CPU 전용이며 GPU를 사용하지 않습니다.
 
-## 의존성 최소화와 OS 호환성
-
-클러스터 준비 과정은 의존성 최소화와 여러 OS에서의 호환을 최우선으로 유지합니다.
-
-- 클러스터 준비 스크립트는 POSIX `sh`로 동작하며 bash 전용 문법을 사용하지 않습니다.
-- 클러스터 준비에 필요한 도구는 kind, kubectl, Docker입니다. 설치와 추론·측정에 필요한 추가 도구는 [작업별 요구사항](requirements.md#작업별-추가-도구)을 참고합니다.
-- 클러스터 준비에는 Python, jq, yq, helm, kustomize가 필요하지 않습니다. `make` 없이 스크립트를 직접 실행할 수 있습니다.
-- Linux, macOS, Windows(WSL2)와 amd64, arm64 아키텍처를 지원합니다. 아키텍처에 맞는 노드 이미지를 사용합니다.
-- 외부 `KUBECONFIG`와 `~/.kube/config`를 변경하지 않으며, kubeconfig는 `.local-k8s/`에 권한 `600`으로 격리합니다.
-
 ## 환경 준비
 
-로컬 Docker가 실행 중인 호스트를 사용합니다. `doctor`는 도구 존재와 Docker 연결을 확인합니다.
-
-기본 Kubernetes 버전에는 cgroup v2가 필요합니다. 호스트와 같은 아키텍처의 노드 이미지를 사용하고, 노드 수와 workload에 맞춰 CPU, 메모리와 디스크를 확보합니다. [kind 설치 안내](https://kind.sigs.k8s.io/docs/user/quick-start/)
+지원 OS, 아키텍처, 도구, cgroup과 자원 조건은 [최소 요구사항](requirements.md)을 참고합니다. `./scripts/local-k8s.sh doctor`로 도구 존재와 Docker 연결을 확인합니다.
 
 오프라인에서는 도구와 노드 이미지를 미리 준비합니다. 노드 이미지는 Docker에 `load`하고 같은 참조를 `KIND_NODE_IMAGE`로 지정합니다. workload 이미지도 같은 방법으로 준비합니다. [kind 오프라인 안내](https://kind.sigs.k8s.io/docs/user/working-offline/)
 
