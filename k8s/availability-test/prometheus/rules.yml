@@ -1,0 +1,21 @@
+groups:
+  - name: availability
+    rules:
+      - record: availability:service_ready_endpoints
+        expr: |
+          sum by (namespace, service) (
+            kube_endpointslice_endpoints{namespace="availability-test",ready="true"}
+            * on (namespace, endpointslice) group_left (service)
+            label_replace(kube_endpointslice_labels{namespace="availability-test"}, "service", "$1", "label_kubernetes_io_service_name", "(.+)")
+          )
+          or on (namespace, service)
+          (0 * max by (namespace, service) (kube_service_info{namespace="availability-test"}))
+      - record: availability:service_unready_endpoints
+        expr: |
+          sum by (namespace, service) (
+            kube_endpointslice_endpoints{namespace="availability-test",ready!="true"}
+            * on (namespace, endpointslice) group_left (service)
+            label_replace(kube_endpointslice_labels{namespace="availability-test"}, "service", "$1", "label_kubernetes_io_service_name", "(.+)")
+          )
+          or on (namespace, service)
+          (0 * max by (namespace, service) (kube_service_info{namespace="availability-test"}))

@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llama-base-metric
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: llama-base-metric
+  template:
+    metadata:
+      labels:
+        app: llama-base-metric
+    spec:
+      nodeSelector:
+        workload: engine
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: llama-base-metric
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: api
+          image: local/llama-base-metric:0.1.0
+          imagePullPolicy: Never
+          args:
+            - --model
+            - /model/qwen2.5-0.5b-instruct-q4_k_m.gguf
+            - --served-model-name
+            - Qwen/Qwen2.5-0.5B-Instruct
+            - --n-threads
+            - "2"
+            - --n-ctx
+            - "1024"
+            - --max-input-tokens
+            - "768"
+            - --max-output-tokens
+            - "128"
+            - --default-output-tokens
+            - "32"
+          ports:
+            - name: http
+              containerPort: 8000
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+          resources:
+            requests:
+              cpu: "2"
+              memory: 2Gi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: model
+              mountPath: /model
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: model
+          hostPath:
+            path: /models/qwen2.5-0.5b
+            type: Directory
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llama-base-metric
+spec:
+  selector:
+    app: llama-base-metric
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

@@ -7,4 +7,11 @@ networking:
 nodes:
   - role: control-plane
   - role: worker
+    labels:
+      workload: monitor
   - role: worker
+    labels:
+      workload: engine
+  - role: worker
+    labels:
+      workload: engine

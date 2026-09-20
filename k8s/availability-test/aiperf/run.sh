@@ -1,0 +1,28 @@
+#!/bin/sh
+set -eu
+
+stopping=0
+child=
+trap 'stopping=1; if [ -n "$child" ]; then kill -INT "$child" 2>/dev/null || true; fi' TERM INT
+
+run=0
+while [ "$stopping" -eq 0 ]; do
+    run=$((run + 1))
+    directory="${RESULTS_DIR:-/results}/$POD_NAME/$(date -u +%Y%m%dT%H%M%SZ)-$run"
+    mkdir -p "$directory"
+    printf 'Starting AIPerf: %s\n' "$directory"
+    # Finite windows flush summaries; failures must not stop the outage workload.
+    aiperf "$@" --benchmark-duration "$RUN_SECONDS" --artifact-dir "$directory" &
+    child=$!
+    status=0
+    wait "$child" || status=$?
+    if [ "$stopping" -eq 1 ]; then
+        wait "$child" || true
+        break
+    fi
+    child=
+    printf '%s\n' "$status" > "$directory/exit-code"
+    if [ "$status" -ne 0 ]; then
+        sleep 5
+    fi
+done
