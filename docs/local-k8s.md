@@ -6,9 +6,9 @@
 
 클러스터 준비 과정은 의존성 최소화와 여러 OS에서의 호환을 최우선으로 유지합니다.
 
-- 모든 스크립트는 POSIX `sh`로 동작하며 bash 전용 문법을 사용하지 않습니다.
-- 클러스터 준비에 필요한 도구는 kind, kubectl, Docker뿐입니다. 설치에는 `curl` 또는 `wget`, `sha256sum` 또는 `shasum` 중 하나만 있으면 됩니다.
-- Python, jq, yq, helm, kustomize는 필요하지 않습니다. `make` 없이 스크립트를 직접 실행할 수 있습니다.
+- 클러스터 준비 스크립트는 POSIX `sh`로 동작하며 bash 전용 문법을 사용하지 않습니다.
+- 클러스터 준비에 필요한 도구는 kind, kubectl, Docker입니다. 설치와 추론·측정에 필요한 추가 도구는 [작업별 요구사항](requirements.md#작업별-추가-도구)을 참고합니다.
+- 클러스터 준비에는 Python, jq, yq, helm, kustomize가 필요하지 않습니다. `make` 없이 스크립트를 직접 실행할 수 있습니다.
 - Linux, macOS, Windows(WSL2)와 amd64, arm64 아키텍처를 지원합니다. 아키텍처에 맞는 노드 이미지를 사용합니다.
 - 외부 `KUBECONFIG`와 `~/.kube/config`를 변경하지 않으며, kubeconfig는 `.local-k8s/`에 권한 `600`으로 격리합니다.
 
@@ -39,7 +39,7 @@
 
 기본 경로는 저장소 기준이며, 사용자 지정 상대 경로는 명령을 실행한 디렉터리 기준입니다. 클러스터 이름에는 소문자, 숫자와 하이픈을 사용하고 다른 클러스터와 겹치지 않게 지정합니다.
 
-control-plane 1개와 worker 2개를 사용하려면 [멀티 노드 설정](../config/cluster/kind-multi-node.yaml)을 선택합니다.
+control-plane 1개와 worker 3개를 사용하려면 [멀티 노드 설정](../config/cluster/kind-multi-node.yaml)을 선택합니다. worker는 `workload=monitor` 1개와 `workload=engine` 2개로 구성합니다. [서비스 안정성 테스트](availability-test.md)는 이 라벨로 워크로드를 배치합니다.
 
 ```sh
 KIND_CONFIG=config/cluster/kind-multi-node.yaml ./scripts/local-k8s.sh up
