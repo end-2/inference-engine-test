@@ -71,4 +71,4 @@ Image IDs, commands, and execution order are recorded in `run.json`. Per-request
 
 ## 재실행
 
-[AIPerf 가이드](../../../guides/aiperf.md#전체-구현-반복-측정)에 따라 클러스터, 이미지를 준비하고 실제 노드를 선택합니다. 이 보고서의 이미지 ID와 실행 순서는 [run.json](run.json)에 있습니다. 다른 환경에서 얻은 결과는 위 실험 조건과 구분해 해석합니다.
+[벤치마크 가이드](../../../guides/benchmark.md#전체-구현-반복-측정)에 따라 클러스터, 이미지를 준비하고 실제 노드를 선택합니다. 이 보고서의 이미지 ID와 실행 순서는 [run.json](run.json)에 있습니다. 다른 환경에서 얻은 결과는 위 실험 조건과 구분해 해석합니다.

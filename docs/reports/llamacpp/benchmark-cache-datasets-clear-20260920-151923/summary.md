@@ -54,4 +54,4 @@
 
 처리량에는 서버가 보고한 사용량을 그대로 사용했습니다. 출력 길이 초과는 요청 오류와 별도로 기록하며, 해당 조건은 고정 출력 길이 검증을 완전히 통과한 것으로 보지 않습니다. [32개 검증](entries-32/run.json)과 [128개 검증](entries-128/run.json)에 PVC 삭제 결과, 입력 체크섬과 불일치 요청 ID를 저장했습니다.
 
-요약은 [CSV](summary.csv), 각 동시성의 AIPerf 요약은 `entries-*/c*/artifacts/profile_export_aiperf.json`에 저장했습니다. 전체 원본, 요청별 CSV, 자원 시계열과 로그도 같은 결과 폴더에 로컬 보관하며, 대용량 자료는 Git에서 제외합니다. 실행 manifest와 Pod 기록은 각 동시성 폴더에 있습니다.
+요약은 [CSV](summary.csv), 각 동시성의 AIPerf 요약은 `entries-*/c*/artifacts/profile_export_aiperf.json`에 저장했습니다. 실행 manifest와 Pod 기록은 각 동시성 폴더에 있습니다.

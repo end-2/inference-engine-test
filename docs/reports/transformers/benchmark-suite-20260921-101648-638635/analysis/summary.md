@@ -52,7 +52,7 @@
 | enhanced-cache | 4 | 48.45 | 49.06 | +1.26% |
 | enhanced-cache | 8 | 48.54 | 48.97 | +0.88% |
 
-[이전 멀티 노드 결과](../../benchmark-suite-20260921-083631-027086/analysis/summary.md), [비교 CSV](summary.csv).
+이전 멀티 노드 측정과의 비교 수치는 위 표와 [비교 CSV](summary.csv)에 정리되어 있습니다.
 
 ## 측정 조건과 해석
 
@@ -69,7 +69,7 @@
 
 ## 재배포와 재실행
 
-기존 멀티 노드의 Kubernetes 설정과 PVC 12개의 데이터를 호스트에 백업하고 아카이브 내용을 확인한 뒤 `local-k8s`를 기본 `config/cluster/kind.yaml`로 재생성했습니다. 모델 파일과 이전 보고서는 보존했습니다. [백업 위치와 SHA-256](../environment/run.json)에 기록돼 있습니다.
+`local-k8s`를 기본 `config/cluster/kind.yaml`로 재생성했습니다. [실행 환경](../environment/run.json)에 클러스터 설정을 기록했습니다.
 
 새 노드에 이전과 동일한 이미지 ID를 로드하고 DNS smoke test를 통과한 뒤 실행했습니다. 클러스터 재생성과 이미지 로드 시간은 위 suite 소요 시간에 포함되지 않습니다.
 

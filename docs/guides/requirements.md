@@ -35,7 +35,7 @@ CPU 전용 kind 클러스터와 추론, 측정 워크로드를 실행하기 위�
 
 선택한 추론 Deployment와 [AIPerf Job](../../k8s/aiperf/job.yaml)의 자원 요청량을 합산하고 Kubernetes 시스템 Pod의 여유분을 확보합니다. 추론 설정은 [Transformers](../../k8s/transformers-base/deployment.yaml) 또는 [llama.cpp](../../k8s/base-llamacpp/deployment.yaml) 매니페스트에서 확인합니다. Docker를 VM에서 실행하면 VM에 할당한 자원도 확인합니다. 측정 자원은 실행 환경에 맞춰 조정하되 `requests=limits`를 유지합니다.
 
-디스크에는 [모델 파일](models.md#다운로드와-연결), Docker 이미지와 빌드 캐시, kind 노드의 이미지 사본, 임시 아카이브와 결과를 저장할 공간이 필요합니다. `TMPDIR`와 Docker 데이터 경로의 여유 공간도 확인합니다.
+디스크에는 [모델 파일](models.md#다운로드), Docker 이미지와 빌드 캐시, kind 노드의 이미지 사본, 임시 아카이브와 결과를 저장할 공간이 필요합니다. `TMPDIR`와 Docker 데이터 경로의 여유 공간도 확인합니다.
 
 ## 네트워크
 

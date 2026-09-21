@@ -81,11 +81,11 @@ ready endpoint 수의 변화와 Pod별 처리 중 요청을 같은 시간축에�
 
 ## 재현과 근거
 
-[HPA 실행 가이드](../../../guides/hpa-test.md#llamacpp)를 따라 배포한 뒤 같은 `CLUSTER_NAME`을 유지하고 저장소 루트에서 [스케일 아웃→인 스크립트](../../../../scripts/run-hpa-scale-out-in-llamacpp.py)를 실행합니다. 목표 replica 유지 후 요청량을 줄여 최소 replica 복귀와 응답 성공을 확인합니다.
+[HPA 실행 가이드](../../../guides/hpa-test.md#llamacpp)를 따라 배포한 뒤 같은 `CLUSTER_NAME`을 유지하고 저장소 루트에서 [스케일 아웃→인 스크립트](../../../../scripts/run-hpa-test-llamacpp.py)를 실행합니다. 목표 replica 유지 후 요청량을 줄여 최소 replica 복귀와 응답 성공을 확인합니다.
 
 ```sh
-python3 scripts/run-hpa-scale-out-in.py \
+python3 scripts/run-hpa-test-llamacpp.py --scenario scale-out-in \
   --target-replicas 4 --hold-seconds 60 --low-request-rate 0.02
 ```
 
-원본은 `reports/llamacpp/hpa-20260920-081357-206946/`에 보관합니다. `run.json`의 단계 시각, 요청 인자, 집계와 `status=complete`, `observations.jsonl`의 상태 표본, `kubernetes-snapshots.jsonl.gz`의 이벤트, Pod, EndpointSlice, `aiperf/high/`, `aiperf/low/`의 요청 원본이 근거입니다. `prometheus/`에는 시계열, `grafana-capture.json`에는 패널 ID, 추출 시각, 범위를 저장했습니다. 본문의 PNG는 `figures/`에서 버전 관리합니다.
+관측 결과는 위 표와 `figures/`의 Grafana PNG에 정리되어 있습니다.

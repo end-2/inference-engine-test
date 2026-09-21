@@ -60,5 +60,4 @@ enhanced-cache에서 고유 입력 수만 32개와 128개로 바꾼 AIPerf Job�
 
 - [요약 CSV](summary.csv), [32개 입력 검증](entries-32/run.json), [128개 입력 검증](entries-128/run.json).
 - 각 `entries-*/c*/artifacts/`에 AIPerf 요약 JSON과 콘솔 결과를 저장했습니다.
-- 전체 AIPerf 원본은 각 `entries-*/artifacts/`, 요청별 CSV는 `entries-*/c*/requests.csv`, 자원 시계열과 로그는 `entries-*/`에 로컬로 보관했습니다. 대용량 원본과 시계열은 Git에서 제외합니다.
-- Job manifest와 Pod 기록에는 노드 배치, 이미지와 자원 설정을 보관했습니다. PVC `aiperf-results-32`, `aiperf-results-128`에도 원본 결과가 남아 있습니다.
+- Job manifest와 Pod 기록에는 노드 배치, 이미지와 자원 설정을 보관했습니다.

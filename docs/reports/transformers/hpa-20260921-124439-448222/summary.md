@@ -6,7 +6,7 @@
 
 - control-plane 1개, monitor worker 1개, engine worker 2개, Kubernetes v1.36.4.
 - SmolLM2-135M-Instruct FP32, Transformers 4.57.6, torch 2.10.0, `transformers-base-metric` 이미지.
-- 추론 Pod당 CPU 2개, 메모리 2Gi, PyTorch 2스레드, requests=limits. 호스트와 이미지 ID는 [원본 요약](../../../../reports/transformers/hpa-20260921-124439-448222/summary.json)의 environment에 기록했습니다.
+- 추론 Pod당 CPU 2개, 메모리 2Gi, PyTorch 2스레드, requests=limits.
 - CPU request 대비 평균 50%, min 1, max 4. 확장 안정화 0초, 축소 안정화 120초, 각 방향 30초당 Pod 1개.
 - AIPerf 고부하 concurrency 8, 저부하 concurrency 1 및 constant 0.02 req/s. worker 1, timeout 30초, streaming, 매 요청 새 연결.
 - 입력/출력 분포 `64,32:50;256,64:50`, 입력 16개, seed 42, sequential, `ignore_eos:true`.
@@ -53,6 +53,4 @@
 
 ![Grafana: 서버 TTFT p95](figures/grafana-ttft.png)
 
-패널 ID, 시간 범위와 추출 시각은 [캡처 기록](../../../../reports/transformers/hpa-20260921-124439-448222/grafana-capture.json)에 있습니다.
-
-[재실행 가이드](../../../guides/hpa-test.md), [실행 시각과 부하 인자](run.json), [5초 간격 관측](../../../../reports/transformers/hpa-20260921-124439-448222/observations.csv), [고부하와 저부하 원본](../../../../reports/transformers/hpa-20260921-124439-448222/aiperf), [Prometheus 시계열](../../../../reports/transformers/hpa-20260921-124439-448222/prometheus).
+[재실행 가이드](../../../guides/hpa-test.md), [실행 시각과 부하 인자](run.json).

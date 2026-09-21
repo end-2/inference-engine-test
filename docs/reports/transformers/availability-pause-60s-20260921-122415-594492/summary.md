@@ -37,4 +37,4 @@
 
 ![SmolLM2 요청 지연, TTFT, 오류 시점과 ready endpoint, CPU](figures/observed-timeline.png)
 
-[재실행 가이드](../../../guides/availability-test.md), [실행 시각](run.json), [원본과 요약](../../../../reports/transformers/availability-pause-60s-20260921-122415-594492/summary.json), [배포 스냅샷](../../../../reports/transformers/availability-pause-60s-20260921-122415-594492/prepared-kubernetes.txt), [AIPerf 요청별 결과](../../../../reports/transformers/availability-pause-60s-20260921-122415-594492/aiperf/profile_export.jsonl).
+[재실행 가이드](../../../guides/availability-test.md), [실행 시각](run.json).
