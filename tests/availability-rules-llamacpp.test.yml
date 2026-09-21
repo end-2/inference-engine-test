@@ -1,0 +1,42 @@
+rule_files:
+  - /etc/prometheus/rules.yml
+evaluation_interval: 5s
+tests:
+  - interval: 5s
+    input_series:
+      - series: 'kube_service_info{namespace="availability-test-llamacpp",service="base-metric-llamacpp",cluster_ip="10.0.0.1"}'
+        values: '1 1'
+      - series: 'kube_service_info{namespace="availability-test-llamacpp",service="prometheus",cluster_ip="10.0.0.2"}'
+        values: '1 1'
+      - series: 'kube_endpointslice_labels{namespace="availability-test-llamacpp",endpointslice="llama-abc",label_kubernetes_io_service_name="base-metric-llamacpp"}'
+        values: '1 1'
+      - series: 'kube_endpointslice_labels{namespace="availability-test-llamacpp",endpointslice="prom-xyz",label_kubernetes_io_service_name="prometheus"}'
+        values: '1 1'
+      - series: 'kube_endpointslice_endpoints{namespace="availability-test-llamacpp",endpointslice="llama-abc",address="10.1.0.1",ready="true"}'
+        values: '1 stale'
+      - series: 'kube_endpointslice_endpoints{namespace="availability-test-llamacpp",endpointslice="llama-abc",address="10.1.0.2",ready="false"}'
+        values: '1 1'
+      - series: 'kube_endpointslice_endpoints{namespace="availability-test-llamacpp",endpointslice="prom-xyz",address="10.1.0.3",ready="true"}'
+        values: '1 1'
+    promql_expr_test:
+      - expr: availability:service_ready_endpoints
+        eval_time: 0s
+        exp_samples:
+          - labels: 'availability:service_ready_endpoints{namespace="availability-test-llamacpp",service="base-metric-llamacpp"}'
+            value: 1
+          - labels: 'availability:service_ready_endpoints{namespace="availability-test-llamacpp",service="prometheus"}'
+            value: 1
+      - expr: availability:service_ready_endpoints
+        eval_time: 5s
+        exp_samples:
+          - labels: 'availability:service_ready_endpoints{namespace="availability-test-llamacpp",service="base-metric-llamacpp"}'
+            value: 0
+          - labels: 'availability:service_ready_endpoints{namespace="availability-test-llamacpp",service="prometheus"}'
+            value: 1
+      - expr: availability:service_unready_endpoints
+        eval_time: 5s
+        exp_samples:
+          - labels: 'availability:service_unready_endpoints{namespace="availability-test-llamacpp",service="base-metric-llamacpp"}'
+            value: 1
+          - labels: 'availability:service_unready_endpoints{namespace="availability-test-llamacpp",service="prometheus"}'
+            value: 0

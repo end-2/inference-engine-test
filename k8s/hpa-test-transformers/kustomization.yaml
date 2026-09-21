@@ -1,0 +1,81 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: hpa-test-transformers
+resources:
+  - ../availability-test-transformers
+  - hpa.yaml
+patches:
+  # Let HPA own replicas; a newly created Deployment defaults to one.
+  - target:
+      kind: Deployment
+      name: transformers-base-metric
+    patch: |-
+      - op: remove
+        path: /spec/replicas
+  - target:
+      kind: Deployment
+      name: aiperf
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+      - op: test
+        path: /spec/template/spec/containers/0/args/23
+        value: --concurrency
+      - op: replace
+        path: /spec/template/spec/containers/0/args/24
+        value: "8"
+  - target:
+      kind: ClusterRole
+      name: availability-node-metrics-transformers
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: hpa-node-metrics-transformers
+  - target:
+      kind: ClusterRoleBinding
+      name: availability-node-metrics-transformers
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: hpa-node-metrics-transformers
+      - op: replace
+        path: /roleRef/name
+        value: hpa-node-metrics-transformers
+      - op: replace
+        path: /subjects/0/namespace
+        value: hpa-test-transformers
+  - target:
+      kind: Role
+      name: kube-state-metrics
+    patch: |-
+      - op: add
+        path: /rules/-
+        value:
+          apiGroups: [autoscaling]
+          resources: [horizontalpodautoscalers]
+          verbs: [list, watch]
+  - target:
+      kind: Deployment
+      name: kube-state-metrics
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/args/0
+        value: --resources=nodes,pods,deployments,services,endpointslices,horizontalpodautoscalers
+      - op: replace
+        path: /spec/template/spec/containers/0/args/1
+        value: --namespaces=hpa-test-transformers
+configMapGenerator:
+  - name: prometheus-config
+    behavior: replace
+    files:
+      - prometheus.yml=prometheus/prometheus.yml
+      - rules.yml=prometheus/rules.yml
+  - name: grafana-dashboard
+    behavior: replace
+    files:
+      - availability.json=grafana/hpa.json
+  - name: grafana-providers
+    behavior: replace
+    files:
+      - dashboards.yaml=grafana/dashboards.yaml
