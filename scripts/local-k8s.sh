@@ -121,7 +121,7 @@ check_models_mount() {
             mounted_models="$LOCAL_K8S_MODELS_DIR:false"
         fi
         [ "$mounted_models" = "$LOCAL_K8S_MODELS_DIR:false" ] || \
-            die "Node $node needs a read-only mount from $LOCAL_K8S_MODELS_DIR to /models. Back up node data, then run down and up. See docs/models.md."
+            die "Node $node needs a read-only mount from $LOCAL_K8S_MODELS_DIR to /models. Back up node data, then run down and up. See docs/guides/models.md."
     done
 }
 
