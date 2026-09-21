@@ -1,0 +1,282 @@
+{
+  "status": "completed_with_output_overruns",
+  "job_runs": 1,
+  "sweep_successful_runs": 4,
+  "verification": [
+    {
+      "dataset_entries": 128,
+      "concurrency": 1,
+      "dataset_sha256": "a52462f2fca7b79f0f95a45fec767d419ab236701a41f77121b57025b2bb01c3",
+      "dataset_unique_prompts": 128,
+      "profiling_unique_prompts": 100,
+      "phase_requests": {
+        "warmup": 2,
+        "profiling": 100
+      },
+      "input_output_lengths": [
+        {
+          "input_tokens": 93,
+          "output_tokens": 32,
+          "requests": 54
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 64,
+          "requests": 40
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 65,
+          "requests": 6
+        }
+      ],
+      "output_validation": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 6
+      },
+      "output_mismatches": [
+        {
+          "conversation_id": "session_000044",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000060",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000066",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000073",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000086",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000087",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        }
+      ]
+    },
+    {
+      "dataset_entries": 128,
+      "concurrency": 2,
+      "dataset_sha256": "a52462f2fca7b79f0f95a45fec767d419ab236701a41f77121b57025b2bb01c3",
+      "dataset_unique_prompts": 128,
+      "profiling_unique_prompts": 100,
+      "phase_requests": {
+        "warmup": 2,
+        "profiling": 100
+      },
+      "input_output_lengths": [
+        {
+          "input_tokens": 93,
+          "output_tokens": 32,
+          "requests": 54
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 64,
+          "requests": 40
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 65,
+          "requests": 5
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 66,
+          "requests": 1
+        }
+      ],
+      "output_validation": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 6
+      },
+      "output_mismatches": [
+        {
+          "conversation_id": "session_000060",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000065",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000073",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000078",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 66
+        },
+        {
+          "conversation_id": "session_000086",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000087",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        }
+      ]
+    },
+    {
+      "dataset_entries": 128,
+      "concurrency": 4,
+      "dataset_sha256": "a52462f2fca7b79f0f95a45fec767d419ab236701a41f77121b57025b2bb01c3",
+      "dataset_unique_prompts": 128,
+      "profiling_unique_prompts": 100,
+      "phase_requests": {
+        "warmup": 2,
+        "profiling": 100
+      },
+      "input_output_lengths": [
+        {
+          "input_tokens": 93,
+          "output_tokens": 32,
+          "requests": 54
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 64,
+          "requests": 40
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 65,
+          "requests": 5
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 66,
+          "requests": 1
+        }
+      ],
+      "output_validation": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 6
+      },
+      "output_mismatches": [
+        {
+          "conversation_id": "session_000060",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000065",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000073",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000078",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 66
+        },
+        {
+          "conversation_id": "session_000086",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000087",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        }
+      ]
+    },
+    {
+      "dataset_entries": 128,
+      "concurrency": 8,
+      "dataset_sha256": "a52462f2fca7b79f0f95a45fec767d419ab236701a41f77121b57025b2bb01c3",
+      "dataset_unique_prompts": 128,
+      "profiling_unique_prompts": 100,
+      "phase_requests": {
+        "warmup": 2,
+        "profiling": 100
+      },
+      "input_output_lengths": [
+        {
+          "input_tokens": 93,
+          "output_tokens": 32,
+          "requests": 54
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 64,
+          "requests": 40
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 65,
+          "requests": 5
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 66,
+          "requests": 1
+        }
+      ],
+      "output_validation": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 6
+      },
+      "output_mismatches": [
+        {
+          "conversation_id": "session_000060",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000065",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000073",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000078",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 66
+        },
+        {
+          "conversation_id": "session_000086",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000087",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        }
+      ]
+    }
+  ]
+}

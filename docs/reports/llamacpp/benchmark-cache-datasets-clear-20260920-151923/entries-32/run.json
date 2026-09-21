@@ -1,0 +1,140 @@
+{
+  "verification": [
+    {
+      "dataset_entries": 32,
+      "concurrency": 1,
+      "dataset_sha256": "54efb7482463d4529952335e3713dbc48f2ee10faeeda995641a5c494331ba32",
+      "matches_preserve_dataset": true,
+      "profiling_unique_prompts": 32,
+      "phase_requests": {
+        "warmup": 2,
+        "profiling": 100
+      },
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 1,
+        "removed_bytes": 0,
+        "remaining_entries": 0,
+        "pvc": "llama-cache-reset-20260920-151923",
+        "completed_at": "2026-09-20T15:19:43.834075+00:00"
+      },
+      "input_output_lengths": [
+        {
+          "input_tokens": 93,
+          "output_tokens": 32,
+          "requests": 57
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 64,
+          "requests": 43
+        }
+      ],
+      "output_mismatches": [],
+      "pod_uid": "9fbad663-f083-44f0-ad9c-7e96f6f31b25"
+    },
+    {
+      "dataset_entries": 32,
+      "concurrency": 2,
+      "dataset_sha256": "54efb7482463d4529952335e3713dbc48f2ee10faeeda995641a5c494331ba32",
+      "matches_preserve_dataset": true,
+      "profiling_unique_prompts": 32,
+      "phase_requests": {
+        "warmup": 2,
+        "profiling": 100
+      },
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 35,
+        "removed_bytes": 74025788,
+        "remaining_entries": 0,
+        "pvc": "llama-cache-reset-20260920-151923",
+        "completed_at": "2026-09-20T15:21:12.144297+00:00"
+      },
+      "input_output_lengths": [
+        {
+          "input_tokens": 93,
+          "output_tokens": 32,
+          "requests": 57
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 64,
+          "requests": 43
+        }
+      ],
+      "output_mismatches": [],
+      "pod_uid": "752eec09-0675-4d0f-a8fa-7b5027843445"
+    },
+    {
+      "dataset_entries": 32,
+      "concurrency": 4,
+      "dataset_sha256": "54efb7482463d4529952335e3713dbc48f2ee10faeeda995641a5c494331ba32",
+      "matches_preserve_dataset": true,
+      "profiling_unique_prompts": 32,
+      "phase_requests": {
+        "warmup": 2,
+        "profiling": 100
+      },
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 35,
+        "removed_bytes": 74025788,
+        "remaining_entries": 0,
+        "pvc": "llama-cache-reset-20260920-151923",
+        "completed_at": "2026-09-20T15:22:39.808451+00:00"
+      },
+      "input_output_lengths": [
+        {
+          "input_tokens": 93,
+          "output_tokens": 32,
+          "requests": 57
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 64,
+          "requests": 43
+        }
+      ],
+      "output_mismatches": [],
+      "pod_uid": "e226ab81-6b87-4f04-b773-a5763d400dc3"
+    },
+    {
+      "dataset_entries": 32,
+      "concurrency": 8,
+      "dataset_sha256": "54efb7482463d4529952335e3713dbc48f2ee10faeeda995641a5c494331ba32",
+      "matches_preserve_dataset": true,
+      "profiling_unique_prompts": 32,
+      "phase_requests": {
+        "warmup": 2,
+        "profiling": 100
+      },
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 35,
+        "removed_bytes": 74025788,
+        "remaining_entries": 0,
+        "pvc": "llama-cache-reset-20260920-151923",
+        "completed_at": "2026-09-20T15:24:08.416140+00:00"
+      },
+      "input_output_lengths": [
+        {
+          "input_tokens": 93,
+          "output_tokens": 32,
+          "requests": 57
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 64,
+          "requests": 43
+        }
+      ],
+      "output_mismatches": [],
+      "pod_uid": "680a91de-e5e9-48a5-98f4-5ddcd94679bc"
+    }
+  ]
+}

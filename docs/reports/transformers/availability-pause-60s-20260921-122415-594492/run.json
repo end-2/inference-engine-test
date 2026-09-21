@@ -1,0 +1,46 @@
+{
+  "id": "availability-pause-60s-20260921-122415-594492",
+  "root": "/Users/sejong/workspace/inference-engine-test",
+  "raw": "/Users/sejong/workspace/inference-engine-test/reports/transformers/availability-pause-60s-20260921-122415-594492",
+  "kube": [
+    "/Users/sejong/workspace/inference-engine-test/.bin/kubectl",
+    "--kubeconfig",
+    "/Users/sejong/workspace/inference-engine-test/.local-k8s/transformers-tests/kubeconfig",
+    "--context",
+    "kind-transformers-tests"
+  ],
+  "namespace": "availability-test-transformers",
+  "cluster": "transformers-tests",
+  "victim_node": "transformers-tests-worker2",
+  "survivor_node": "transformers-tests-worker3",
+  "monitor_node": "transformers-tests-worker",
+  "mode": "pause",
+  "toleration_seconds": 60,
+  "status": "complete",
+  "preparation_started": "2026-09-21T12:24:15.594803+00:00",
+  "prometheus_url": "http://127.0.0.1:55409",
+  "initial_pods": {
+    "transformers-base-metric-6d75cbc647-rv5th": "transformers-tests-worker3",
+    "transformers-base-metric-6d75cbc647-s5qss": "transformers-tests-worker2"
+  },
+  "victim_pod": "transformers-base-metric-6d75cbc647-s5qss",
+  "victim_uid": "cc9471fc-763b-418f-af83-9a1e5e2c3aa0",
+  "aiperf_pod": "aiperf-7fd8d9867b-t9czg",
+  "warmup_started": "2026-09-21T12:24:19.774209+00:00",
+  "collection_start": "2026-09-21T12:25:49.921387+00:00",
+  "original_restart_policy": {
+    "Name": "on-failure",
+    "MaximumRetryCount": 1
+  },
+  "fault_requested": "2026-09-21T12:28:20.259295+00:00",
+  "fault_completed": "2026-09-21T12:28:20.296169+00:00",
+  "node_not_ready_observed": "2026-09-21T12:29:10.155778+00:00",
+  "replacement_pod": "transformers-base-metric-6d75cbc647-vwk8j",
+  "replacement_ready_observed": "2026-09-21T12:30:15.692401+00:00",
+  "recover_requested": "2026-09-21T12:31:46.219975+00:00",
+  "recover_completed": "2026-09-21T12:31:46.247947+00:00",
+  "node_recovered_observed": "2026-09-21T12:31:56.642957+00:00",
+  "experiment_complete": "2026-09-21T12:33:26.822536+00:00",
+  "aiperf_artifact_path": "/results/aiperf-7fd8d9867b-t9czg/20260921T122423Z-1",
+  "completed": "2026-09-21T12:33:39.130285+00:00"
+}

@@ -1,0 +1,284 @@
+{
+  "verification": [
+    {
+      "dataset_entries": 128,
+      "concurrency": 1,
+      "dataset_sha256": "a52462f2fca7b79f0f95a45fec767d419ab236701a41f77121b57025b2bb01c3",
+      "matches_preserve_dataset": true,
+      "profiling_unique_prompts": 100,
+      "phase_requests": {
+        "warmup": 2,
+        "profiling": 100
+      },
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 35,
+        "removed_bytes": 74025788,
+        "remaining_entries": 0,
+        "pvc": "llama-cache-reset-20260920-151923",
+        "completed_at": "2026-09-20T15:25:35.859931+00:00"
+      },
+      "input_output_lengths": [
+        {
+          "input_tokens": 93,
+          "output_tokens": 32,
+          "requests": 54
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 64,
+          "requests": 40
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 65,
+          "requests": 6
+        }
+      ],
+      "output_mismatches": [
+        {
+          "conversation_id": "session_000044",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000060",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000066",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000073",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000086",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000087",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        }
+      ],
+      "pod_uid": "53a12248-a354-48e0-88fd-314b955c7e7f"
+    },
+    {
+      "dataset_entries": 128,
+      "concurrency": 2,
+      "dataset_sha256": "a52462f2fca7b79f0f95a45fec767d419ab236701a41f77121b57025b2bb01c3",
+      "matches_preserve_dataset": true,
+      "profiling_unique_prompts": 100,
+      "phase_requests": {
+        "warmup": 2,
+        "profiling": 100
+      },
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 103,
+        "removed_bytes": 227491442,
+        "remaining_entries": 0,
+        "pvc": "llama-cache-reset-20260920-151923",
+        "completed_at": "2026-09-20T15:27:54.118590+00:00"
+      },
+      "input_output_lengths": [
+        {
+          "input_tokens": 93,
+          "output_tokens": 32,
+          "requests": 54
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 64,
+          "requests": 40
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 65,
+          "requests": 6
+        }
+      ],
+      "output_mismatches": [
+        {
+          "conversation_id": "session_000044",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000060",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000066",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000073",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000086",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000087",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        }
+      ],
+      "pod_uid": "b1bb1910-c3b3-4a4b-a89c-fcde00e622bd"
+    },
+    {
+      "dataset_entries": 128,
+      "concurrency": 4,
+      "dataset_sha256": "a52462f2fca7b79f0f95a45fec767d419ab236701a41f77121b57025b2bb01c3",
+      "matches_preserve_dataset": true,
+      "profiling_unique_prompts": 100,
+      "phase_requests": {
+        "warmup": 2,
+        "profiling": 100
+      },
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 103,
+        "removed_bytes": 227491442,
+        "remaining_entries": 0,
+        "pvc": "llama-cache-reset-20260920-151923",
+        "completed_at": "2026-09-20T15:30:10.108815+00:00"
+      },
+      "input_output_lengths": [
+        {
+          "input_tokens": 93,
+          "output_tokens": 32,
+          "requests": 54
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 64,
+          "requests": 40
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 65,
+          "requests": 6
+        }
+      ],
+      "output_mismatches": [
+        {
+          "conversation_id": "session_000044",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000060",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000066",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000073",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000086",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000087",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        }
+      ],
+      "pod_uid": "671b4b15-545d-445d-8ce9-dc8364e3e073"
+    },
+    {
+      "dataset_entries": 128,
+      "concurrency": 8,
+      "dataset_sha256": "a52462f2fca7b79f0f95a45fec767d419ab236701a41f77121b57025b2bb01c3",
+      "matches_preserve_dataset": true,
+      "profiling_unique_prompts": 100,
+      "phase_requests": {
+        "warmup": 2,
+        "profiling": 100
+      },
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 103,
+        "removed_bytes": 227491442,
+        "remaining_entries": 0,
+        "pvc": "llama-cache-reset-20260920-151923",
+        "completed_at": "2026-09-20T15:32:27.650224+00:00"
+      },
+      "input_output_lengths": [
+        {
+          "input_tokens": 93,
+          "output_tokens": 32,
+          "requests": 54
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 64,
+          "requests": 40
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 65,
+          "requests": 6
+        }
+      ],
+      "output_mismatches": [
+        {
+          "conversation_id": "session_000044",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000060",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000066",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000073",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000086",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        },
+        {
+          "conversation_id": "session_000087",
+          "requested_output_tokens": 64,
+          "reported_output_tokens": 65
+        }
+      ],
+      "pod_uid": "ced8e419-f235-45a0-ac3f-a698506af78d"
+    }
+  ]
+}

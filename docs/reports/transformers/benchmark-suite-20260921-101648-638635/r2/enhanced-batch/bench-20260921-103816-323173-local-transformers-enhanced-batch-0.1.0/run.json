@@ -1,0 +1,113 @@
+{
+  "run_id": "bench-20260921-103816-323173",
+  "started_at": "2026-09-21T10:38:16.323173+00:00",
+  "status": "complete",
+  "backend": "transformers",
+  "concurrencies": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "sample_interval_seconds": 5,
+  "cache_policy": "preserve",
+  "inference_node": "local-k8s-control-plane",
+  "benchmark_node": "local-k8s-control-plane",
+  "conditions": [
+    {
+      "concurrency": 1,
+      "status": "complete",
+      "pod_uid": "fc3ffbb5-a558-4e5a-bbf5-66dd06fb419e",
+      "pod_name": "transformers-base-66cd5d4b99-4hn2l",
+      "started_at": "2026-09-21T10:38:32.685284+00:00",
+      "resource_collection": {
+        "node_samples": 23,
+        "pod_cpu_samples": {
+          "inference": 23,
+          "aiperf": 19
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-21T10:40:22.177059+00:00"
+    },
+    {
+      "concurrency": 2,
+      "status": "complete",
+      "pod_uid": "35e1b2f9-cddb-471e-8986-2767273a32e7",
+      "pod_name": "transformers-base-6fc8ff9d8-2kwxq",
+      "started_at": "2026-09-21T10:40:29.123833+00:00",
+      "resource_collection": {
+        "node_samples": 18,
+        "pod_cpu_samples": {
+          "inference": 18,
+          "aiperf": 14
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-21T10:41:52.296443+00:00"
+    },
+    {
+      "concurrency": 4,
+      "status": "complete",
+      "pod_uid": "d8110e2f-a115-41ff-a1ee-9dd16055e78c",
+      "pod_name": "transformers-base-699469569d-777vn",
+      "started_at": "2026-09-21T10:41:58.459274+00:00",
+      "resource_collection": {
+        "node_samples": 15,
+        "pod_cpu_samples": {
+          "inference": 15,
+          "aiperf": 12
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-21T10:43:06.174521+00:00"
+    },
+    {
+      "concurrency": 8,
+      "status": "complete",
+      "pod_uid": "bd9d9181-baad-4de3-885a-9d6e02b03bfe",
+      "pod_name": "transformers-base-5dfbd795d5-cn8n2",
+      "started_at": "2026-09-21T10:43:12.720619+00:00",
+      "resource_collection": {
+        "node_samples": 15,
+        "pod_cpu_samples": {
+          "inference": 15,
+          "aiperf": 12
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-21T10:44:20.674451+00:00"
+    }
+  ],
+  "inference": {
+    "image": "local/transformers-enhanced-batch:0.1.0",
+    "id": "sha256:d46fbc571c9ea0a971e5adc25225d205ce7b4ba0146b4c29944207102e8cd496",
+    "source_sha256": null,
+    "build_context": null,
+    "build_target": null
+  },
+  "benchmark": {
+    "image": "local/aiperf:0.12.0",
+    "id": "sha256:e916ca4e164739cd9a0d334faf73ea02dbb5f98aa77000ead84ab50ac7df8371",
+    "source_sha256": "6afce96c6785f584c2d420f6be9ee7483ae201f432cf246e450d8bca2eb51298",
+    "build_context": "/Users/sejong/workspace/inference-engine-test/src/aiperf",
+    "build_target": null
+  },
+  "finished_at": "2026-09-21T10:44:20.674945+00:00"
+}

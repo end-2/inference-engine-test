@@ -1,0 +1,87 @@
+{
+  "run_id": "20260920-145858",
+  "git_commit": "a90a13683f42f4b1f34aeb78f33867ade1652368",
+  "git_status": " M docs/aiperf.md\n M docs/llama-api.md\n M k8s/aiperf/job.yaml\n M tests/test-aiperf-manifests.sh\n?? docs/quality-check.md\n?? docs/report-template.md\n?? docs/report.md\n?? k8s/aiperf-128/\n?? k8s/aiperf-32/\n?? scripts/check-quality.py\n?? tests/test_quality_check.py\n",
+  "inference_node": "local-k8s-worker",
+  "image_python_sources_match_worktree": true,
+  "original_deployment_restored": true,
+  "status": "complete",
+  "started_at": "2026-09-20T14:59:08.719745+00:00",
+  "finished_at": "2026-09-20T15:00:25.969711+00:00",
+  "images": [
+    {
+      "image": "local/llama-base:0.1.0",
+      "id": "sha256:4710ee54b1a7868bbbaf1cff55ffa2fe553294d5bb70371a67dd58c6e8ebe539",
+      "source_sha256": null,
+      "build_context": null,
+      "build_target": null
+    },
+    {
+      "image": "local/llama-enhanced-batch:0.1.0",
+      "id": "sha256:1629cba22fdf7a84938cf5d5a278c1421a5da7733223edbc2c7ad061b6922860",
+      "source_sha256": null,
+      "build_context": null,
+      "build_target": null
+    },
+    {
+      "image": "local/llama-enhanced-cache:0.1.0",
+      "id": "sha256:0bf4b86be3de5000cb50eb88d18752978a95525f7291a2f46a9c7370e2a55f3f",
+      "source_sha256": null,
+      "build_context": null,
+      "build_target": null
+    }
+  ],
+  "cases_per_image": 7,
+  "automatic_cases_per_image": 5,
+  "quality": [
+    {
+      "variant": "base",
+      "summary": {
+        "PASS": 5,
+        "FAIL": 0,
+        "REVIEW": 2,
+        "ERROR": 0
+      },
+      "pod": "llama-base-597bd6db6b-8csks",
+      "image_id": "docker.io/library/import-2026-09-20@sha256:8c27fefa3c10f248f57adffed6c9188e17a21e2b8fc43419dd78d5e484ba2f65",
+      "execution_exit_code": 1,
+      "evaluation_exit_code": 0
+    },
+    {
+      "variant": "enhanced-batch",
+      "summary": {
+        "PASS": 5,
+        "FAIL": 0,
+        "REVIEW": 2,
+        "ERROR": 0
+      },
+      "pod": "llama-base-57467f4cd4-dpszb",
+      "image_id": "docker.io/library/import-2026-09-20@sha256:6a7ffc4af5bd86625062d6961cb7070c99f445ec0a9d775b05fa886403b56ac5",
+      "execution_exit_code": 1,
+      "evaluation_exit_code": 0
+    },
+    {
+      "variant": "enhanced-cache",
+      "summary": {
+        "PASS": 5,
+        "FAIL": 0,
+        "REVIEW": 2,
+        "ERROR": 0
+      },
+      "pod": "llama-base-6bb8677b6f-b9fmg",
+      "image_id": "docker.io/library/import-2026-09-20@sha256:9f2bec0e8c5686cd1fc32f09bc33c551c791ed2c17d389587a40f492bb88f16a",
+      "execution_exit_code": 1,
+      "evaluation_exit_code": 0
+    }
+  ],
+  "answers_identical_across_images": true,
+  "manual_review": {
+    "reviewer": "Codex",
+    "summary": "criteria_not_met",
+    "translation": "criteria_not_met",
+    "original_status_retained": "REVIEW"
+  },
+  "rubric": "content-v1",
+  "evaluated_at": "2026-09-20T15:21:00.752910+00:00",
+  "evaluation_source": "saved_responses"
+}

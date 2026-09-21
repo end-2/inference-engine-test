@@ -1,0 +1,401 @@
+{
+  "started_at": "2026-09-20T14:59:17.709318+00:00",
+  "finished_at": "2026-09-20T14:59:20.000695+00:00",
+  "url": "http://127.0.0.1:59894",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "max_tokens": 128,
+  "timeout_seconds": 60,
+  "automatic_cases": 5,
+  "summary": {
+    "PASS": 5,
+    "FAIL": 0,
+    "REVIEW": 2,
+    "ERROR": 0
+  },
+  "results": [
+    {
+      "id": "instruction",
+      "messages": [
+        {
+          "role": "user",
+          "content": "다른 설명 없이 PASS라는 단어만 출력하세요."
+        }
+      ],
+      "expected": "PASS",
+      "criterion": "PASS라는 답을 제시하는지 확인, 설명과 서식은 허용",
+      "automatic": true,
+      "request": {
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "messages": [
+          {
+            "role": "user",
+            "content": "다른 설명 없이 PASS라는 단어만 출력하세요."
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_completion_tokens": 128,
+        "stream": false,
+        "ignore_eos": false
+      },
+      "response": {
+        "id": "chatcmpl-1b5d4e38465b4883b37783fd0cf204b1",
+        "created": 1789916357,
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "PASS"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 42,
+          "completion_tokens": 1,
+          "total_tokens": 43
+        }
+      },
+      "answer": "PASS",
+      "finish_reason": "stop",
+      "status": "PASS",
+      "reason": "정답 내용과 일치합니다. 설명과 출력 형식은 평가하지 않습니다.",
+      "elapsed_seconds": 0.192
+    },
+    {
+      "id": "arithmetic",
+      "messages": [
+        {
+          "role": "user",
+          "content": "17 + 25를 계산하세요. 정답 숫자만 출력하세요."
+        }
+      ],
+      "expected": "42",
+      "criterion": "계산 결과가 42인지 확인, 수식과 설명은 허용",
+      "automatic": true,
+      "request": {
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "messages": [
+          {
+            "role": "user",
+            "content": "17 + 25를 계산하세요. 정답 숫자만 출력하세요."
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_completion_tokens": 128,
+        "stream": false,
+        "ignore_eos": false
+      },
+      "response": {
+        "id": "chatcmpl-7e21fffcacda4addb9ec30db06a75fb5",
+        "created": 1789916357,
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "17 + 25 = 42"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 48,
+          "completion_tokens": 10,
+          "total_tokens": 58
+        }
+      },
+      "answer": "17 + 25 = 42",
+      "finish_reason": "stop",
+      "status": "PASS",
+      "reason": "정답 내용과 일치합니다. 설명과 출력 형식은 평가하지 않습니다.",
+      "elapsed_seconds": 0.244
+    },
+    {
+      "id": "extraction",
+      "messages": [
+        {
+          "role": "user",
+          "content": "문장: 주문번호는 ZX-2048이고 배송일은 금요일입니다. 주문번호만 그대로 출력하세요. 다른 설명은 쓰지 마세요."
+        }
+      ],
+      "expected": "ZX-2048",
+      "criterion": "주문번호 ZX-2048을 정확하게 제시하는지 확인, 설명은 허용",
+      "automatic": true,
+      "request": {
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "messages": [
+          {
+            "role": "user",
+            "content": "문장: 주문번호는 ZX-2048이고 배송일은 금요일입니다. 주문번호만 그대로 출력하세요. 다른 설명은 쓰지 마세요."
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_completion_tokens": 128,
+        "stream": false,
+        "ignore_eos": false
+      },
+      "response": {
+        "id": "chatcmpl-748762b1f46c4d1aae28ea5299b6538c",
+        "created": 1789916358,
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "ZX-2048입니다. 배송일은 금요일입니다."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 72,
+          "completion_tokens": 18,
+          "total_tokens": 90
+        }
+      },
+      "answer": "ZX-2048입니다. 배송일은 금요일입니다.",
+      "finish_reason": "stop",
+      "status": "PASS",
+      "reason": "정답 내용과 일치합니다. 설명과 출력 형식은 평가하지 않습니다.",
+      "elapsed_seconds": 0.375
+    },
+    {
+      "id": "json",
+      "messages": [
+        {
+          "role": "user",
+          "content": "name 값이 \"Mina\"이고 count 값이 숫자 3인 JSON 객체를 출력하세요. 이 두 필드만 포함하고 설명이나 코드 블록은 쓰지 마세요."
+        }
+      ],
+      "expected": {
+        "name": "Mina",
+        "count": 3
+      },
+      "criterion": "name이 Mina이고 count가 3인지 확인, 설명과 코드 블록 및 추가 필드는 허용",
+      "automatic": true,
+      "request": {
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "messages": [
+          {
+            "role": "user",
+            "content": "name 값이 \"Mina\"이고 count 값이 숫자 3인 JSON 객체를 출력하세요. 이 두 필드만 포함하고 설명이나 코드 블록은 쓰지 마세요."
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_completion_tokens": 128,
+        "stream": false,
+        "ignore_eos": false
+      },
+      "response": {
+        "id": "chatcmpl-80d77241cc784c50959fe67f4bb2d5a1",
+        "created": 1789916358,
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "```json\n{\n  \"name\": \"Mina\",\n  \"count\": 3\n}\n```"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 73,
+          "completion_tokens": 21,
+          "total_tokens": 94
+        }
+      },
+      "answer": "```json\n{\n  \"name\": \"Mina\",\n  \"count\": 3\n}\n```",
+      "finish_reason": "stop",
+      "status": "PASS",
+      "reason": "정답 내용과 일치합니다. 설명과 출력 형식은 평가하지 않습니다.",
+      "elapsed_seconds": 0.392
+    },
+    {
+      "id": "conversation",
+      "messages": [
+        {
+          "role": "user",
+          "content": "내 고양이 이름은 모카입니다."
+        },
+        {
+          "role": "assistant",
+          "content": "고양이 이름이 모카군요."
+        },
+        {
+          "role": "user",
+          "content": "내 고양이 이름만 출력하세요. 다른 설명은 쓰지 마세요."
+        }
+      ],
+      "expected": "모카",
+      "criterion": "대화에서 제시한 이름 모카를 답하는지 확인, 설명은 허용",
+      "automatic": true,
+      "request": {
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "messages": [
+          {
+            "role": "user",
+            "content": "내 고양이 이름은 모카입니다."
+          },
+          {
+            "role": "assistant",
+            "content": "고양이 이름이 모카군요."
+          },
+          {
+            "role": "user",
+            "content": "내 고양이 이름만 출력하세요. 다른 설명은 쓰지 마세요."
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_completion_tokens": 128,
+        "stream": false,
+        "ignore_eos": false
+      },
+      "response": {
+        "id": "chatcmpl-30f7fc8481be4778a95a487d027cdb2e",
+        "created": 1789916358,
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "고양이 이름은 모카입니다."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 78,
+          "completion_tokens": 9,
+          "total_tokens": 87
+        }
+      },
+      "answer": "고양이 이름은 모카입니다.",
+      "finish_reason": "stop",
+      "status": "PASS",
+      "reason": "정답 내용과 일치합니다. 설명과 출력 형식은 평가하지 않습니다.",
+      "elapsed_seconds": 0.34
+    },
+    {
+      "id": "summary",
+      "messages": [
+        {
+          "role": "user",
+          "content": "다음 내용을 한국어 한 문장으로 요약하세요. 도서관은 시설 점검 때문에 월요일에 문을 닫습니다. 화요일 오전 9시에 다시 엽니다."
+        }
+      ],
+      "criterion": "월요일 시설 점검으로 휴관하고 화요일 오전 9시에 재개한다는 사실을 보존",
+      "automatic": false,
+      "request": {
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "messages": [
+          {
+            "role": "user",
+            "content": "다음 내용을 한국어 한 문장으로 요약하세요. 도서관은 시설 점검 때문에 월요일에 문을 닫습니다. 화요일 오전 9시에 다시 엽니다."
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_completion_tokens": 128,
+        "stream": false,
+        "ignore_eos": false
+      },
+      "response": {
+        "id": "chatcmpl-b5da2eb714bd4abeb05a1fe6c99883c2",
+        "created": 1789916359,
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "도서관은 주말에 문을 닫습니다. 월요일 오전 9시에 다시 문을 열게 됩니다."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 79,
+          "completion_tokens": 31,
+          "total_tokens": 110
+        }
+      },
+      "answer": "도서관은 주말에 문을 닫습니다. 월요일 오전 9시에 다시 문을 열게 됩니다.",
+      "finish_reason": "stop",
+      "status": "REVIEW",
+      "reason": "응답과 기준을 사람이 비교해야 합니다.",
+      "elapsed_seconds": 0.481
+    },
+    {
+      "id": "translation",
+      "messages": [
+        {
+          "role": "user",
+          "content": "다음 문장을 한국어로 번역하세요. 번역문만 출력하세요. The meeting starts at three in the afternoon."
+        }
+      ],
+      "criterion": "회의가 오후 3시에 시작한다는 의미를 보존하는 자연스러운 한국어 번역",
+      "automatic": false,
+      "request": {
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "messages": [
+          {
+            "role": "user",
+            "content": "다음 문장을 한국어로 번역하세요. 번역문만 출력하세요. The meeting starts at three in the afternoon."
+          }
+        ],
+        "temperature": 0,
+        "top_p": 1,
+        "max_completion_tokens": 128,
+        "stream": false,
+        "ignore_eos": false
+      },
+      "response": {
+        "id": "chatcmpl-503ea9dfc51e4091afbcf60cc6b8bcb3",
+        "created": 1789916359,
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "중noon에 열리는 회의가 있습니다."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 56,
+          "completion_tokens": 10,
+          "total_tokens": 66
+        }
+      },
+      "answer": "중noon에 열리는 회의가 있습니다.",
+      "finish_reason": "stop",
+      "status": "REVIEW",
+      "reason": "응답과 기준을 사람이 비교해야 합니다.",
+      "elapsed_seconds": 0.266
+    }
+  ],
+  "rubric": "content-v1",
+  "evaluated_at": "2026-09-20T15:21:00.752910+00:00",
+  "evaluation_source": "saved_responses"
+}

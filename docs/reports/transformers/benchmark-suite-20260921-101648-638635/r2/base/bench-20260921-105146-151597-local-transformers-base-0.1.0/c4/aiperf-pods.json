@@ -1,0 +1,335 @@
+{
+  "apiVersion": "v1",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "creationTimestamp": "2026-09-21T10:55:53Z",
+        "generateName": "bench-20260921-105146-151597-c4-",
+        "generation": 1,
+        "labels": {
+          "app": "aiperf",
+          "batch.kubernetes.io/controller-uid": "1dc12ded-1b90-4ac7-8b8c-fcdc7bb6d150",
+          "batch.kubernetes.io/job-name": "bench-20260921-105146-151597-c4",
+          "benchmark": "aiperf-cpu",
+          "controller-uid": "1dc12ded-1b90-4ac7-8b8c-fcdc7bb6d150",
+          "job-name": "bench-20260921-105146-151597-c4"
+        },
+        "name": "bench-20260921-105146-151597-c4-qxrwz",
+        "namespace": "default",
+        "ownerReferences": [
+          {
+            "apiVersion": "batch/v1",
+            "blockOwnerDeletion": true,
+            "controller": true,
+            "kind": "Job",
+            "name": "bench-20260921-105146-151597-c4",
+            "uid": "1dc12ded-1b90-4ac7-8b8c-fcdc7bb6d150"
+          }
+        ],
+        "resourceVersion": "5936",
+        "uid": "43e820e2-dcb9-436c-b90b-0c679577166c"
+      },
+      "spec": {
+        "automountServiceAccountToken": false,
+        "containers": [
+          {
+            "args": [
+              "profile",
+              "--model",
+              "$(MODEL_ID)",
+              "--tokenizer",
+              "/tokenizer",
+              "--url",
+              "$(API_URL)",
+              "--endpoint-type",
+              "chat",
+              "--streaming",
+              "--use-server-token-count",
+              "--sequence-distribution",
+              "64,32:50;256,64:50",
+              "--num-dataset-entries",
+              "$(DATASET_ENTRIES)",
+              "--random-seed",
+              "42",
+              "--parameter-sweep-same-seed",
+              "--dataset-sampling-strategy",
+              "sequential",
+              "--extra-inputs",
+              "ignore_eos:true",
+              "--concurrency",
+              "$(CONCURRENCIES)",
+              "--workers-max",
+              "1",
+              "--warmup-request-count",
+              "2",
+              "--warmup-concurrency",
+              "1",
+              "--request-count",
+              "100",
+              "--request-timeout-seconds",
+              "3600",
+              "--no-server-metrics",
+              "--ui",
+              "none",
+              "--artifact-dir",
+              "/results/bench-20260921-105146-151597/c4"
+            ],
+            "env": [
+              {
+                "name": "API_URL",
+                "value": "http://transformers-base:8000"
+              },
+              {
+                "name": "MODEL_ID",
+                "value": "HuggingFaceTB/SmolLM2-135M-Instruct"
+              },
+              {
+                "name": "POD_NAME",
+                "valueFrom": {
+                  "fieldRef": {
+                    "apiVersion": "v1",
+                    "fieldPath": "metadata.name"
+                  }
+                }
+              },
+              {
+                "name": "CONCURRENCIES",
+                "value": "4"
+              },
+              {
+                "name": "DATASET_ENTRIES",
+                "value": "16"
+              }
+            ],
+            "image": "local/aiperf:0.12.0",
+            "imagePullPolicy": "Never",
+            "name": "aiperf",
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "1Gi"
+              },
+              "requests": {
+                "cpu": "1",
+                "memory": "1Gi"
+              }
+            },
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              },
+              "readOnlyRootFilesystem": true
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "volumeMounts": [
+              {
+                "mountPath": "/tokenizer",
+                "name": "tokenizer",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/results",
+                "name": "results"
+              },
+              {
+                "mountPath": "/tmp",
+                "name": "tmp"
+              }
+            ]
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "enableServiceLinks": true,
+        "nodeName": "local-k8s-control-plane",
+        "nodeSelector": {
+          "kubernetes.io/hostname": "local-k8s-control-plane"
+        },
+        "preemptionPolicy": "PreemptLowerPriority",
+        "priority": 0,
+        "restartPolicy": "Never",
+        "schedulerName": "default-scheduler",
+        "securityContext": {
+          "fsGroup": 1000,
+          "runAsGroup": 1000,
+          "runAsNonRoot": true,
+          "runAsUser": 1000
+        },
+        "serviceAccount": "default",
+        "serviceAccountName": "default",
+        "terminationGracePeriodSeconds": 60,
+        "tolerations": [
+          {
+            "effect": "NoExecute",
+            "key": "node.kubernetes.io/not-ready",
+            "operator": "Exists",
+            "tolerationSeconds": 300
+          },
+          {
+            "effect": "NoExecute",
+            "key": "node.kubernetes.io/unreachable",
+            "operator": "Exists",
+            "tolerationSeconds": 300
+          }
+        ],
+        "volumes": [
+          {
+            "hostPath": {
+              "path": "/models/smollm2-135m",
+              "type": "Directory"
+            },
+            "name": "tokenizer"
+          },
+          {
+            "name": "results",
+            "persistentVolumeClaim": {
+              "claimName": "aiperf-results"
+            }
+          },
+          {
+            "emptyDir": {
+              "sizeLimit": "1Gi"
+            },
+            "name": "tmp"
+          }
+        ]
+      },
+      "status": {
+        "allocatedResources": {
+          "cpu": "1",
+          "memory": "1Gi"
+        },
+        "conditions": [
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2026-09-21T10:57:37Z",
+            "observedGeneration": 1,
+            "status": "False",
+            "type": "PodReadyToStartContainers"
+          },
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2026-09-21T10:55:53Z",
+            "observedGeneration": 1,
+            "reason": "PodCompleted",
+            "status": "True",
+            "type": "Initialized"
+          },
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2026-09-21T10:57:36Z",
+            "observedGeneration": 1,
+            "reason": "PodCompleted",
+            "status": "False",
+            "type": "Ready"
+          },
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2026-09-21T10:57:36Z",
+            "observedGeneration": 1,
+            "reason": "PodCompleted",
+            "status": "False",
+            "type": "ContainersReady"
+          },
+          {
+            "lastProbeTime": null,
+            "lastTransitionTime": "2026-09-21T10:55:53Z",
+            "observedGeneration": 1,
+            "status": "True",
+            "type": "PodScheduled"
+          }
+        ],
+        "containerStatuses": [
+          {
+            "allocatedResources": {
+              "cpu": "1",
+              "memory": "1Gi"
+            },
+            "containerID": "containerd://43b4ed306d4701eb106eaeb791ec6c8c486b51adc1c82d0e90776b2c89b97fa5",
+            "image": "docker.io/local/aiperf:0.12.0",
+            "imageID": "docker.io/library/import-2026-09-21@sha256:236a4c3010bcdd8dc8a871d97283150a708a148ed1ea5e6a79c980b2034e2e95",
+            "lastState": {},
+            "name": "aiperf",
+            "ready": false,
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "1Gi"
+              },
+              "requests": {
+                "cpu": "1",
+                "memory": "1Gi"
+              }
+            },
+            "restartCount": 0,
+            "started": false,
+            "state": {
+              "terminated": {
+                "containerID": "containerd://43b4ed306d4701eb106eaeb791ec6c8c486b51adc1c82d0e90776b2c89b97fa5",
+                "exitCode": 0,
+                "finishedAt": "2026-09-21T10:57:36Z",
+                "reason": "Completed",
+                "startedAt": "2026-09-21T10:55:54Z"
+              }
+            },
+            "user": {
+              "linux": {
+                "gid": 1000,
+                "supplementalGroups": [
+                  1000
+                ],
+                "uid": 1000
+              }
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/tokenizer",
+                "name": "tokenizer",
+                "readOnly": true,
+                "recursiveReadOnly": "Disabled"
+              },
+              {
+                "mountPath": "/results",
+                "name": "results"
+              },
+              {
+                "mountPath": "/tmp",
+                "name": "tmp"
+              }
+            ]
+          }
+        ],
+        "hostIP": "172.18.0.2",
+        "hostIPs": [
+          {
+            "ip": "172.18.0.2"
+          }
+        ],
+        "observedGeneration": 1,
+        "phase": "Succeeded",
+        "podIP": "10.244.0.62",
+        "podIPs": [
+          {
+            "ip": "10.244.0.62"
+          }
+        ],
+        "qosClass": "Guaranteed",
+        "resources": {
+          "requests": {
+            "memory": "1Gi"
+          }
+        },
+        "startTime": "2026-09-21T10:55:53Z"
+      }
+    }
+  ],
+  "kind": "List",
+  "metadata": {
+    "resourceVersion": ""
+  }
+}

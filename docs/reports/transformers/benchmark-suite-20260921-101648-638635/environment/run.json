@@ -1,0 +1,95 @@
+{
+  "host_cpu": "Apple M5 Pro",
+  "host_os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83",
+  "docker": {
+    "NCPU": 15,
+    "MemTotal": 25688301568,
+    "Architecture": "aarch64",
+    "KernelVersion": "6.12.76-linuxkit",
+    "ServerVersion": "29.5.3"
+  },
+  "kind_configuration": "config/cluster/kind.yaml",
+  "topology": "one control-plane node, no workers",
+  "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+  "model_revision": "12fd25f77366fa6b3b4b768ec3050bf629380bac",
+  "torch_threads": 4,
+  "dtype": "float32",
+  "inference_resources": {
+    "limits": {
+      "cpu": "8",
+      "memory": "16Gi"
+    },
+    "requests": {
+      "cpu": "8",
+      "memory": "16Gi"
+    }
+  },
+  "images": {
+    "local/transformers-base:0.1.0": {
+      "id": "sha256:a033c7e225cbfbb325b73c8e09deb0ee8c6b387f76e589bd90c601776cc72ae6",
+      "source_sha256": "d904e382450f3e885bf92ecf21e7b8e3bc31fda87c7f0f4d8c6d81df76f407b9"
+    },
+    "local/transformers-enhanced-batch:0.1.0": {
+      "id": "sha256:d46fbc571c9ea0a971e5adc25225d205ce7b4ba0146b4c29944207102e8cd496",
+      "source_sha256": "957be054a891ee7dc4a38cceef58bb25544a36b8dffaabd1123b96e70bfcac63"
+    },
+    "local/transformers-enhanced-cache:0.1.0": {
+      "id": "sha256:b19d539e6c688f2b5e391c03a7da522fc70e681066fbe36597b794ef87db1d61",
+      "source_sha256": "4fc3c781def06340ae9d912f840ed22bafa08d029e18d2dd8ded4622a99a292d"
+    }
+  },
+  "runtime_command": "python -m transformers_cpu.base.server --model /model --served-model-name HuggingFaceTB/SmolLM2-135M-Instruct --n-threads 4 --dtype float32 --n-ctx 1024 --max-input-tokens 768 --max-output-tokens 128 --default-output-tokens 32",
+  "node_placement_reason": "Fresh default single-node cluster. Inference, benchmark, cache and result PVCs use local-k8s-control-plane.",
+  "previous_comparison_report": "docs/reports/benchmark-suite-20260921-083631-027086",
+  "recreation": {
+    "previous_backup_directory": "/Users/sejong/workspace/inference-engine-test/.local-k8s/smollm2-single-default/backup-multi-node-20260921-101400",
+    "verified_pvc_count": 12,
+    "archives": [
+      {
+        "file": "local-k8s-worker-persistent-data.tar",
+        "bytes": 927255040,
+        "sha256": "8c256ae4459f2e8557201a242d9246a68fa215fde577dffb4fbb396b1e53c2f4",
+        "pvc_directories": [
+          "pvc-023f3cac-7751-459b-863d-dc4e70253520_availability-test_grafana-data",
+          "pvc-031f7f38-45d5-43b4-aeb5-71041687ba2d_hpa-test_grafana-data",
+          "pvc-30eb83a3-5ee8-474d-9d16-15c4180bbe27_default_llama-enhanced-cache",
+          "pvc-67a9b554-b529-4a87-a201-d677b90c04c2_availability-test_aiperf-results",
+          "pvc-8889945f-b5ab-4080-b69f-c6cef5fdc094_availability-test_prometheus-data",
+          "pvc-91723e47-66a8-486c-8a95-5f5133ae63d0_hpa-test_aiperf-results",
+          "pvc-d98ad3af-4d26-4d49-94aa-d4ca3facfd7f_default_llama-cache-reset-20260920-151923",
+          "pvc-e7dad3a3-e815-4a25-ae4c-6573b9404538_hpa-test_prometheus-data"
+        ],
+        "tar_entries": 1139
+      },
+      {
+        "file": "local-k8s-worker2-persistent-data.tar",
+        "bytes": 181300224,
+        "sha256": "bfc5ac77f0f259e8eae6d02a263ccdc8b193136039932a1677192aebaf4b5997",
+        "pvc_directories": [
+          "pvc-3120dad3-1de8-4507-8c9c-fafac4df6058_default_aiperf-results",
+          "pvc-4f9ba441-4022-4b23-b63a-8d4fcc183f0d_default_aiperf-results-128",
+          "pvc-577c7220-0bb9-4194-9e7b-b72321c32618_default_aiperf-results-32",
+          "pvc-cce01394-6607-4630-a075-0a11f6922660_default_transformers-enhanced-cache"
+        ],
+        "tar_entries": 1827
+      }
+    ]
+  },
+  "comparison_note": "Node count and background workload population changed together; the previous cluster also ran monitoring and other test workloads.",
+  "final_state": {
+    "node_names": [
+      "local-k8s-control-plane"
+    ],
+    "pvc_names": [
+      "aiperf-results",
+      "transformers-enhanced-cache"
+    ],
+    "namespace_names": [
+      "default",
+      "kube-node-lease",
+      "kube-public",
+      "kube-system",
+      "local-path-storage"
+    ]
+  }
+}

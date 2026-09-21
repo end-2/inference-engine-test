@@ -1,0 +1,4 @@
+image,PASS,FAIL,REVIEW,ERROR
+base,5,0,2,0
+enhanced-batch,5,0,2,0
+enhanced-cache,5,0,2,0

@@ -1,0 +1,72 @@
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "name": "clear-20260920-151923-32-c4"
+  },
+  "spec": {
+    "backoffLimit": 0,
+    "activeDeadlineSeconds": 300,
+    "template": {
+      "spec": {
+        "restartPolicy": "Never",
+        "automountServiceAccountToken": false,
+        "securityContext": {
+          "fsGroup": 1000,
+          "runAsGroup": 1000,
+          "runAsNonRoot": true,
+          "runAsUser": 1000
+        },
+        "containers": [
+          {
+            "name": "clear-cache",
+            "image": "local/llama-enhanced-cache:0.1.0",
+            "imagePullPolicy": "Never",
+            "command": [
+              "python",
+              "-c",
+              "\nimport json\nfrom pathlib import Path\nimport shutil\nimport sys\n\nroot = Path(sys.argv[1])\nif not root.is_mount() or root.is_symlink() or root == Path('/'):\n    raise RuntimeError('Cache directory must be a mounted PVC root')\nentries = list(root.iterdir())\nfiles = [path for path in root.rglob('*') if path.is_file() and not path.is_symlink()]\nresult = {'directory': str(root), 'removed_entries': len(entries),\n          'removed_files': len(files), 'removed_bytes': sum(path.stat().st_size for path in files)}\nfor path in entries:\n    if path.is_dir() and not path.is_symlink():\n        shutil.rmtree(path)\n    else:\n        path.unlink()\nresult['remaining_entries'] = len(list(root.iterdir()))\nif result['remaining_entries']:\n    raise RuntimeError('Cache directory is not empty after cleanup')\nprint(json.dumps(result), flush=True)\n",
+              "/cache"
+            ],
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              },
+              "readOnlyRootFilesystem": true
+            },
+            "resources": {
+              "requests": {
+                "cpu": "100m",
+                "memory": "128Mi"
+              },
+              "limits": {
+                "cpu": "100m",
+                "memory": "128Mi"
+              }
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/cache",
+                "name": "cache"
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "cache",
+            "persistentVolumeClaim": {
+              "claimName": "llama-cache-reset-20260920-151923"
+            }
+          }
+        ],
+        "nodeSelector": {
+          "kubernetes.io/hostname": "local-k8s-worker"
+        }
+      }
+    }
+  }
+}

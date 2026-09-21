@@ -10,3 +10,4 @@ __pycache__/
 !/reports/**/summary*.csv
 !/reports/**/summary*.json
 !/reports/**/summary*.md
+!/reports/*/README.md

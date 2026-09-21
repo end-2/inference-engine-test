@@ -1,0 +1,301 @@
+{
+  "run_id": "20260920-151923",
+  "started_at": "2026-09-20T15:19:23.111462+00:00",
+  "status": "complete",
+  "cache_policy": "clear-per-concurrency",
+  "repetitions": 1,
+  "dataset_entries": [
+    32,
+    128
+  ],
+  "concurrencies": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "requests_per_concurrency": 100,
+  "warmup_requests_per_concurrency": 2,
+  "inference_node": "local-k8s-worker",
+  "benchmark_node": "local-k8s-worker2",
+  "comparison_report": "../benchmark-cache-datasets-20260920-145858/summary.md",
+  "conditions": [
+    {
+      "dataset_entries": 32,
+      "concurrency": 1,
+      "status": "complete",
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 1,
+        "removed_bytes": 0,
+        "remaining_entries": 0,
+        "pvc": "llama-cache-reset-20260920-151923",
+        "completed_at": "2026-09-20T15:19:43.834075+00:00"
+      },
+      "inference_pod": "llama-base-749788b48d-bdlg8",
+      "pod_uid": "9fbad663-f083-44f0-ad9c-7e96f6f31b25",
+      "job": "cache-reset-20260920-151923-32-c1",
+      "started_at": "2026-09-20T15:19:49.756155+00:00",
+      "output_validation": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "resource_collection": {
+        "node_samples": 30,
+        "pod_cpu_samples": {
+          "inference": 15,
+          "aiperf": 12
+        }
+      },
+      "finished_at": "2026-09-20T15:21:04.374345+00:00"
+    },
+    {
+      "dataset_entries": 32,
+      "concurrency": 2,
+      "status": "complete",
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 35,
+        "removed_bytes": 74025788,
+        "remaining_entries": 0,
+        "pvc": "llama-cache-reset-20260920-151923",
+        "completed_at": "2026-09-20T15:21:12.144297+00:00"
+      },
+      "inference_pod": "llama-base-749788b48d-2768m",
+      "pod_uid": "752eec09-0675-4d0f-a8fa-7b5027843445",
+      "job": "cache-reset-20260920-151923-32-c2",
+      "started_at": "2026-09-20T15:21:17.942558+00:00",
+      "output_validation": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "resource_collection": {
+        "node_samples": 30,
+        "pod_cpu_samples": {
+          "inference": 15,
+          "aiperf": 12
+        }
+      },
+      "finished_at": "2026-09-20T15:22:33.264539+00:00"
+    },
+    {
+      "dataset_entries": 32,
+      "concurrency": 4,
+      "status": "complete",
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 35,
+        "removed_bytes": 74025788,
+        "remaining_entries": 0,
+        "pvc": "llama-cache-reset-20260920-151923",
+        "completed_at": "2026-09-20T15:22:39.808451+00:00"
+      },
+      "inference_pod": "llama-base-749788b48d-6vpl9",
+      "pod_uid": "e226ab81-6b87-4f04-b773-a5763d400dc3",
+      "job": "cache-reset-20260920-151923-32-c4",
+      "started_at": "2026-09-20T15:22:46.152052+00:00",
+      "output_validation": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "resource_collection": {
+        "node_samples": 30,
+        "pod_cpu_samples": {
+          "inference": 15,
+          "aiperf": 12
+        }
+      },
+      "finished_at": "2026-09-20T15:24:00.702247+00:00"
+    },
+    {
+      "dataset_entries": 32,
+      "concurrency": 8,
+      "status": "complete",
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 35,
+        "removed_bytes": 74025788,
+        "remaining_entries": 0,
+        "pvc": "llama-cache-reset-20260920-151923",
+        "completed_at": "2026-09-20T15:24:08.416140+00:00"
+      },
+      "inference_pod": "llama-base-749788b48d-7xw72",
+      "pod_uid": "680a91de-e5e9-48a5-98f4-5ddcd94679bc",
+      "job": "cache-reset-20260920-151923-32-c8",
+      "started_at": "2026-09-20T15:24:14.348932+00:00",
+      "output_validation": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "resource_collection": {
+        "node_samples": 30,
+        "pod_cpu_samples": {
+          "inference": 15,
+          "aiperf": 12
+        }
+      },
+      "finished_at": "2026-09-20T15:25:29.047574+00:00"
+    },
+    {
+      "dataset_entries": 128,
+      "concurrency": 1,
+      "status": "complete",
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 35,
+        "removed_bytes": 74025788,
+        "remaining_entries": 0,
+        "pvc": "llama-cache-reset-20260920-151923",
+        "completed_at": "2026-09-20T15:25:35.859931+00:00"
+      },
+      "inference_pod": "llama-base-749788b48d-f6554",
+      "pod_uid": "53a12248-a354-48e0-88fd-314b955c7e7f",
+      "job": "cache-reset-20260920-151923-128-c1",
+      "started_at": "2026-09-20T15:25:42.507996+00:00",
+      "output_validation": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 6
+      },
+      "resource_collection": {
+        "node_samples": 48,
+        "pod_cpu_samples": {
+          "inference": 24,
+          "aiperf": 22
+        }
+      },
+      "finished_at": "2026-09-20T15:27:46.223636+00:00"
+    },
+    {
+      "dataset_entries": 128,
+      "concurrency": 2,
+      "status": "complete",
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 103,
+        "removed_bytes": 227491442,
+        "remaining_entries": 0,
+        "pvc": "llama-cache-reset-20260920-151923",
+        "completed_at": "2026-09-20T15:27:54.118590+00:00"
+      },
+      "inference_pod": "llama-base-749788b48d-k7vmg",
+      "pod_uid": "b1bb1910-c3b3-4a4b-a89c-fcde00e622bd",
+      "job": "cache-reset-20260920-151923-128-c2",
+      "started_at": "2026-09-20T15:27:59.794956+00:00",
+      "output_validation": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 6
+      },
+      "resource_collection": {
+        "node_samples": 48,
+        "pod_cpu_samples": {
+          "inference": 24,
+          "aiperf": 22
+        }
+      },
+      "finished_at": "2026-09-20T15:30:03.378008+00:00"
+    },
+    {
+      "dataset_entries": 128,
+      "concurrency": 4,
+      "status": "complete",
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 103,
+        "removed_bytes": 227491442,
+        "remaining_entries": 0,
+        "pvc": "llama-cache-reset-20260920-151923",
+        "completed_at": "2026-09-20T15:30:10.108815+00:00"
+      },
+      "inference_pod": "llama-base-749788b48d-qb2md",
+      "pod_uid": "671b4b15-545d-445d-8ce9-dc8364e3e073",
+      "job": "cache-reset-20260920-151923-128-c4",
+      "started_at": "2026-09-20T15:30:16.085609+00:00",
+      "output_validation": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 6
+      },
+      "resource_collection": {
+        "node_samples": 48,
+        "pod_cpu_samples": {
+          "inference": 24,
+          "aiperf": 22
+        }
+      },
+      "finished_at": "2026-09-20T15:32:19.813909+00:00"
+    },
+    {
+      "dataset_entries": 128,
+      "concurrency": 8,
+      "status": "complete",
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 103,
+        "removed_bytes": 227491442,
+        "remaining_entries": 0,
+        "pvc": "llama-cache-reset-20260920-151923",
+        "completed_at": "2026-09-20T15:32:27.650224+00:00"
+      },
+      "inference_pod": "llama-base-749788b48d-5kngw",
+      "pod_uid": "ced8e419-f235-45a0-ac3f-a698506af78d",
+      "job": "cache-reset-20260920-151923-128-c8",
+      "started_at": "2026-09-20T15:32:33.385452+00:00",
+      "output_validation": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 6
+      },
+      "resource_collection": {
+        "node_samples": 48,
+        "pod_cpu_samples": {
+          "inference": 24,
+          "aiperf": 22
+        }
+      },
+      "finished_at": "2026-09-20T15:34:37.451136+00:00"
+    }
+  ],
+  "images": [
+    {
+      "image": "local/llama-enhanced-cache:0.1.0",
+      "id": "sha256:0bf4b86be3de5000cb50eb88d18752978a95525f7291a2f46a9c7370e2a55f3f",
+      "source_sha256": null,
+      "build_context": null,
+      "build_target": null
+    },
+    {
+      "image": "local/aiperf:0.12.0",
+      "id": "sha256:e916ca4e164739cd9a0d334faf73ea02dbb5f98aa77000ead84ab50ac7df8371",
+      "source_sha256": null,
+      "build_context": null,
+      "build_target": null
+    }
+  ],
+  "cache_pvc": "llama-cache-reset-20260920-151923",
+  "original_deployment_restored": true,
+  "finished_at": "2026-09-20T15:34:43.565972+00:00",
+  "verification": {
+    "profiling_requests": 800,
+    "warmup_requests": 16,
+    "request_errors": 0,
+    "fresh_inference_pods": 8,
+    "empty_pvc_checks": 8,
+    "datasets_match_preserve_run": true,
+    "output_shortfalls": 0,
+    "output_overruns": 24
+  }
+}

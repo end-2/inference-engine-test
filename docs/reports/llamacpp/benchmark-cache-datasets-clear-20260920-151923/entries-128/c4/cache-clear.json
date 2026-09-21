@@ -1,0 +1,9 @@
+{
+  "directory": "/cache",
+  "removed_entries": 1,
+  "removed_files": 103,
+  "removed_bytes": 227491442,
+  "remaining_entries": 0,
+  "pvc": "llama-cache-reset-20260920-151923",
+  "completed_at": "2026-09-20T15:30:10.108815+00:00"
+}

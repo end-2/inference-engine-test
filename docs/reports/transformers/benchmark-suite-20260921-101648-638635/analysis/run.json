@@ -1,0 +1,54 @@
+{
+  "profiling_requests": 3600,
+  "warmup_requests": 72,
+  "successful_conditions": 36,
+  "distinct_inference_pods": 36,
+  "output_shortfalls": 0,
+  "output_overruns": 0,
+  "dataset_sha256": "71652b0ff2f9696eec63bd90c139b752f436625663facd474cb64394baf4629f",
+  "profiling_output_lengths": {
+    "64": 1116,
+    "32": 2484
+  },
+  "profiling_input_lengths": {
+    "286": 1116,
+    "94": 2484
+  },
+  "suite_elapsed_seconds": 3857.800041,
+  "profiling_seconds": 2946.9810964480002,
+  "comparison": {
+    "same_dataset_as_previous": true,
+    "same_image_ids_as_previous": true,
+    "previous_report": "docs/reports/benchmark-suite-20260921-083631-027086",
+    "throughput_change_percent": {
+      "base/c1": 0.5692994906431936,
+      "base/c2": 0.5716124952043433,
+      "base/c4": 1.2189129802591347,
+      "base/c8": 0.775263600222531,
+      "enhanced-batch/c1": 0.9473974999305579,
+      "enhanced-batch/c2": 0.4254392575331556,
+      "enhanced-batch/c4": 1.1480634058833816,
+      "enhanced-batch/c8": 1.8491459342617755,
+      "enhanced-cache/c1": 1.530112537923367,
+      "enhanced-cache/c2": 0.7338192445520031,
+      "enhanced-cache/c4": 1.260467687985134,
+      "enhanced-cache/c8": 0.8810440535741204
+    }
+  },
+  "restored_deployment": {
+    "image": "local/transformers-base:0.1.0",
+    "torch_threads": 4,
+    "resources": {
+      "limits": {
+        "cpu": "8",
+        "memory": "16Gi"
+      },
+      "requests": {
+        "cpu": "8",
+        "memory": "16Gi"
+      }
+    },
+    "node": "local-k8s-control-plane",
+    "readiness": "200 {\"status\":\"ready\"}"
+  }
+}

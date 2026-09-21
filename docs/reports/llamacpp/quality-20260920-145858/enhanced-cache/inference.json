@@ -1,0 +1,152 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "llama-base",
+    "namespace": "default"
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "llama-base"
+      }
+    },
+    "strategy": {
+      "type": "Recreate"
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "llama-base",
+          "inference-variant": "enhanced-cache"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "args": [
+              "--model",
+              "/model/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+              "--served-model-name",
+              "Qwen/Qwen2.5-0.5B-Instruct",
+              "--n-threads",
+              "12",
+              "--cache-dir",
+              "/cache/quality-20260920-145858",
+              "--cache-ram-mib",
+              "64",
+              "--cache-disk-mib",
+              "1024",
+              "--cache-min-prefix",
+              "32",
+              "--n-ctx",
+              "1024",
+              "--max-input-tokens",
+              "768",
+              "--max-output-tokens",
+              "128",
+              "--default-output-tokens",
+              "32"
+            ],
+            "image": "local/llama-enhanced-cache:0.1.0",
+            "imagePullPolicy": "Never",
+            "livenessProbe": {
+              "httpGet": {
+                "path": "/healthz",
+                "port": "http"
+              },
+              "periodSeconds": 10
+            },
+            "name": "api",
+            "ports": [
+              {
+                "containerPort": 8000,
+                "name": "http"
+              }
+            ],
+            "readinessProbe": {
+              "httpGet": {
+                "path": "/readyz",
+                "port": "http"
+              }
+            },
+            "resources": {
+              "limits": {
+                "cpu": "12",
+                "memory": "16Gi"
+              },
+              "requests": {
+                "cpu": "12",
+                "memory": "16Gi"
+              }
+            },
+            "securityContext": {
+              "allowPrivilegeEscalation": false,
+              "capabilities": {
+                "drop": [
+                  "ALL"
+                ]
+              },
+              "readOnlyRootFilesystem": true
+            },
+            "startupProbe": {
+              "failureThreshold": 60,
+              "httpGet": {
+                "path": "/readyz",
+                "port": "http"
+              },
+              "periodSeconds": 5
+            },
+            "volumeMounts": [
+              {
+                "mountPath": "/model",
+                "name": "model",
+                "readOnly": true
+              },
+              {
+                "mountPath": "/tmp",
+                "name": "tmp"
+              },
+              {
+                "mountPath": "/cache",
+                "name": "cache"
+              }
+            ]
+          }
+        ],
+        "securityContext": {
+          "fsGroup": 1000,
+          "runAsGroup": 1000,
+          "runAsNonRoot": true,
+          "runAsUser": 1000
+        },
+        "terminationGracePeriodSeconds": 60,
+        "volumes": [
+          {
+            "hostPath": {
+              "path": "/models/qwen2.5-0.5b",
+              "type": "Directory"
+            },
+            "name": "model"
+          },
+          {
+            "emptyDir": {
+              "sizeLimit": "1Gi"
+            },
+            "name": "tmp"
+          },
+          {
+            "name": "cache",
+            "persistentVolumeClaim": {
+              "claimName": "llama-enhanced-cache"
+            }
+          }
+        ],
+        "nodeSelector": {
+          "kubernetes.io/hostname": "local-k8s-worker"
+        }
+      }
+    }
+  }
+}

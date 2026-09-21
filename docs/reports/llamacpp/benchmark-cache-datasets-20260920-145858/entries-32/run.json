@@ -1,0 +1,123 @@
+{
+  "status": "verified",
+  "job_runs": 1,
+  "sweep_successful_runs": 4,
+  "verification": [
+    {
+      "dataset_entries": 32,
+      "concurrency": 1,
+      "dataset_sha256": "54efb7482463d4529952335e3713dbc48f2ee10faeeda995641a5c494331ba32",
+      "dataset_unique_prompts": 32,
+      "profiling_unique_prompts": 32,
+      "phase_requests": {
+        "warmup": 2,
+        "profiling": 100
+      },
+      "input_output_lengths": [
+        {
+          "input_tokens": 93,
+          "output_tokens": 32,
+          "requests": 57
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 64,
+          "requests": 43
+        }
+      ],
+      "output_validation": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "output_mismatches": []
+    },
+    {
+      "dataset_entries": 32,
+      "concurrency": 2,
+      "dataset_sha256": "54efb7482463d4529952335e3713dbc48f2ee10faeeda995641a5c494331ba32",
+      "dataset_unique_prompts": 32,
+      "profiling_unique_prompts": 32,
+      "phase_requests": {
+        "warmup": 2,
+        "profiling": 100
+      },
+      "input_output_lengths": [
+        {
+          "input_tokens": 93,
+          "output_tokens": 32,
+          "requests": 57
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 64,
+          "requests": 43
+        }
+      ],
+      "output_validation": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "output_mismatches": []
+    },
+    {
+      "dataset_entries": 32,
+      "concurrency": 4,
+      "dataset_sha256": "54efb7482463d4529952335e3713dbc48f2ee10faeeda995641a5c494331ba32",
+      "dataset_unique_prompts": 32,
+      "profiling_unique_prompts": 32,
+      "phase_requests": {
+        "warmup": 2,
+        "profiling": 100
+      },
+      "input_output_lengths": [
+        {
+          "input_tokens": 93,
+          "output_tokens": 32,
+          "requests": 57
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 64,
+          "requests": 43
+        }
+      ],
+      "output_validation": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "output_mismatches": []
+    },
+    {
+      "dataset_entries": 32,
+      "concurrency": 8,
+      "dataset_sha256": "54efb7482463d4529952335e3713dbc48f2ee10faeeda995641a5c494331ba32",
+      "dataset_unique_prompts": 32,
+      "profiling_unique_prompts": 32,
+      "phase_requests": {
+        "warmup": 2,
+        "profiling": 100
+      },
+      "input_output_lengths": [
+        {
+          "input_tokens": 93,
+          "output_tokens": 32,
+          "requests": 57
+        },
+        {
+          "input_tokens": 285,
+          "output_tokens": 64,
+          "requests": 43
+        }
+      ],
+      "output_validation": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "output_mismatches": []
+    }
+  ]
+}

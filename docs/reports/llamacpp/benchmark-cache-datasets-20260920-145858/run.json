@@ -1,0 +1,111 @@
+{
+  "run_id": "20260920-145858",
+  "started_at": "2026-09-20T14:58:58.947106+00:00",
+  "status": "complete",
+  "git_commit": "a90a13683f42f4b1f34aeb78f33867ade1652368",
+  "git_status": " M docs/aiperf.md\n M docs/llama-api.md\n M k8s/aiperf/job.yaml\n M tests/test-aiperf-manifests.sh\n?? docs/quality-check.md\n?? docs/report-template.md\n?? docs/report.md\n?? k8s/aiperf-128/\n?? k8s/aiperf-32/\n?? scripts/check-quality.py\n?? tests/test_quality_check.py\n",
+  "inference_node": "local-k8s-worker",
+  "benchmark_node": "local-k8s-worker2",
+  "replicates": 1,
+  "cache_policy": "empty per Job, preserved across concurrency sweep",
+  "concurrencies": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "requests_per_concurrency": 100,
+  "warmup_requests_per_concurrency": 2,
+  "benchmarks": [
+    {
+      "dataset_entries": 32,
+      "job": "aiperf-32",
+      "started_at": "2026-09-20T15:00:32.685585+00:00",
+      "finished_at": "2026-09-20T15:04:05.738728+00:00",
+      "cache_directory": "/cache/datasets-20260920-145858/32",
+      "inference_pod": "llama-base-57d84f4cff-nzsck",
+      "aiperf_pod": "aiperf-32-nlgkx",
+      "resources": {
+        "node_samples": 82,
+        "pod_cpu_samples": {
+          "inference": 41,
+          "aiperf": 38
+        }
+      }
+    },
+    {
+      "dataset_entries": 128,
+      "job": "aiperf-128",
+      "started_at": "2026-09-20T15:04:12.066819+00:00",
+      "finished_at": "2026-09-20T15:08:33.257250+00:00",
+      "cache_directory": "/cache/datasets-20260920-145858/128",
+      "inference_pod": "llama-base-576d9bb68f-c76kq",
+      "aiperf_pod": "aiperf-128-dttzd",
+      "resources": {
+        "node_samples": 100,
+        "pod_cpu_samples": {
+          "inference": 50,
+          "aiperf": 48
+        }
+      }
+    }
+  ],
+  "images": [
+    {
+      "image": "local/llama-base:0.1.0",
+      "id": "sha256:4710ee54b1a7868bbbaf1cff55ffa2fe553294d5bb70371a67dd58c6e8ebe539",
+      "source_sha256": null,
+      "build_context": null,
+      "build_target": null
+    },
+    {
+      "image": "local/llama-enhanced-batch:0.1.0",
+      "id": "sha256:1629cba22fdf7a84938cf5d5a278c1421a5da7733223edbc2c7ad061b6922860",
+      "source_sha256": null,
+      "build_context": null,
+      "build_target": null
+    },
+    {
+      "image": "local/llama-enhanced-cache:0.1.0",
+      "id": "sha256:0bf4b86be3de5000cb50eb88d18752978a95525f7291a2f46a9c7370e2a55f3f",
+      "source_sha256": null,
+      "build_context": null,
+      "build_target": null
+    },
+    {
+      "image": "local/aiperf:0.12.0",
+      "id": "sha256:e916ca4e164739cd9a0d334faf73ea02dbb5f98aa77000ead84ab50ac7df8371",
+      "source_sha256": null,
+      "build_context": null,
+      "build_target": null
+    }
+  ],
+  "image_python_sources_match_worktree": true,
+  "original_deployment_restored": true,
+  "finished_at": "2026-09-20T15:08:39.220664+00:00",
+  "quality_report": "../quality-20260920-145858/summary.md",
+  "validation": {
+    "successful_profiling_requests": 800,
+    "successful_warmup_requests": 16,
+    "request_errors": 0,
+    "output_shortfalls": 0,
+    "output_overruns": 24,
+    "output_overruns_dataset_entries": 128,
+    "output_length_status": "overruns_detected",
+    "dataset_unique_prompts": [
+      32,
+      128
+    ],
+    "profiling_unique_prompts_per_concurrency": [
+      32,
+      100
+    ]
+  },
+  "runtime_observation": {
+    "image": "local/llama-enhanced-cache:0.1.0",
+    "llama_cpp_python": "0.3.35",
+    "method": "Llama._create_completion",
+    "observation": "Incomplete UTF-8 handling may continue generation before the max_tokens check.",
+    "causality": "Possible cause of observed output overruns; per-request token trace was not collected."
+  }
+}
