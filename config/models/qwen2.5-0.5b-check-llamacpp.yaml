@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: qwen2.5-0.5b-model-check-llamacpp-
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 180
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: check
+          image: busybox:1.37.0
+          imagePullPolicy: IfNotPresent
+          command: [sh, -ec]
+          args:
+            - |
+              file=/model/qwen2.5-0.5b-instruct-q4_k_m.gguf
+              [ -s "$file" ] || { echo "Missing model file: $file" >&2; exit 1; }
+              ls -la "$file"
+              awk '$2 == "/model" && $4 ~ /(^|,)ro(,|$)/ { found=1 } END { exit !found }' /proc/mounts
+              if touch /model/.write-test 2>/dev/null; then
+                rm /model/.write-test
+                echo 'Model mount must be read-only' >&2
+                exit 1
+              fi
+              echo 'PASS: model file is present and mounted read-only'
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+          volumeMounts:
+            - name: model
+              mountPath: /model
+              readOnly: true
+      volumes:
+        - name: model
+          hostPath:
+            path: /models/qwen2.5-0.5b
+            type: Directory

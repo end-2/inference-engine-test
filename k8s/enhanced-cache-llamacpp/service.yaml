@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: base-llamacpp
+spec:
+  selector:
+    app: base-llamacpp
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
