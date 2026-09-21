@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: aiperf
+spec:
+  template:
+    spec:
+      containers:
+        - name: aiperf
+          env:
+            - name: API_URL
+              value: http://base-llamacpp:8000
+            - name: MODEL_ID
+              value: Qwen/Qwen2.5-0.5B-Instruct
+      volumes:
+        - name: tokenizer
+          hostPath:
+            path: /models/qwen2.5-0.5b/tokenizer
+            type: Directory

@@ -1,61 +1,56 @@
-.PHONY: help up down test status download-model download-tokenizer build-image load-image build-benchmark-image load-benchmark-image benchmark
+.PHONY: help install up down test status download-model download-tokenizer build-image load-image build-benchmark-image load-benchmark-image benchmark benchmark-suite
 
 IMAGE_TAG ?= 0.1.0
 AIPERF_IMAGE_TAG ?= 0.12.0
-VARIANT ?= base
-INFERENCE_IMAGE ?= local/llama-$(VARIANT):$(IMAGE_TAG)
+VARIANT ?= transformers-base
+INFERENCE_BACKEND ?= $(if $(filter transformers-%,$(VARIANT)),transformers,llamacpp)
+INFERENCE_IMAGE ?= local/$(VARIANT):$(IMAGE_TAG)
 INFERENCE_CONTEXT ?= src
 INFERENCE_TARGET ?= $(VARIANT)
-INFERENCE_MANIFESTS ?= k8s/llama-$(VARIANT)
-CACHE_POLICY ?= preserve
+INFERENCE_MANIFESTS ?= k8s/$(VARIANT)
+CACHE_POLICY ?= $(if $(filter transformers-enhanced-cache,$(VARIANT)),clear-before-sweep,preserve)
+REPETITIONS ?= 3
+INFERENCE_NODE ?=
+BENCHMARK_NODE ?=
 
-help:
-	@echo "Targets:"
-	@echo "  up       Create or reuse the local Kubernetes cluster"
-	@echo "  down     Delete the local Kubernetes cluster"
-	@echo "  test     Run a no-GPU smoke Job with DNS lookup"
-	@echo "  status   Show nodes and pods"
-	@echo "  download-model  Download the pinned GGUF model file"
-	@echo "  download-tokenizer  Download the pinned tokenizer for AIPerf"
-	@echo "  build-image     Build VARIANT=base|base-metric|enhanced-batch|enhanced-cache"
-	@echo "  load-image      Load the selected inference image into the cluster nodes"
-	@echo "  build-benchmark-image  Build the AIPerf benchmark image"
-	@echo "  load-benchmark-image   Load the AIPerf benchmark image into the cluster nodes"
-	@echo "  benchmark  Build/load as needed, restart inference per concurrency, save docs/reports"
+help: ## Show available commands
+	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-24s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-up:
-	./scripts/local-k8s.sh up
+install: ## Download pinned kind and kubectl into .bin
+up: ## Create or reuse the local cluster
+down: ## Delete the local cluster
+test: ## Run the cluster smoke test
+status: ## Show nodes and pods
+install up down test status:
+	./scripts/local-k8s.sh $@
 
-down:
-	./scripts/local-k8s.sh down
+download-model: ## Download the selected model
+	$(if $(filter transformers,$(INFERENCE_BACKEND)),./scripts/download-transformers-model.sh,./scripts/download-model-llamacpp.sh)
 
-test:
-	./scripts/local-k8s.sh test
+download-tokenizer: ## Prepare the benchmark tokenizer
+	$(if $(filter transformers,$(INFERENCE_BACKEND)),./scripts/download-transformers-model.sh,./scripts/download-tokenizer-llamacpp.sh)
 
-status:
-	./scripts/local-k8s.sh status
-
-download-model:
-	./scripts/download-model.sh
-
-download-tokenizer:
-	./scripts/download-tokenizer.sh
-
-build-image:
+build-image: ## Build the selected VARIANT
 	IMAGE_TAG=$(IMAGE_TAG) ./scripts/build-inference-images.sh $(VARIANT)
 
-load-image:
+load-image: ## Load the selected VARIANT into kind
 	IMAGE_TAG=$(IMAGE_TAG) ./scripts/load-inference-images.sh $(VARIANT)
 
-build-benchmark-image:
+build-benchmark-image: ## Build the AIPerf image
 	AIPERF_IMAGE_TAG=$(AIPERF_IMAGE_TAG) ./scripts/build-benchmark-images.sh
 
-load-benchmark-image:
+load-benchmark-image: ## Load the AIPerf image into kind
 	AIPERF_IMAGE_TAG=$(AIPERF_IMAGE_TAG) ./scripts/load-benchmark-images.sh
 
-benchmark:
+benchmark: ## Measure the selected VARIANT
+	INFERENCE_BACKEND="$(INFERENCE_BACKEND)" \
 	INFERENCE_IMAGE="$(INFERENCE_IMAGE)" INFERENCE_CONTEXT="$(INFERENCE_CONTEXT)" \
 	INFERENCE_TARGET="$(INFERENCE_TARGET)" \
 	INFERENCE_MANIFESTS="$(INFERENCE_MANIFESTS)" AIPERF_IMAGE_TAG="$(AIPERF_IMAGE_TAG)" \
 	BENCHMARK_CACHE_POLICY="$(CACHE_POLICY)" \
 	./scripts/run-benchmark.py
+
+benchmark-suite: ## Measure all variants, REPETITIONS=3
+	python3 scripts/run-benchmark-suite.py --backend "$(INFERENCE_BACKEND)" --repetitions "$(REPETITIONS)" \
+	  --image-tag "$(IMAGE_TAG)" --benchmark-image "local/aiperf:$(AIPERF_IMAGE_TAG)" \
+	  $(if $(INFERENCE_NODE),--inference-node "$(INFERENCE_NODE)") $(if $(BENCHMARK_NODE),--benchmark-node "$(BENCHMARK_NODE)")

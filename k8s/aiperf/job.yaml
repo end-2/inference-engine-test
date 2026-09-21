@@ -34,12 +34,14 @@ spec:
                   fieldPath: metadata.name
             - name: CONCURRENCIES
               value: "1,2,4,8"
+            - name: DATASET_ENTRIES
+              value: "16"
             # Inference Service providing the OpenAI-compatible API.
-            # It is deployed separately: kubectl apply -f k8s/llama-base/
+            # It is deployed separately: kubectl apply -k k8s/transformers-base/
             - name: API_URL
-              value: http://llama-base:8000
+              value: http://transformers-base:8000
             - name: MODEL_ID
-              value: Qwen/Qwen2.5-0.5B-Instruct
+              value: HuggingFaceTB/SmolLM2-135M-Instruct
           args:
             - profile
             - --model
@@ -55,7 +57,7 @@ spec:
             - --sequence-distribution
             - "64,32:50;256,64:50"
             - --num-dataset-entries
-            - "16"
+            - $(DATASET_ENTRIES)
             - --random-seed
             - "42"
             - --parameter-sweep-same-seed
@@ -103,7 +105,7 @@ spec:
       volumes:
         - name: tokenizer
           hostPath:
-            path: /models/qwen2.5-0.5b/tokenizer
+            path: /models/smollm2-135m
             type: Directory
         - name: results
           persistentVolumeClaim:

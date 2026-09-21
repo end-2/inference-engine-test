@@ -91,8 +91,9 @@ class BenchmarkTests(unittest.TestCase):
 
     def test_default_and_custom_build_contexts_select_targets(self):
         for options, context, target in [
-            ([], benchmark.ROOT / "src", "base"),
-            (["--build-target", "enhanced-cache"], benchmark.ROOT / "src", "enhanced-cache"),
+            ([], benchmark.ROOT / "src", "transformers-base"),
+            (["--build-target", "transformers-enhanced-cache"], benchmark.ROOT / "src", "transformers-enhanced-cache"),
+            (["--backend", "llamacpp"], benchmark.ROOT / "src", "base-llamacpp"),
             (["--build-context", str(self.context)], self.context, None),
             (["--build-context", ""], None, None),
         ]:
@@ -108,6 +109,88 @@ class BenchmarkTests(unittest.TestCase):
         with patch.object(benchmark, "kube", return_value=result):
             rendered = benchmark.render(self.context)
         self.assertEqual([item["kind"] for item in rendered["items"]], ["Deployment", "Service"])
+
+    def test_transformers_defaults_select_smollm2_and_cpu_image(self):
+        with patch.dict(os.environ, {}, clear=True), patch(
+            "sys.argv", ["run-benchmark.py"]
+        ):
+            args = benchmark.parse_args()
+        self.assertEqual(args.image, "local/transformers-base:0.1.0")
+        self.assertEqual(args.build_target, "transformers-base")
+        self.assertEqual(args.manifests, benchmark.ROOT / "k8s/transformers-base")
+        self.assertEqual(args.deployment, "transformers-base")
+        self.assertEqual(args.api_url, "http://transformers-base:8000")
+        self.assertEqual(args.model, "HuggingFaceTB/SmolLM2-135M-Instruct")
+        self.assertEqual(args.concurrencies, [1, 2, 4, 8])
+        self.assertEqual(args.benchmark_build_context, benchmark.ROOT / "src/aiperf")
+
+    def test_backend_selects_matching_names_and_report_directory(self):
+        for backend in ("llamacpp", "llama", "transformers"):
+            with self.subTest(backend=backend), patch.dict(os.environ, {}, clear=True), patch(
+                "sys.argv", ["run-benchmark.py", "--backend", backend]
+            ):
+                args = benchmark.parse_args()
+            canonical = "transformers" if backend == "transformers" else "llamacpp"
+            name = "transformers-base" if canonical == "transformers" else "base-llamacpp"
+            self.assertEqual(args.backend, canonical)
+            self.assertEqual(args.reports_dir, benchmark.ROOT / "docs/reports" / canonical)
+            self.assertEqual(args.image, f"local/{name}:0.1.0")
+            self.assertEqual(args.deployment, name)
+            self.assertEqual(args.build_target, name)
+            self.assertEqual(args.manifests, benchmark.ROOT / "k8s" / name)
+            self.assertEqual(args.api_url, f"http://{name}:8000")
+
+    def test_custom_report_root_is_used_without_adding_backend(self):
+        with patch.dict(os.environ, {}, clear=True), patch(
+            "sys.argv", ["run-benchmark.py", "--backend", "llamacpp", "--reports-dir", str(self.context)]
+        ):
+            self.assertEqual(benchmark.parse_args().reports_dir, self.context)
+
+    def test_backends_select_matching_aiperf_profiles(self):
+        job = {"kind": "Job", "metadata": {"name": "aiperf"}}
+        for backend, profile in [("transformers", "aiperf"), ("llamacpp", "aiperf-qwen2.5")]:
+            with self.subTest(backend=backend), patch.object(benchmark, "render", return_value={
+                "items": [{"kind": "PersistentVolumeClaim"}, job, {"kind": "Pod"}]
+            }) as render:
+                self.assertIs(benchmark.benchmark_template(backend), job)
+            render.assert_called_once_with(benchmark.ROOT / "k8s" / profile)
+
+    def test_empty_benchmark_context_keeps_prebuilt_aiperf(self):
+        with patch.dict(os.environ, {}, clear=True), patch(
+            "sys.argv", ["run-benchmark.py", "--benchmark-build-context", ""]
+        ):
+            self.assertIsNone(benchmark.parse_args().benchmark_build_context)
+
+    def test_model_preparation_matches_backend(self):
+        for backend, scripts in [("transformers", ["download-transformers-model.sh"]),
+                                 ("llamacpp", ["download-model-llamacpp.sh", "download-tokenizer-llamacpp.sh"])]:
+            with self.subTest(backend=backend), patch.object(benchmark, "run") as run:
+                benchmark.prepare_model(backend)
+            self.assertEqual([call.args[0].name for call in run.call_args_list], scripts)
+
+    @staticmethod
+    def node(name, ready=True, control_plane=False):
+        return {"metadata": {"name": name, "labels": {"node-role.kubernetes.io/control-plane": ""} if control_plane else {}},
+                "status": {"conditions": [{"type": "Ready", "status": "True" if ready else "False"}]}}
+
+    def test_default_placement_discovers_single_control_plane_name(self):
+        nodes = {"items": [self.node("custom-control-plane", control_plane=True)]}
+        self.assertEqual(benchmark.resolve_nodes(None, None, nodes), ("custom-control-plane",) * 2)
+
+    def test_multi_node_requires_explicit_placement(self):
+        nodes = {"items": [self.node("cp", control_plane=True), self.node("worker")]}
+        with self.assertRaisesRegex(RuntimeError, "one control-plane"):
+            benchmark.resolve_nodes(None, None, nodes)
+        with self.assertRaisesRegex(RuntimeError, "one control-plane"):
+            benchmark.resolve_nodes("worker", None, nodes)
+        self.assertEqual(benchmark.resolve_nodes("worker", "cp", nodes), ("worker", "cp"))
+
+    def test_placement_rejects_missing_and_unready_nodes(self):
+        nodes = {"items": [self.node("cp", ready=False, control_plane=True)]}
+        with self.assertRaisesRegex(RuntimeError, "not Ready"):
+            benchmark.resolve_nodes(None, None, nodes)
+        with self.assertRaisesRegex(RuntimeError, "does not exist"):
+            benchmark.resolve_nodes("missing", "cp", nodes)
 
     def cache_deployment(self):
         container = {"name": "api", "image": "local/cache:1", "args": ["--cache-dir", "/cache"],

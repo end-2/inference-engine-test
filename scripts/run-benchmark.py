@@ -151,7 +151,12 @@ def ensure_image(image, context, target=None):
 
 
 def render(path):
-    output = kube("create", "--dry-run=client", "--validate=false", "-f", path,
+    path = Path(path)
+    source_flag = "-k" if path.is_dir() and any(
+        (path / name).is_file()
+        for name in ("kustomization.yaml", "kustomization.yml", "Kustomization")
+    ) else "-f"
+    output = kube("create", "--dry-run=client", "--validate=false", source_flag, path,
                   "-o", "json", capture=True).stdout
     decoder = json.JSONDecoder()
     items = []
@@ -448,18 +453,28 @@ def save_summary(report, metadata, rows):
     (report / "summary.md").write_text("\n".join(lines) + "\n")
 
 
+def normalize_backend(backend):
+    return "llamacpp" if backend == "llama" else backend
+
+
+def variant_name(backend, variant="base"):
+    return f"transformers-{variant}" if backend == "transformers" else f"{variant}-llamacpp"
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--image", default=os.environ.get("INFERENCE_IMAGE", "local/llama-base:0.1.0"))
+    parser.add_argument("--backend", choices=("llamacpp", "transformers"), type=normalize_backend,
+                        default=os.environ.get("INFERENCE_BACKEND", "transformers"))
+    parser.add_argument("--image", default=os.environ.get("INFERENCE_IMAGE"))
     parser.add_argument("--build-context", default=os.environ.get("INFERENCE_CONTEXT", str(ROOT / "src")),
                         help="Empty string reuses a prebuilt local image without building")
     parser.add_argument("--build-target", default=os.environ.get("INFERENCE_TARGET"),
                         help="Docker build stage; defaults to base for the shared src context")
-    parser.add_argument("--manifests", default=os.environ.get("INFERENCE_MANIFESTS", str(ROOT / "k8s/llama-base")))
-    parser.add_argument("--deployment", default=os.environ.get("INFERENCE_DEPLOYMENT", "llama-base"))
+    parser.add_argument("--manifests", default=os.environ.get("INFERENCE_MANIFESTS"))
+    parser.add_argument("--deployment", default=os.environ.get("INFERENCE_DEPLOYMENT"))
     parser.add_argument("--container", default=os.environ.get("INFERENCE_CONTAINER", "api"))
-    parser.add_argument("--api-url", default=os.environ.get("API_URL", "http://llama-base:8000"))
-    parser.add_argument("--model", default=os.environ.get("SERVED_MODEL_NAME", "Qwen/Qwen2.5-0.5B-Instruct"))
+    parser.add_argument("--api-url", default=os.environ.get("API_URL"))
+    parser.add_argument("--model", default=os.environ.get("SERVED_MODEL_NAME"))
     parser.add_argument("--concurrencies", default="1,2,4,8")
     parser.add_argument("--cache-policy", choices=CACHE_POLICIES,
                         default=os.environ.get("BENCHMARK_CACHE_POLICY", "preserve"),
@@ -467,12 +482,25 @@ def parse_args():
     parser.add_argument("--inference-node", help="Pin inference and cache cleanup to this Kubernetes node")
     parser.add_argument("--benchmark-node", help="Pin AIPerf to this Kubernetes node")
     parser.add_argument("--benchmark-image", default=f"local/aiperf:{os.environ.get('AIPERF_IMAGE_TAG', '0.12.0')}")
+    parser.add_argument("--benchmark-build-context", default=str(ROOT / "src/aiperf"),
+                        help="Empty string reuses the prebuilt AIPerf image without building")
     parser.add_argument("--job-timeout", type=int, default=3600)
     parser.add_argument("--ready-timeout", type=int, default=300)
     parser.add_argument("--sample-interval", type=float, default=5,
                         help="Seconds between resource samples (plus collection time)")
-    parser.add_argument("--reports-dir", type=Path, default=ROOT / "docs/reports")
+    parser.add_argument("--reports-dir", type=Path,
+                        help="Output root; defaults to docs/reports/<backend>")
     args = parser.parse_args()
+    if args.backend not in {"llamacpp", "transformers"}:
+        parser.error("backend must be llamacpp or transformers")
+    args.reports_dir = args.reports_dir or ROOT / "docs/reports" / args.backend
+    name = variant_name(args.backend)
+    args.image = args.image or f"local/{name}:0.1.0"
+    args.manifests = args.manifests or str(ROOT / "k8s" / name)
+    args.deployment = args.deployment or name
+    args.api_url = args.api_url or f"http://{name}:8000"
+    args.model = args.model or ("HuggingFaceTB/SmolLM2-135M-Instruct" if args.backend == "transformers"
+                                else "Qwen/Qwen2.5-0.5B-Instruct")
     if args.cache_policy not in CACHE_POLICIES:
         parser.error(f"cache policy must be one of {', '.join(CACHE_POLICIES)}")
     try:
@@ -486,14 +514,52 @@ def parse_args():
     if not 0 < args.sample_interval <= 60:
         parser.error("sample interval must be between 0 and 60 seconds")
     args.build_context = Path(args.build_context).resolve() if args.build_context else None
+    args.benchmark_build_context = Path(args.benchmark_build_context).resolve() if args.benchmark_build_context else None
     if args.build_target is None and args.build_context == ROOT / "src":
-        args.build_target = "base"
+        args.build_target = name
     if args.build_context and not (args.build_context / "Dockerfile").is_file():
         parser.error("build context must contain a Dockerfile")
+    if args.benchmark_build_context and not (args.benchmark_build_context / "Dockerfile").is_file():
+        parser.error("benchmark build context must contain a Dockerfile")
     args.manifests = Path(args.manifests).resolve()
     if not args.manifests.exists():
         parser.error("inference manifests do not exist")
     return args
+
+
+def benchmark_manifests(backend):
+    return render(ROOT / "k8s" / ("aiperf" if backend == "transformers" else "aiperf-qwen2.5"))
+
+
+def benchmark_template(backend):
+    return next(item for item in benchmark_manifests(backend)["items"] if item["kind"] == "Job")
+
+
+def prepare_model(backend):
+    if backend == "transformers":
+        run(ROOT / "scripts/download-transformers-model.sh")
+    else:
+        run(ROOT / "scripts/download-model-llamacpp.sh")
+        run(ROOT / "scripts/download-tokenizer-llamacpp.sh")
+
+
+def resolve_nodes(inference_node, benchmark_node, nodes):
+    items = nodes["items"]
+    if not inference_node or not benchmark_node:
+        if len(items) != 1 or "node-role.kubernetes.io/control-plane" not in items[0]["metadata"].get("labels", {}):
+            raise RuntimeError("Default benchmark requires one control-plane node. Existing clusters are reused unchanged; "
+                               "use the default kind configuration or explicitly set both --inference-node and --benchmark-node.")
+        name = items[0]["metadata"]["name"]
+        inference_node = inference_node or name
+        benchmark_node = benchmark_node or name
+    by_name = {node["metadata"]["name"]: node for node in items}
+    for name in (inference_node, benchmark_node):
+        if name not in by_name:
+            raise RuntimeError(f"Requested node does not exist: {name}")
+        if not any(condition["type"] == "Ready" and condition["status"] == "True"
+                   for condition in by_name[name].get("status", {}).get("conditions", [])):
+            raise RuntimeError(f"Requested node is not Ready: {name}")
+    return inference_node, benchmark_node
 
 
 def main():
@@ -513,6 +579,7 @@ def main():
     report = args.reports_dir.resolve() / f"{run_id}-{name}"
     report.mkdir(parents=True)
     metadata = {"run_id": run_id, "started_at": started.isoformat(), "status": "running",
+                "backend": args.backend,
                 "concurrencies": args.concurrencies, "sample_interval_seconds": args.sample_interval,
                 "cache_policy": args.cache_policy,
                 "inference_node": args.inference_node, "benchmark_node": args.benchmark_node,
@@ -520,21 +587,20 @@ def main():
     rows = []
     job_name = None
     case_dir = None
+    results_reader = None
     print(f"Reports: {report}", flush=True)
     try:
-        run(ROOT / "scripts/download-model.sh")
-        run(ROOT / "scripts/download-tokenizer.sh")
+        prepare_model(args.backend)
         run(ROOT / "scripts/local-k8s.sh", "up")
         active = kube_json("get", "jobs", "-l", "benchmark=aiperf-cpu")["items"]
         if any(item.get("status", {}).get("active", 0) for item in active):
             raise RuntimeError("An AIPerf Job is already active; wait for it before restarting the server.")
-        metadata["inference"] = ensure_image(args.image, args.build_context, args.build_target)
-        metadata["benchmark"] = ensure_image(args.benchmark_image, ROOT / "src/aiperf")
         nodes = kube_json("get", "nodes")
-        node_names = {node["metadata"]["name"] for node in nodes["items"]}
-        if any(name and name not in node_names for name in (args.inference_node, args.benchmark_node)):
-            raise RuntimeError("Requested benchmark or inference node does not exist.")
+        args.inference_node, args.benchmark_node = resolve_nodes(args.inference_node, args.benchmark_node, nodes)
+        metadata.update(inference_node=args.inference_node, benchmark_node=args.benchmark_node)
         write_json(report / "nodes.json", nodes)
+        metadata["inference"] = ensure_image(args.image, args.build_context, args.build_target)
+        metadata["benchmark"] = ensure_image(args.benchmark_image, args.benchmark_build_context)
         manifests = render(args.manifests)
         items = manifests.get("items", [manifests])
         deployment = next(item for item in items if item["kind"] == "Deployment"
@@ -552,9 +618,14 @@ def main():
         write_json(path, manifests)
         kube("apply", "-f", path)
         kube("rollout", "status", f"deployment/{args.deployment}", f"--timeout={args.ready_timeout}s")
-        kube("apply", "-f", ROOT / "k8s/aiperf/results.yaml")
-        kube("wait", "--for=condition=Ready", "pod/aiperf-results", f"--timeout={args.ready_timeout}s")
-        template = render(ROOT / "k8s/aiperf/job.yaml")
+        profile = benchmark_manifests(args.backend)
+        template = next(item for item in profile["items"] if item["kind"] == "Job")
+        resources = {"apiVersion": "v1", "kind": "List", "items": [
+            item for item in profile["items"] if item["kind"] != "Job"]}
+        results_reader = next(item["metadata"]["name"] for item in resources["items"] if item["kind"] == "Pod")
+        write_json(report / "benchmark-resources.json", resources)
+        kube("apply", "-f", report / "benchmark-resources.json")
+        kube("wait", "--for=condition=Ready", f"pod/{results_reader}", f"--timeout={args.ready_timeout}s")
         if args.benchmark_node:
             template["spec"]["template"]["spec"].setdefault("nodeSelector", {})[
                 "kubernetes.io/hostname"] = args.benchmark_node
@@ -601,7 +672,7 @@ def main():
             wait_job(job_name, args.job_timeout, sampler, args.sample_interval)
             write_json(case_dir / "aiperf-pods.json", kube_json("get", "pods", "-l", f"job-name={job_name}"))
             (case_dir / "aiperf.log").write_text(kube("logs", f"job/{job_name}", capture=True).stdout)
-            kube("cp", f"aiperf-results:{artifact_path}/.", case_dir / "artifacts")
+            kube("cp", f"{results_reader}:{artifact_path}/.", case_dir / "artifacts")
             result = case_dir / "artifacts/profile_export_aiperf.json"
             export_requests(result.parent / "profile_export.jsonl", case_dir / "requests.csv")
             condition["resource_collection"] = sampler.validate()
@@ -632,7 +703,7 @@ def main():
                 (case_dir / filename).write_text(result.stdout + result.stderr)
             kube("delete", "job", job_name, "--ignore-not-found=true", check=False)
             if (case_dir / "job.json").exists():
-                kube("cp", f"aiperf-results:/results/{run_id}/{case_dir.name}/.",
+                kube("cp", f"{results_reader}:/results/{run_id}/{case_dir.name}/.",
                      case_dir / "artifacts", check=False)
         print(f"Benchmark failed: {exc}\nDiagnostics: {report}", file=sys.stderr)
         return 1

@@ -45,9 +45,9 @@ class ChatHandler(BaseHTTPRequestHandler):
 
 def main():
     tokenizer = Path(os.environ.get(
-        "TEST_TOKENIZER_PATH", ROOT / ".models/qwen2.5-0.5b/tokenizer")).resolve()
+        "TEST_TOKENIZER_PATH", ROOT / ".models/smollm2-135m")).resolve()
     if not tokenizer.is_dir():
-        raise SystemExit("Run ./scripts/download-tokenizer.sh first, or set TEST_TOKENIZER_PATH.")
+        raise SystemExit("Run make download-model first, or set TEST_TOKENIZER_PATH.")
     job = yaml.safe_load((ROOT / "k8s/aiperf/job.yaml").read_text())
     container = job["spec"]["template"]["spec"]["containers"][0]
     values = {item["name"]: item["value"] for item in container["env"] if "value" in item}
