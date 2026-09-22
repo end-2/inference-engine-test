@@ -2,6 +2,8 @@
 
 단일 노드 kind에서 SmolLM2를 Transformers + PyTorch CPU로 실행하고, base, batch, prefix KV cache 구현의 성능을 AIPerf로 비교합니다. llama.cpp 구현도 별도로 선택할 수 있습니다.
 
+Benchmark, Availablity, HPA 테스트 결과는 [reports-transformers.md](docs/reports-transformers.md) 파일을 참고해주세요.
+
 ## 준비 사항
 
 - Docker가 실행 중인 호스트, POSIX 셸, Python 3.10 이상과 `make`

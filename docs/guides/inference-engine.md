@@ -26,7 +26,7 @@ macOS에서는 CPU 인덱스 설치 명령을 생략하고 requirements만 설�
 
 다운로드는 검증된 파일을 보존하며 중단된 파일을 이어받습니다. 전체 파일의 검증이 끝난 뒤 `.models/smollm2-135m/`를 공개합니다. `LOCAL_K8S_MODELS_DIR`로 모델 루트를 변경할 수 있으며 클러스터 생성에도 같은 값을 사용합니다. 서버는 로컬 파일만 읽으며 원격 모델 코드나 자동 다운로드를 사용하지 않습니다.
 
-기본 모델은 영어 중심의 SmolLM2-135M-Instruct입니다. CPU 스레드는 실행 환경에 맞춰 `--n-threads`로 지정합니다. Llama 구조와 Qwen3를 지원하고 각 모델의 채팅 템플릿을 사용합니다. Qwen3를 별도로 로딩할 때는 `--served-model-name`도 맞춥니다. `--enable-thinking`은 Qwen3에서만 허용하며, reasoning 텍스트도 `content`와 출력 상한에 포함됩니다.
+모델은 영어 중심의 SmolLM2-135M-Instruct를 사용하며, Llama 모델 클래스로 로딩하고 모델의 채팅 템플릿을 적용합니다. CPU 스레드는 실행 환경에 맞춰 `--n-threads`로 지정합니다.
 
 ### API와 구현 선택
 
@@ -47,17 +47,21 @@ curl http://127.0.0.1:8000/v1/chat/completions \
 
 로컬 실행 명령의 모듈을 바꾸어 구현을 선택합니다. 공통 CLI와 기본값은 각 모듈의 `--help`를 참고하세요. 입력과 출력의 합은 `--n-ctx`를 넘을 수 없으며 입력을 자동으로 자르지 않습니다. 토큰 수는 실제 입력 및 생성 ID로 계산하며 종료 EOS는 출력 토큰 수에서 제외합니다. SSE 텍스트는 UTF-8과 단어 경계를 보존하므로 한 청크가 여러 토큰을 포함할 수 있습니다.
 
+Base와 cache는 Transformers의 `generate()`로 생성하며 KV 갱신과 종료 조건을 라이브러리에 맡깁니다. 샘플링은 `temperature > 0`일 때만 활성화하고 `top_k=0`으로 top-k 제한을 끕니다. 요청의 `temperature`, `top_p`에 모델 파일의 샘플링 기본값을 추가로 적용하지 않습니다. `ignore_eos`는 종료 조건만 끄는 대신 EOS 토큰을 억제합니다.
+
+스트리밍은 `TextStreamer`로 디코딩하며 base와 cache는 `skip_prompt=True`로 입력 텍스트를 제외합니다. 사용량은 생성 ID에서 입력과 마지막 EOS를 제외해 계산합니다. 마지막 생성 단계에서 EOS가 나오면 `finish_reason`은 `stop`입니다. 생성 전 취소된 요청은 모델을 호출하지 않습니다. 생성 중 취소는 `StoppingCriteria`가 토큰 생성 후 확인하므로 진행 중인 연산과 해당 토큰 출력을 즉시 중단하지 않습니다.
+
 Base + Prometheus는 같은 직렬 엔진에 `/metrics`의 `transformers_*` 요청, 토큰 수, TTFT 지표를 추가합니다. 로컬 실행에는 `src/transformers_cpu/base_metric/requirements.txt`도 설치합니다. [멀티 노드 availability](availability-test.md)와 [HPA](hpa-test.md)는 이 이미지를 사용합니다.
 
 ### 요청 배칭
 
-[배칭 작업자](../../src/transformers_cpu/enhanced/batch/engine.py)는 `--batch-wait-ms` 동안 모은 요청을 `--max-parallel` 크기까지 함께 실행합니다. 길이가 다른 입력은 왼쪽 패딩과 요청별 attention mask, position ID를 사용합니다. 각 요청의 샘플링 옵션과 출력 제한, 취소 상태를 분리하고, 종료된 행은 다음 decode 전에 KV와 배치에서 제거합니다.
+[배칭 작업자](../../src/transformers_cpu/enhanced/batch/engine.py)는 `--batch-wait-ms` 동안 모은 요청을 `--max-parallel` 크기까지 함께 실행합니다. 길이가 다른 입력은 토크나이저의 왼쪽 패딩과 `prepare_inputs_for_generation()`의 position ID 준비를 사용합니다. 샘플링에는 Transformers의 `TemperatureLogitsWarper`, `TopPLogitsWarper`, `SuppressTokensLogitsProcessor`를 사용합니다. 각 요청의 샘플링 옵션과 출력 제한, 취소 상태를 분리하고, 종료된 행은 다음 decode 전에 KV와 배치에서 제거합니다.
 
-진행 중인 배치에는 새 요청을 추가하지 않습니다. 새 요청은 다음 배치를 기다리므로 긴 출력이 대기 시간을 늘릴 수 있습니다. 모델 연산은 한 작업자만 실행하고 HTTP 스레드는 결과를 기다립니다. 작업자 오류는 대기 요청에 전달되며 health와 readiness가 실패합니다. 요청 간 prefix 캐시는 유지하지 않습니다.
+일반 `generate()`가 제공하지 않는 요청별 생성 설정, 스트림 분배와 완료 행 제거는 [배치 백엔드](../../src/transformers_cpu/enhanced/batch/backend.py)의 루프에서 처리합니다. 진행 중인 배치에는 새 요청을 추가하지 않습니다. 새 요청은 다음 배치를 기다리므로 긴 출력이 대기 시간을 늘릴 수 있습니다. 모델 연산은 한 작업자만 실행하고 HTTP 스레드는 결과를 기다립니다. 작업자 오류는 대기 요청에 전달되며 health와 readiness가 실패합니다. 요청 간 prefix 캐시는 유지하지 않습니다.
 
 ### Prefix KV 캐시
 
-[캐시 엔진](../../src/transformers_cpu/enhanced/cache/engine.py)은 입력 prefill의 KV 텐서만 safetensors로 저장합니다. 토큰 ID의 최장 공통 prefix를 복원하고 나머지 입력을 계산합니다. 입력 전체가 일치하면 마지막 토큰을 다시 계산해 logits를 얻습니다. 모든 구현은 한 요청의 decode 안에서 KV를 사용하며, cache 구현은 이를 요청 사이에도 재사용합니다.
+[캐시 엔진](../../src/transformers_cpu/enhanced/cache/engine.py)은 `generate()`가 반환된 뒤 `DynamicCache.crop()`으로 입력 길이만 남겨 safetensors로 저장합니다. 생성 토큰의 KV는 저장하지 않습니다. 토큰 ID의 최장 공통 prefix를 복원하여 `past_key_values`로 전달하고 나머지 입력을 계산합니다. 입력 전체가 일치하면 마지막 토큰을 다시 계산해 logits를 얻습니다. 모든 구현은 한 요청의 decode 안에서 KV를 사용하며, cache 구현은 이를 요청 사이에도 재사용합니다. 생성 중 예외나 프로세스 종료가 발생하면 해당 요청의 새 snapshot은 저장하지 않습니다.
 
 | CLI 옵션 | 용도 |
 | --- | --- |
@@ -103,7 +107,7 @@ CPU, 메모리와 `--n-threads`는 각 Deployment에서 설정합니다.
 
 ### 검증
 
-테스트는 위 Python 환경에 `httpx`를 추가해 실행합니다. 작은 Llama와 Qwen3 가중치를 임시 생성하여 CPU 연산, 배치 패딩과 완료 행 제거, 취소, 캐시 복원과 손상 복구를 검증합니다.
+테스트는 위 Python 환경에 `httpx`를 추가해 실행합니다. SmolLM2와 같은 Llama 구조의 작은 가중치를 임시 생성하여 CPU 연산, 배치 패딩과 완료 행 제거, 취소, 캐시 복원과 손상 복구를 검증합니다.
 
 ```sh
 python -m pip install httpx
