@@ -19,8 +19,10 @@ Full AIPerf exports, request CSV, resource JSONL/CSV, and logs are saved locally
 
 ## 실행 조건
 
+현재 이미지 이름으로 같은 캐시 정책을 실행하는 명령입니다. 측정 당시 이미지와 ID는 위에 기록되어 있습니다.
+
 ```sh
-make benchmark VARIANT=enhanced-cache CACHE_POLICY=clear-per-concurrency INFERENCE_CONTEXT=
+make benchmark VARIANT=enhanced-cache-llamacpp CACHE_POLICY=clear-per-concurrency INFERENCE_CONTEXT=
 ```
 
 `INFERENCE_CONTEXT=`로 기존 추론 이미지를 재사용했습니다. Concurrency 1, 2, 4, 8마다 워밍업 2회와 본 측정 100회를 실행했으며, 본 측정 400회 모두 성공했고 출력 길이 부족이나 초과는 없었습니다. 추론 Pod 4개의 UID는 모두 다르고 QoS는 Guaranteed입니다.

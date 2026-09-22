@@ -40,7 +40,7 @@ CPU 추론 서버에 동시성별 부하를 보내 처리량, TTFT, ITL과 응�
 
 AIPerf 컨테이너는 CPU `1`, 메모리 `1Gi`를 requests와 limits에 동일하게 지정합니다. Job 제한 시간은 `activeDeadlineSeconds: 14400`이며 개별 요청 timeout과 별개입니다. 자동 runner는 `--job-timeout` 값으로 덮어쓰며 기본값은 3,600초입니다.
 
-[llama.cpp 프로필](../../k8s/aiperf-qwen2.5/base/model.yaml)은 모델을 `Qwen/Qwen2.5-0.5B-Instruct`, 주소를 `http://base-llamacpp:8000`, 호스트 토크나이저 경로를 `/models/qwen2.5-0.5b/tokenizer`로 변경합니다. 공통 부하 옵션은 동일하며, 자동 runner는 선택한 서버에 맞춰 모델과 주소를 설정합니다.
+[llama.cpp 프로필](../../k8s/aiperf-qwen2.5/job.yaml)은 모델을 `Qwen/Qwen2.5-0.5B-Instruct`, 주소를 `http://base-llamacpp:8000`, 호스트 토크나이저 경로를 `/models/qwen2.5-0.5b/tokenizer`로 변경합니다. 공통 부하 옵션은 동일하며, 자동 runner는 선택한 서버에 맞춰 모델과 주소를 설정합니다.
 
 ## 토크나이저 준비
 

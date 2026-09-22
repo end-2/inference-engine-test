@@ -123,6 +123,19 @@ SERVED_MODEL_NAME=HuggingFaceTB/SmolLM2-135M-Instruct python tests/test-api-llam
 
 llama.cpp는 GGUF 모델을 CPU에서 실행합니다. base는 직렬 추론, enhanced/batch는 continuous batching, enhanced/cache는 RAM과 디스크 prefix KV 캐시를 제공합니다. 배칭과 캐시는 독립적으로 실행합니다. 의존성과 CPU 빌드 옵션은 [Dockerfile](../../src/Dockerfile)에서 관리합니다.
 
+### 엔진 전환
+
+Transformers와 llama.cpp는 서로 다른 Deployment를 사용합니다. 같은 클러스터에서 엔진을 전환할 때는 기존 엔진의 Pod를 먼저 중지합니다. 유휴 Pod도 자원을 예약하므로 함께 배포하면 새 Pod가 CPU나 메모리 부족으로 Pending 상태에 머물 수 있습니다.
+
+Transformers에서 llama.cpp로 전환하려면 실행 중인 벤치마크를 마친 뒤 다음을 실행합니다.
+
+```sh
+./scripts/local-k8s.sh kubectl scale deployment/transformers-base --replicas=0
+./scripts/local-k8s.sh kubectl wait --for=delete pod -l app=transformers-base --timeout=120s
+```
+
+반대 방향은 위 명령의 `transformers-base`를 `base-llamacpp`로 바꿉니다. 처음 선택하는 엔진이라면 중지 단계는 필요 없습니다. 이후 대상 엔진의 매니페스트를 적용하거나 벤치마크를 실행하면 해당 Deployment가 다시 시작됩니다. PVC와 모델은 유지됩니다.
+
 ### llama.cpp 배포
 
 저장소 루트에서 `VARIANT=base-llamacpp`를 지정해 모델과 이미지를 준비합니다.

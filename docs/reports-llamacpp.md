@@ -82,7 +82,7 @@ flowchart LR
 
 ### 배포와 측정 검증
 
-[공통 Dockerfile](../src/Dockerfile)의 `base`, `enhanced-batch`, `enhanced-cache` 타깃으로 이미지를 빌드하고, [이미지 로드 스크립트](../scripts/load-inference-images.sh)로 로컬 Kubernetes에 로드했습니다. 모델은 이미지에 포함하지 않고 읽기 전용 볼륨으로 연결했습니다. 각 구현의 매니페스트는 같은 Deployment와 Service를 사용하며, 구현을 순차 교체합니다.
+현재 [공통 Dockerfile](../src/Dockerfile)의 `base-llamacpp`, `enhanced-batch-llamacpp`, `enhanced-cache-llamacpp` 타깃으로 각 구현을 빌드하고, [이미지 로드 스크립트](../scripts/load-inference-images.sh)로 로컬 Kubernetes에 로드할 수 있습니다. 모델은 이미지에 포함하지 않고 읽기 전용 볼륨으로 연결했습니다. 각 구현의 매니페스트는 같은 Deployment와 Service를 사용하며, 구현을 순차 교체합니다.
 
 측정 runner는 새 추론 Pod의 준비 상태를 기다린 뒤 Service에 요청을 보냅니다. 반복 실험에서 이미지 ID를 고정하고, 조건별 Pod UID가 서로 다른지 확인했습니다. 최종 기록은 48개 단계와 48개 추론 Pod, 본 요청 4,800건과 워밍업 96건의 성공, 출력 길이 부족과 초과 0건을 확인합니다. [실행 기록](reports/llamacpp/benchmark-suite-20260920-091620-649645/run.json), [검증 기록](reports/llamacpp/benchmark-suite-20260920-091620-649645/verification.json)
 

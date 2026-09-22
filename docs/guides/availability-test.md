@@ -118,7 +118,7 @@ metric 단위 테스트에는 Transformers 런타임과 `src/transformers_cpu/ba
 
 모델은 [Qwen GGUF 설정](../../config/models/qwen2.5-0.5b-gguf-llamacpp.env)을 사용하며 서버와 AIPerf의 모델 및 토크나이저를 맞춥니다. 자원과 부하 설정은 [llama.cpp 매니페스트](../../k8s/availability-test-llamacpp/)를 기준으로 합니다. 같은 클러스터의 다른 테스트를 정리할 때도 해당 엔진의 namespace와 매니페스트를 선택합니다.
 
-재실행 전에 AIPerf와 renderer를 중지합니다. 각 시나리오는 독립 실행하며 순서에 의존하지 않습니다.
+최초 배포 후와 재실행 전에 아래 명령으로 AIPerf와 renderer를 중지합니다. llama.cpp 매니페스트의 AIPerf는 기본 replicas가 1이므로 첫 실행에도 이 단계가 필요합니다. 각 시나리오는 독립 실행하며 순서에 의존하지 않습니다.
 
 ```sh
 export CLUSTER_NAME=availability-test-llamacpp

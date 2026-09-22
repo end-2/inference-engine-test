@@ -30,7 +30,7 @@ make benchmark VARIANT=transformers-enhanced-batch
 make benchmark VARIANT=transformers-enhanced-cache
 ```
 
-llama.cpp는 `make benchmark VARIANT=base-llamacpp`로 선택하며, `enhanced-batch-llamacpp`와 `enhanced-cache-llamacpp`도 같은 방식으로 실행합니다. 보고서는 `docs/reports/llamacpp/`와 `docs/reports/transformers/`에 backend별로 저장됩니다.
+llama.cpp는 [엔진 전환](docs/guides/inference-engine.md#엔진-전환) 후 `make benchmark VARIANT=base-llamacpp`로 선택하며, `enhanced-batch-llamacpp`와 `enhanced-cache-llamacpp`도 같은 방식으로 실행합니다. 보고서는 `docs/reports/llamacpp/`와 `docs/reports/transformers/`에 backend별로 저장됩니다.
 
 ### 스크립트 직접 실행
 

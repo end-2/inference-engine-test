@@ -84,6 +84,7 @@ docker build -t inference:test /path/to/application
 | 증상 | 확인 사항 |
 | --- | --- |
 | Docker 연결 실패 | Docker 서비스와 현재 사용자의 접근 권한 |
+| macOS에서 `keychain cannot be accessed` | 이미지 다운로드에 사용하는 Docker credential helper가 로그인 키체인에 접근할 수 있는지 확인 |
 | 준비 시간 초과 | 로그와 할당 자원. 필요하면 `WAIT_TIMEOUT=300s`로 조정 |
 | `no space left on device` | Docker 데이터 경로와 임시 디렉터리의 여유 공간 확인. 임시 파일은 `TMPDIR`로 위치 지정 |
 | VPN과 Pod 또는 Service 대역 충돌 | 사용자 지정 kind YAML의 `podSubnet`, `serviceSubnet` 조정 |

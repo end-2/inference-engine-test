@@ -39,8 +39,13 @@ for deployment in transformers-base-metric prometheus kube-state-metrics grafana
   ./scripts/local-k8s.sh kubectl -n hpa-test-transformers rollout status "deployment/$deployment" --timeout=300s
 done
 ./scripts/local-k8s.sh kubectl -n hpa-test-transformers wait --for=condition=Ready pod/aiperf-results --timeout=120s
+./scripts/local-k8s.sh kubectl -n hpa-test-transformers wait \
+  --for=jsonpath='{.status.currentMetrics[0].resource.current.averageUtilization}' \
+  hpa/transformers-base-metric --timeout=180s
 ./scripts/local-k8s.sh kubectl -n hpa-test-transformers top pods
 ```
+
+새 Pod는 Ready가 된 뒤에도 첫 메트릭 수집까지 시간이 필요합니다. HPA의 CPU 측정값을 기다린 뒤 `top`을 실행합니다.
 
 기존 Metrics Server가 있으면 해당 Metrics API를 사용합니다. 저장소 설정의 `--kubelet-insecure-tls`는 kind 실험용입니다. Metrics Server는 HPA 제어에 사용하고 Prometheus는 관측에 사용합니다.
 
