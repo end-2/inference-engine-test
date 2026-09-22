@@ -1,6 +1,6 @@
 # Transformers 테스트 결과
 
-2026-09-21 SmolLM2-135M-Instruct FP32로 측정한 성능, 장애 복구와 CPU HPA 결과입니다.
+2026-09-22 SmolLM2-135M-Instruct FP32 성능 측정과 2026-09-21 장애 복구 및 CPU HPA 결과입니다.
 
 ## 단일 노드 성능
 
@@ -8,13 +8,13 @@ kind control-plane 1개에서 base, enhanced-batch, enhanced-cache를 동시성 
 
 | 구현 | c1 출력 tok/s | c2 출력 tok/s | c4 출력 tok/s | c8 출력 tok/s |
 | --- | ---: | ---: | ---: | ---: |
-| base | 44.79 | 44.96 | 45.27 | 45.09 |
-| enhanced-batch | 45.39 | 62.21 | 78.53 | 79.32 |
-| enhanced-cache | 48.08 | 48.90 | 49.06 | 48.97 |
+| base | 43.44 | 43.99 | 44.33 | 44.29 |
+| enhanced-batch | 44.41 | 61.28 | 77.06 | 77.56 |
+| enhanced-cache | 47.13 | 48.05 | 47.96 | 47.73 |
 
 출력 처리량은 3회 평균입니다. 각 동시성 측정은 새 추론 Pod에서 워밍업 2건과 본 요청 100건을 실행합니다. cache는 sweep 시작 전에 비우고 동시성 사이에는 보존합니다.
 
-[성능 보고서](benchmark-suite-20260921-101648-638635/summary.md)에서 지연, 표준편차와 회차별 결과를 확인할 수 있습니다. 재실행 방법은 [AIPerf 가이드](../../guides/aiperf.md)를 참고하세요.
+[성능 보고서](benchmark-suite-20260922-061851-685273/summary.md)에서 지연, 표준편차와 회차별 결과를 확인할 수 있습니다. 재실행 방법은 [AIPerf 가이드](../../guides/aiperf.md)를 참고하세요.
 
 ## 멀티 노드 장애 복구
 
