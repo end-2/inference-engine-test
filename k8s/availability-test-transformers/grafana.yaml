@@ -1,123 +1,128 @@
 apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: availability-test-transformers
+spec:
+  ports:
+  - name: http
+    port: 3000
+    targetPort: http
+  selector:
+    app: grafana
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: grafana-data
+  namespace: availability-test-transformers
 spec:
-  accessModes: [ReadWriteOnce]
-  storageClassName: standard
+  accessModes:
+  - ReadWriteOnce
   resources:
     requests:
       storage: 1Gi
+  storageClassName: standard
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: grafana
+  namespace: availability-test-transformers
 spec:
   replicas: 1
-  strategy:
-    type: Recreate
   selector:
     matchLabels:
       app: grafana
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
         app: grafana
     spec:
+      automountServiceAccountToken: false
+      containers:
+      - env:
+        - name: GF_AUTH_ANONYMOUS_ENABLED
+          value: "true"
+        - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+          value: Viewer
+        - name: GF_AUTH_DISABLE_LOGIN_FORM
+          value: "true"
+        - name: GF_USERS_ALLOW_SIGN_UP
+          value: "false"
+        - name: GF_ANALYTICS_REPORTING_ENABLED
+          value: "false"
+        - name: GF_ANALYTICS_CHECK_FOR_UPDATES
+          value: "false"
+        - name: GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH
+          value: /var/lib/grafana/dashboards/availability.json
+        - name: GF_RENDERING_SERVER_URL
+          value: http://grafana-renderer:8081/render
+        - name: GF_RENDERING_CALLBACK_URL
+          value: http://grafana:3000/
+        - name: GF_RENDERING_RENDERER_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: token
+              name: grafana-renderer-auth
+        image: grafana/grafana:12.1.0
+        name: grafana
+        ports:
+        - containerPort: 3000
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+        resources:
+          limits:
+            cpu: 250m
+            memory: 256Mi
+          requests:
+            cpu: 250m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /var/lib/grafana
+          name: data
+        - mountPath: /tmp
+          name: tmp
+        - mountPath: /etc/grafana/provisioning/datasources
+          name: datasources
+          readOnly: true
+        - mountPath: /etc/grafana/provisioning/dashboards
+          name: providers
+          readOnly: true
+        - mountPath: /var/lib/grafana/dashboards
+          name: dashboard
+          readOnly: true
       nodeSelector:
         workload: monitor
-      automountServiceAccountToken: false
       securityContext:
+        fsGroup: 472
+        runAsGroup: 472
         runAsNonRoot: true
         runAsUser: 472
-        runAsGroup: 472
-        fsGroup: 472
-      containers:
-        - name: grafana
-          image: grafana/grafana:12.1.0
-          env:
-            - name: GF_AUTH_ANONYMOUS_ENABLED
-              value: "true"
-            - name: GF_AUTH_ANONYMOUS_ORG_ROLE
-              value: "Viewer"
-            - name: GF_AUTH_DISABLE_LOGIN_FORM
-              value: "true"
-            - name: GF_USERS_ALLOW_SIGN_UP
-              value: "false"
-            - name: GF_ANALYTICS_REPORTING_ENABLED
-              value: "false"
-            - name: GF_ANALYTICS_CHECK_FOR_UPDATES
-              value: "false"
-            - name: GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH
-              value: /var/lib/grafana/dashboards/availability.json
-            - name: GF_RENDERING_SERVER_URL
-              value: http://grafana-renderer:8081/render
-            - name: GF_RENDERING_CALLBACK_URL
-              value: http://grafana:3000/
-            - name: GF_RENDERING_RENDERER_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: grafana-renderer-auth
-                  key: token
-          ports:
-            - name: http
-              containerPort: 3000
-          readinessProbe:
-            httpGet:
-              path: /api/health
-              port: http
-          resources:
-            requests:
-              cpu: 250m
-              memory: 256Mi
-            limits:
-              cpu: 250m
-              memory: 256Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop: [ALL]
-          volumeMounts:
-            - name: data
-              mountPath: /var/lib/grafana
-            - name: tmp
-              mountPath: /tmp
-            - name: datasources
-              mountPath: /etc/grafana/provisioning/datasources
-              readOnly: true
-            - name: providers
-              mountPath: /etc/grafana/provisioning/dashboards
-              readOnly: true
-            - name: dashboard
-              mountPath: /var/lib/grafana/dashboards
-              readOnly: true
       volumes:
-        - name: data
-          persistentVolumeClaim:
-            claimName: grafana-data
-        - name: tmp
-          emptyDir:
-            sizeLimit: 128Mi
-        - name: datasources
-          configMap:
-            name: grafana-datasources
-        - name: providers
-          configMap:
-            name: grafana-providers
-        - name: dashboard
-          configMap:
-            name: grafana-dashboard
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: grafana
-spec:
-  selector:
-    app: grafana
-  ports:
-    - name: http
-      port: 3000
-      targetPort: http
+      - name: data
+        persistentVolumeClaim:
+          claimName: grafana-data
+      - emptyDir:
+          sizeLimit: 128Mi
+        name: tmp
+      - configMap:
+          name: grafana-datasources
+        name: datasources
+      - configMap:
+          name: grafana-providers
+        name: providers
+      - configMap:
+          name: grafana-dashboard
+        name: dashboard

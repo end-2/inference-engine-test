@@ -311,7 +311,8 @@ class Experiment:
                 destination, self.state.get("low_hold_started") if phase == "low" else None,
                 self.state.get("measurement_complete"),
             )
-        dashboard = json.loads((ROOT / "k8s/hpa-test-transformers/grafana/hpa.json").read_text())
+        config = self.get(*self.ns, "get", "configmap/grafana-dashboard", "-o", "json")
+        dashboard = json.loads(config["data"]["availability.json"])
         directory = self.raw / "prometheus"
         directory.mkdir(exist_ok=True)
         for panel in dashboard["panels"]:

@@ -2,18 +2,18 @@
 set -eu
 
 ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
-KUBECTL=${LOCAL_K8S_BIN_DIR:-$ROOT/.bin}/kubectl
-if [ ! -x "$KUBECTL" ]; then KUBECTL=kubectl; fi
+. "$ROOT/tests/lib/manifests.sh"
+
 rendered=$(mktemp -d "${TMPDIR:-/tmp}/hpa-manifests.XXXXXX")
 trap 'rm -rf "$rendered"' 0
 trap 'exit 130' INT
 trap 'exit 143' TERM
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 
-"$KUBECTL" kustomize "$ROOT/k8s/availability-test-transformers" > "$rendered/availability.yaml"
-"$KUBECTL" kustomize "$ROOT/k8s/hpa-test-transformers" > "$rendered/hpa.yaml"
-"$KUBECTL" kustomize "$ROOT/k8s/metrics-server" > "$rendered/metrics.yaml"
-# Namespace and RBAC rewrites must not leak into the availability experiment.
+read_manifests "$ROOT/k8s/availability-test-transformers" > "$rendered/availability.yaml"
+read_manifests "$ROOT/k8s/hpa-test-transformers" > "$rendered/hpa.yaml"
+read_manifests "$ROOT/k8s/metrics-server" > "$rendered/metrics.yaml"
+# HPA namespace and RBAC must remain isolated from the availability experiment.
 if grep -Fq 'availability-test-transformers' "$rendered/hpa.yaml"; then fail 'Stale availability namespace or RBAC'; fi
 grep -Fq 'name: hpa-node-metrics-transformers' "$rendered/hpa.yaml" || fail 'Missing isolated node RBAC'
 grep -Fq 'horizontalpodautoscalers' "$rendered/hpa.yaml" || fail 'Missing HPA metric permission'

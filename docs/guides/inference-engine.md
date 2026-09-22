@@ -1,5 +1,7 @@
 # CPU 추론 엔진
 
+Manifest 적용과 ConfigMap 변경 방법은 [manifest 관리](manifests.md)를 참고합니다.
+
 기본 엔진은 Transformers + PyTorch CPU이며 llama.cpp도 선택할 수 있습니다. 두 엔진 모두 base, enhanced/batch, enhanced/cache를 제공합니다. 이 문서는 Transformers의 실행과 설정을 먼저 설명하고 [llama.cpp](#llamacpp) 차이를 뒤에 정리합니다.
 
 ## Transformers
@@ -76,24 +78,24 @@ RAM 예산은 실행 중인 모델 KV, 역직렬화 버퍼, Python 인덱스를 
 make download-model
 ./scripts/local-k8s.sh up
 make build-image load-image
-./scripts/local-k8s.sh kubectl apply -k k8s/transformers-base/
+./scripts/local-k8s.sh kubectl apply -f k8s/transformers-base/
 ./scripts/local-k8s.sh kubectl rollout status deployment/transformers-base --timeout=300s
 ./scripts/local-k8s.sh kubectl port-forward service/transformers-base 8000:8000
 ```
 
-각 디렉터리의 `kustomization.yaml`은 Deployment와 Service를 묶으며 cache는 PVC도 포함합니다. 배칭과 캐시는 다음 명령으로 전환합니다.
+각 디렉터리에는 Deployment와 Service manifest가 있으며 cache는 PVC도 포함합니다. 배칭과 캐시는 다음 명령으로 전환합니다.
 
 ```sh
 make build-image load-image VARIANT=transformers-enhanced-batch
-./scripts/local-k8s.sh kubectl apply -k k8s/transformers-enhanced-batch/
+./scripts/local-k8s.sh kubectl apply -f k8s/transformers-enhanced-batch/
 
 make build-image load-image VARIANT=transformers-enhanced-cache
-./scripts/local-k8s.sh kubectl apply -k k8s/transformers-enhanced-cache/
+./scripts/local-k8s.sh kubectl apply -f k8s/transformers-enhanced-cache/
 ```
 
 세 구성 중 하나만 선택해 적용합니다. 같은 `Deployment/transformers-base`와 `Service/transformers-base`를 교체하며, 다른 구현으로 전환해도 캐시 PVC는 유지됩니다. 성능 측정 시 같은 노드의 다른 추론 작업을 함께 실행하지 않습니다.
 
-배포 전에는 `./scripts/local-k8s.sh kubectl apply --dry-run=server -k k8s/transformers-base/`로 API 서버 검증을 실행할 수 있습니다. 위 명령은 매니페스트의 기본 이미지 태그를 사용합니다. 다른 `IMAGE_TAG`로 빌드했다면 선택한 `deployment.yaml`의 `image`도 같은 태그로 맞춥니다.
+배포 전에는 `./scripts/local-k8s.sh kubectl apply --dry-run=server -f k8s/transformers-base/`로 API 서버 검증을 실행할 수 있습니다. 위 명령은 매니페스트의 기본 이미지 태그를 사용합니다. 다른 `IMAGE_TAG`로 빌드했다면 선택한 `deployment.yaml`의 `image`도 같은 태그로 맞춥니다.
 
 CPU, 메모리와 `--n-threads`는 각 Deployment에서 설정합니다.
 

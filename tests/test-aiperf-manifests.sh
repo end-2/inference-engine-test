@@ -6,19 +6,14 @@ BENCH="$ROOT/k8s/aiperf"
 . "$ROOT/config/models/smollm2-135m-transformers.env"
 
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
-if [ -x "$ROOT/.bin/kubectl" ]; then
-    KUBECTL="$ROOT/.bin/kubectl"
-elif command -v kubectl >/dev/null 2>&1; then
-    KUBECTL=kubectl
-else
-    fail "Missing kubectl. Run ./scripts/local-k8s.sh install or add it to PATH."
-fi
+
+. "$ROOT/tests/lib/manifests.sh"
 
 rendered=$(mktemp -d "${TMPDIR:-/tmp}/aiperf-manifests.XXXXXX")
 trap 'rm -rf "$rendered"' 0
 trap 'exit 130' INT
 trap 'exit 143' TERM
-"$KUBECTL" kustomize "$BENCH" > "$rendered/all.yaml" || fail 'kustomize failed'
+read_manifests "$BENCH" > "$rendered/all.yaml" || fail 'Cannot read manifests'
 [ "$(grep -c '^kind: Job$' "$rendered/all.yaml")" -eq 1 ] || fail 'Sweep must use one Job'
 awk 'BEGIN { RS="---" } /kind: Job/ { print }' "$rendered/all.yaml" > "$rendered/job.yaml"
 out="$rendered/job.yaml"
@@ -69,7 +64,7 @@ for profile_name in qwen2.5 32-qwen2.5 128-qwen2.5; do
     size=${profile_name%-qwen2.5}
     suffix="-$profile_name"
     if [ "$profile_name" = qwen2.5 ]; then size=16; fi
-    "$KUBECTL" kustomize "$ROOT/k8s/aiperf-$profile_name" > "$rendered/profile.yaml" || fail "Cannot render profile $profile_name"
+    read_manifests "$ROOT/k8s/aiperf-$profile_name" > "$rendered/profile.yaml" || fail "Cannot render profile $profile_name"
     [ "$(grep -c '^kind: Job$' "$rendered/profile.yaml")" -eq 1 ] || fail 'Each profile must use one Job'
     awk 'BEGIN { RS="---" } /kind: Job/ { print }' "$rendered/profile.yaml" > "$rendered/profile-job.yaml"
     profile="$rendered/profile-job.yaml"

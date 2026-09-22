@@ -2,17 +2,30 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: grafana-renderer-auth
-type: Opaque
+  namespace: availability-test-transformers
 stringData:
-  # Shared token for this local test environment.
   token: local-availability-renderer
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-renderer
+  namespace: availability-test-transformers
+spec:
+  ports:
+  - name: http
+    port: 8081
+    targetPort: http
+  selector:
+    app: grafana-renderer
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: grafana-renderer
+  namespace: availability-test-transformers
 spec:
-  # Render after measurement to avoid competing with the load generator.
   replicas: 0
   selector:
     matchLabels:
@@ -22,63 +35,52 @@ spec:
       labels:
         app: grafana-renderer
     spec:
+      automountServiceAccountToken: false
+      containers:
+      - env:
+        - name: AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: token
+              name: grafana-renderer-auth
+        image: grafana/grafana-image-renderer:v5.12.3
+        name: renderer
+        ports:
+        - containerPort: 8081
+          name: http
+        readinessProbe:
+          tcpSocket:
+            port: http
+        resources:
+          limits:
+            cpu: "2"
+            memory: 2Gi
+          requests:
+            cpu: "2"
+            memory: 2Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+        - mountPath: /dev/shm
+          name: shm
       nodeSelector:
         workload: monitor
-      automountServiceAccountToken: false
       securityContext:
+        fsGroup: 65532
+        runAsGroup: 65532
         runAsNonRoot: true
         runAsUser: 65532
-        runAsGroup: 65532
-        fsGroup: 65532
-      containers:
-        - name: renderer
-          image: grafana/grafana-image-renderer:v5.12.3
-          env:
-            - name: AUTH_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: grafana-renderer-auth
-                  key: token
-          ports:
-            - name: http
-              containerPort: 8081
-          readinessProbe:
-            tcpSocket:
-              port: http
-          resources:
-            requests:
-              cpu: "2"
-              memory: 2Gi
-            limits:
-              cpu: "2"
-              memory: 2Gi
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop: [ALL]
-          volumeMounts:
-            - name: tmp
-              mountPath: /tmp
-            - name: shm
-              mountPath: /dev/shm
       volumes:
-        - name: tmp
-          emptyDir:
-            sizeLimit: 512Mi
-        - name: shm
-          emptyDir:
-            medium: Memory
-            sizeLimit: 256Mi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: grafana-renderer
-spec:
-  selector:
-    app: grafana-renderer
-  ports:
-    - name: http
-      port: 8081
-      targetPort: http
+      - emptyDir:
+          sizeLimit: 512Mi
+        name: tmp
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 256Mi
+        name: shm

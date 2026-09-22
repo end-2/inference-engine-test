@@ -1,12 +1,14 @@
 # CPU HPA 테스트
 
+Manifest 적용과 ConfigMap 변경 방법은 [manifest 관리](manifests.md)를 참고합니다.
+
 기본 절차는 Transformers CPU를 사용합니다. llama.cpp는 [엔진별 변경 사항](#llamacpp)을 적용하며 관찰과 판정 기준은 동일합니다. 추론 구현과 API는 [추론 엔진 가이드](inference-engine.md)를 참고하세요.
 
 SmolLM2 Transformers CPU base 서버에 AIPerf 부하를 보내 CPU HPA의 1→4 확장과 4→1 축소를 검증합니다. 실제 Ready Pod, Service endpoint와 성공 요청을 함께 확인합니다.
 
 ## 준비와 배포
 
-control-plane 1개, monitor worker 1개, engine worker 2개와 `transformers-base-metric` 이미지를 사용합니다. 자원과 스레드는 [배포 매니페스트](../../k8s/hpa-test-transformers/kustomization.yaml)에서 설정하며 `requests=limits`를 유지합니다. Pod별 자원 요청량과 최대 replica 수를 기준으로 추론 용량을 확보하고, monitor와 Kubernetes 시스템 자원을 추가합니다.
+control-plane 1개, monitor worker 1개, engine worker 2개와 `transformers-base-metric` 이미지를 사용합니다. 자원과 스레드는 [배포 매니페스트](../../k8s/hpa-test-transformers/)에서 설정하며 `requests=limits`를 유지합니다. Pod별 자원 요청량과 최대 replica 수를 기준으로 추론 용량을 확보하고, monitor와 Kubernetes 시스템 자원을 추가합니다.
 
 Docker, POSIX 셸, Python 3.10 이상이 필요합니다. 저장소 루트에서 모델, 클러스터와 이미지를 준비합니다.
 
@@ -24,14 +26,15 @@ KIND_CONFIG=config/cluster/kind-multi-node.yaml ./scripts/local-k8s.sh up
 
 `up`은 기존 클러스터의 토폴로지를 변경하지 않습니다. 같은 이름의 단일 노드 클러스터가 있으면 새 이름을 지정합니다. 모든 명령은 같은 `CLUSTER_NAME`으로 실행합니다.
 
-availability 테스트가 배포되어 있으면 결과를 내보낸 뒤 `./scripts/local-k8s.sh kubectl delete -k k8s/availability-test-transformers`로 정리합니다. 이 명령은 해당 테스트 PVC도 삭제합니다. 다른 부하 실험과 동시에 실행하지 않습니다.
+availability 테스트가 배포되어 있으면 결과를 내보낸 뒤 `./scripts/local-k8s.sh kubectl delete -f k8s/availability-test-transformers`로 정리합니다. 이 명령은 해당 테스트 PVC도 삭제합니다. 다른 부하 실험과 동시에 실행하지 않습니다.
 
 ```sh
 export CLUSTER_NAME=transformers-tests
-./scripts/local-k8s.sh kubectl apply -k k8s/metrics-server
+./scripts/local-k8s.sh kubectl apply -f k8s/metrics-server
 ./scripts/local-k8s.sh kubectl -n kube-system rollout status deployment/metrics-server --timeout=180s
 ./scripts/local-k8s.sh kubectl wait --for=condition=Available apiservice/v1beta1.metrics.k8s.io --timeout=180s
-./scripts/local-k8s.sh kubectl apply -k k8s/hpa-test-transformers
+./scripts/local-k8s.sh kubectl apply -f k8s/hpa-test-transformers/namespace.yaml
+./scripts/local-k8s.sh kubectl apply -f k8s/hpa-test-transformers
 for deployment in transformers-base-metric prometheus kube-state-metrics grafana; do
   ./scripts/local-k8s.sh kubectl -n hpa-test-transformers rollout status "deployment/$deployment" --timeout=300s
 done
@@ -50,7 +53,7 @@ done
 | 저부하 | concurrency 1, constant 0.02 req/s |
 | 판정 | 단계별 제한 600초, 확장과 축소 도달 후 각각 60초 유지 |
 
-CPU 목표는 Pod의 CPU request 대비 사용률입니다. 모델은 고정된 SmolLM2-135M-Instruct FP32 snapshot이며 서버와 AIPerf가 해당 snapshot의 tokenizer를 사용합니다. 입력과 출력 길이 분포는 `64,32:50;256,64:50`, 입력 16개, seed 42, sequential, `ignore_eos:true`입니다. [HPA overlay](../../k8s/hpa-test-transformers/kustomization.yaml)는 availability 리소스를 재사용하고 namespace, RBAC, 대시보드와 부하를 분리합니다. 추론 Deployment의 replicas는 HPA가 관리하고 AIPerf와 renderer는 0개로 시작합니다.
+CPU 목표는 Pod의 CPU request 대비 사용률입니다. 모델은 고정된 SmolLM2-135M-Instruct FP32 snapshot이며 서버와 AIPerf가 해당 snapshot의 tokenizer를 사용합니다. 입력과 출력 길이 분포는 `64,32:50;256,64:50`, 입력 16개, seed 42, sequential, `ignore_eos:true`입니다. [HPA manifest](../../k8s/hpa-test-transformers/)는 namespace, RBAC, 대시보드와 부하를 독립적으로 정의합니다. 추론 Deployment의 replicas는 HPA가 관리하고 AIPerf와 renderer는 0개로 시작합니다.
 
 ## 실행
 
@@ -89,9 +92,9 @@ Grafana `hpa-test-transformers` 대시보드에서 CPU, HPA replica, endpoint, `
 python3 -m unittest discover -s tests -p 'test_hpa_runner_transformers.py'
 sh tests/test-hpa-manifests-transformers.sh
 # 결과 수집 후 워크로드와 PVC 삭제
-./scripts/local-k8s.sh kubectl delete -k k8s/hpa-test-transformers
+./scripts/local-k8s.sh kubectl delete -f k8s/hpa-test-transformers
 # 이 실험만 사용하는 Metrics Server일 때
-./scripts/local-k8s.sh kubectl delete -k k8s/metrics-server
+./scripts/local-k8s.sh kubectl delete -f k8s/metrics-server
 ```
 
 ## llama.cpp
@@ -108,7 +111,7 @@ sh tests/test-hpa-manifests-transformers.sh
 | runner | `scripts/run-hpa-test-transformers.py` | `scripts/run-hpa-test-llamacpp.py` |
 | 결과 루트 | `reports/transformers/` | `reports/llamacpp/` |
 
-모델은 [Qwen GGUF 설정](../../config/models/qwen2.5-0.5b-gguf-llamacpp.env)을 사용하며 서버와 AIPerf의 모델 및 토크나이저를 맞춥니다. 자원과 부하 설정은 [llama.cpp 매니페스트](../../k8s/hpa-test-llamacpp/kustomization.yaml)를 기준으로 합니다. 같은 클러스터의 다른 테스트를 정리할 때도 해당 엔진의 namespace와 매니페스트를 선택합니다.
+모델은 [Qwen GGUF 설정](../../config/models/qwen2.5-0.5b-gguf-llamacpp.env)을 사용하며 서버와 AIPerf의 모델 및 토크나이저를 맞춥니다. 자원과 부하 설정은 [llama.cpp 매니페스트](../../k8s/hpa-test-llamacpp/)를 기준으로 합니다. 같은 클러스터의 다른 테스트를 정리할 때도 해당 엔진의 namespace와 매니페스트를 선택합니다.
 
 ```sh
 export CLUSTER_NAME=hpa-test-llamacpp
@@ -125,7 +128,8 @@ python3 scripts/run-hpa-test-llamacpp.py --scenario scale-out
 ./scripts/local-k8s.sh kubectl -n hpa-test-llamacpp wait --for=delete pod -l app=aiperf --timeout=150s
 mkdir -p reports/llamacpp/hpa-manual
 ./scripts/local-k8s.sh kubectl -n hpa-test-llamacpp cp aiperf-results:/results reports/llamacpp/hpa-manual/aiperf
-./scripts/local-k8s.sh kubectl apply -k k8s/hpa-test-llamacpp
+./scripts/local-k8s.sh kubectl apply -f k8s/hpa-test-llamacpp/namespace.yaml
+./scripts/local-k8s.sh kubectl apply -f k8s/hpa-test-llamacpp
 ```
 
 llama.cpp runner와 매니페스트 검증은 다음 명령을 사용합니다.

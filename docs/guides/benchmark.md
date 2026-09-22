@@ -72,7 +72,7 @@ python3 scripts/run-benchmark-suite.py --resume 'docs/reports/transformers/bench
 
 ### llama.cpp 선택
 
-Qwen2.5 GGUF와 로컬 토크나이저를 사용하는 [전용 프로필](../../k8s/aiperf-qwen2.5/kustomization.yaml)을 선택합니다.
+Qwen2.5 GGUF와 로컬 토크나이저를 사용하는 [전용 프로필](../../k8s/aiperf-qwen2.5/)을 선택합니다.
 
 ```sh
 make benchmark VARIANT=base-llamacpp

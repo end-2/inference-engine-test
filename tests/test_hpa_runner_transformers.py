@@ -86,6 +86,27 @@ class ScaleOutTests(unittest.TestCase):
             self.assertEqual(runner.summarize(data)["ready_endpoints"], 1)
 
 
+class DashboardCollectionTests(unittest.TestCase):
+    def test_collection_uses_deployed_dashboard_queries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            e = runner.Experiment(runner.parse_args("scale-out", ["--cluster", "test"]))
+            e.raw = Path(directory)
+            e.state = {"load_phases": {}, "started": "2026-09-20T00:00:00Z"}
+            dashboard = {"panels": [{"id": 7, "targets": [{"refId": "A", "expr": "up"}]}]}
+            e.get = Mock(return_value={"data": {"availability.json": json.dumps(dashboard)}})
+            e.prometheus = Mock(return_value={"status": "success"})
+            (e.raw / "observations.jsonl").write_text('{"at": "sample", "ready_uids": []}\n')
+            with patch.object(runner, "now", return_value="2026-09-20T00:01:00Z"):
+                e.collect()
+            e.get.assert_called_once_with(*e.ns, "get", "configmap/grafana-dashboard", "-o", "json")
+            e.prometheus.assert_called_once_with(
+                "query_range", query="up", start=e.state["started"],
+                end="2026-09-20T00:01:00Z", step="5s",
+            )
+            self.assertEqual(json.loads((e.raw / "prometheus/panel-7-A.json").read_text()),
+                             {"status": "success"})
+
+
 class CleanupTests(unittest.TestCase):
     def experiment(self):
         e = runner.Experiment(runner.parse_args("scale-out-in", ["--cluster", "test"]))

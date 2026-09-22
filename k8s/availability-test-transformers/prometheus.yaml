@@ -2,115 +2,135 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: prometheus
+  namespace: availability-test-transformers
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: prometheus-discovery
+  namespace: availability-test-transformers
 rules:
-  - apiGroups: [""]
-    resources: [services, pods]
-    verbs: [get, list, watch]
-  - apiGroups: [discovery.k8s.io]
-    resources: [endpointslices]
-    verbs: [get, list, watch]
+- apiGroups:
+  - ""
+  resources:
+  - services
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - list
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: prometheus-discovery
+  namespace: availability-test-transformers
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: prometheus-discovery
 subjects:
-  - kind: ServiceAccount
-    name: prometheus
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: prometheus-data
-spec:
-  accessModes: [ReadWriteOnce]
-  storageClassName: standard
-  resources:
-    requests:
-      storage: 5Gi
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
+- kind: ServiceAccount
   name: prometheus
-spec:
-  replicas: 1
-  strategy:
-    type: Recreate
-  selector:
-    matchLabels:
-      app: prometheus
-  template:
-    metadata:
-      labels:
-        app: prometheus
-    spec:
-      serviceAccountName: prometheus
-      nodeSelector:
-        workload: monitor
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 65534
-        runAsGroup: 65534
-        fsGroup: 65534
-      containers:
-        - name: prometheus
-          image: prom/prometheus:v3.5.0
-          args:
-            - --config.file=/etc/prometheus/prometheus.yml
-            - --storage.tsdb.path=/prometheus
-            - --storage.tsdb.retention.time=7d
-            - --storage.tsdb.retention.size=4GB
-          ports:
-            - name: http
-              containerPort: 9090
-          readinessProbe:
-            httpGet:
-              path: /-/ready
-              port: http
-          resources:
-            requests:
-              cpu: 500m
-              memory: 512Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop: [ALL]
-          volumeMounts:
-            - name: config
-              mountPath: /etc/prometheus
-              readOnly: true
-            - name: data
-              mountPath: /prometheus
-      volumes:
-        - name: config
-          configMap:
-            name: prometheus-config
-        - name: data
-          persistentVolumeClaim:
-            claimName: prometheus-data
+  namespace: availability-test-transformers
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: prometheus
+  namespace: availability-test-transformers
 spec:
+  ports:
+  - name: http
+    port: 9090
+    targetPort: http
   selector:
     app: prometheus
-  ports:
-    - name: http
-      port: 9090
-      targetPort: http
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-data
+  namespace: availability-test-transformers
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: availability-test-transformers
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - args:
+        - --config.file=/etc/prometheus/prometheus.yml
+        - --storage.tsdb.path=/prometheus
+        - --storage.tsdb.retention.time=7d
+        - --storage.tsdb.retention.size=4GB
+        image: prom/prometheus:v3.5.0
+        name: prometheus
+        ports:
+        - containerPort: 9090
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: http
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 500m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /etc/prometheus
+          name: config
+          readOnly: true
+        - mountPath: /prometheus
+          name: data
+      nodeSelector:
+        workload: monitor
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+      serviceAccountName: prometheus
+      volumes:
+      - configMap:
+          name: prometheus-config
+        name: config
+      - name: data
+        persistentVolumeClaim:
+          claimName: prometheus-data

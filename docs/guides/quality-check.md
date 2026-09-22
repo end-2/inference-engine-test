@@ -13,7 +13,7 @@ SmolLM2는 영어 질문을, Qwen은 한국어 질문을 사용합니다. 영어
 make download-model VARIANT=transformers-base
 make up
 make build-image load-image VARIANT=transformers-base
-./scripts/local-k8s.sh kubectl apply -k k8s/transformers-base
+./scripts/local-k8s.sh kubectl apply -f k8s/transformers-base
 ./scripts/local-k8s.sh kubectl rollout status deployment/transformers-base --timeout=300s
 ```
 

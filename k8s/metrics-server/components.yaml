@@ -1,3 +1,4 @@
+# Upstream: https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.8.1/components.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -138,6 +139,7 @@ spec:
         - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
         - --kubelet-use-node-status-port
         - --metric-resolution=15s
+        - --kubelet-insecure-tls
         image: registry.k8s.io/metrics-server/metrics-server:v0.8.1
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -161,6 +163,9 @@ spec:
           initialDelaySeconds: 20
           periodSeconds: 10
         resources:
+          limits:
+            cpu: 100m
+            memory: 200Mi
           requests:
             cpu: 100m
             memory: 200Mi
@@ -179,6 +184,7 @@ spec:
           name: tmp-dir
       nodeSelector:
         kubernetes.io/os: linux
+        workload: monitor
       priorityClassName: system-cluster-critical
       serviceAccountName: metrics-server
       volumes:

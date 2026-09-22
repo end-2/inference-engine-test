@@ -1,0 +1,64 @@
+apiVersion: v1
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 5s
+      scrape_timeout: 3s
+      evaluation_interval: 5s
+    rule_files:
+      - /etc/prometheus/rules.yml
+    scrape_configs:
+      - job_name: prometheus
+        static_configs:
+          - targets: [localhost:9090]
+      - job_name: kube-state-metrics
+        honor_labels: true
+        static_configs:
+          - targets: [kube-state-metrics:8080]
+      - job_name: base-metric-llamacpp
+        kubernetes_sd_configs:
+          - role: endpointslice
+            namespaces:
+              names: [hpa-test-llamacpp]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: base-metric-llamacpp
+          - source_labels: [__meta_kubernetes_endpointslice_port_name]
+            action: keep
+            regex: http
+          # Keep unready endpoints to observe scrape failures before endpoint removal.
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_service_name]
+            target_label: service
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_endpointslice_endpoint_node_name]
+            target_label: node
+  rules.yml: |
+    groups:
+      - name: hpa
+        rules:
+          - record: hpa:service_ready_endpoints
+            expr: |
+              sum by (namespace, service) (
+                kube_endpointslice_endpoints{namespace="hpa-test-llamacpp",ready="true"}
+                * on (namespace, endpointslice) group_left (service)
+                label_replace(kube_endpointslice_labels{namespace="hpa-test-llamacpp"}, "service", "$1", "label_kubernetes_io_service_name", "(.+)")
+              )
+              or on (namespace, service)
+              (0 * max by (namespace, service) (kube_service_info{namespace="hpa-test-llamacpp"}))
+          - record: hpa:service_unready_endpoints
+            expr: |
+              sum by (namespace, service) (
+                kube_endpointslice_endpoints{namespace="hpa-test-llamacpp",ready!="true"}
+                * on (namespace, endpointslice) group_left (service)
+                label_replace(kube_endpointslice_labels{namespace="hpa-test-llamacpp"}, "service", "$1", "label_kubernetes_io_service_name", "(.+)")
+              )
+              or on (namespace, service)
+              (0 * max by (namespace, service) (kube_service_info{namespace="hpa-test-llamacpp"}))
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: hpa-test-llamacpp

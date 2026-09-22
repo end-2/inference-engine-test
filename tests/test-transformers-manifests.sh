@@ -10,9 +10,9 @@ trap 'rm -rf "$rendered"' 0
 trap 'exit 130' INT
 trap 'exit 143' TERM
 for variant in base enhanced-batch enhanced-cache; do
-    "$KUBECTL" create --dry-run=client --validate=false -k "$ROOT/k8s/transformers-$variant" -o json > "$rendered/$variant.json"
+    "$KUBECTL" create --dry-run=client --validate=false -f "$ROOT/k8s/transformers-$variant" -o json > "$rendered/$variant.json"
 done
-"$KUBECTL" create --dry-run=client --validate=false -k "$ROOT/k8s/aiperf-smollm2" -o json > "$rendered/aiperf.json"
+"$KUBECTL" create --dry-run=client --validate=false -f "$ROOT/k8s/aiperf-smollm2" -o json > "$rendered/aiperf.json"
 python3 - "$rendered" "$SERVED_MODEL_NAME" "$MODEL_DIRECTORY" <<'PY'
 import json
 from pathlib import Path

@@ -1,0 +1,114 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: aiperf
+    benchmark: aiperf-cpu
+  name: aiperf-qwen2.5
+spec:
+  activeDeadlineSeconds: 14400
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: aiperf
+        benchmark: aiperf-cpu
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - profile
+        - --model
+        - $(MODEL_ID)
+        - --tokenizer
+        - /tokenizer
+        - --url
+        - $(API_URL)
+        - --endpoint-type
+        - chat
+        - --streaming
+        - --use-server-token-count
+        - --sequence-distribution
+        - 64,32:50;256,64:50
+        - --num-dataset-entries
+        - $(DATASET_ENTRIES)
+        - --random-seed
+        - "42"
+        - --parameter-sweep-same-seed
+        - --dataset-sampling-strategy
+        - sequential
+        - --extra-inputs
+        - ignore_eos:true
+        - --concurrency
+        - $(CONCURRENCIES)
+        - --workers-max
+        - "1"
+        - --warmup-request-count
+        - "2"
+        - --warmup-concurrency
+        - "1"
+        - --request-count
+        - "100"
+        - --request-timeout-seconds
+        - "3600"
+        - --no-server-metrics
+        - --ui
+        - none
+        - --artifact-dir
+        - /results/$(POD_NAME)
+        env:
+        - name: API_URL
+          value: http://base-llamacpp:8000
+        - name: MODEL_ID
+          value: Qwen/Qwen2.5-0.5B-Instruct
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CONCURRENCIES
+          value: 1,2,4,8
+        - name: DATASET_ENTRIES
+          value: "16"
+        image: local/aiperf:0.12.0
+        imagePullPolicy: Never
+        name: aiperf
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1Gi
+          requests:
+            cpu: "1"
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /tokenizer
+          name: tokenizer
+          readOnly: true
+        - mountPath: /results
+          name: results
+        - mountPath: /tmp
+          name: tmp
+      restartPolicy: Never
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - hostPath:
+          path: /models/qwen2.5-0.5b/tokenizer
+          type: Directory
+        name: tokenizer
+      - name: results
+        persistentVolumeClaim:
+          claimName: aiperf-results-qwen2.5
+      - emptyDir:
+          sizeLimit: 1Gi
+        name: tmp
+  ttlSecondsAfterFinished: 3600

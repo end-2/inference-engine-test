@@ -1,0 +1,118 @@
+# HPA owns replicas; a newly created Deployment defaults to one.
+apiVersion: v1
+kind: Service
+metadata:
+  name: base-metric-llamacpp
+  namespace: hpa-test-llamacpp
+spec:
+  ports:
+  - name: http
+    port: 8000
+    targetPort: http
+  selector:
+    app: base-metric-llamacpp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: base-metric-llamacpp
+  namespace: hpa-test-llamacpp
+spec:
+  selector:
+    matchLabels:
+      app: base-metric-llamacpp
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: base-metric-llamacpp
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: base-metric-llamacpp
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - --model
+        - /model/qwen2.5-0.5b-instruct-q4_k_m.gguf
+        - --served-model-name
+        - Qwen/Qwen2.5-0.5B-Instruct
+        - --n-threads
+        - "2"
+        - --n-ctx
+        - "1024"
+        - --max-input-tokens
+        - "768"
+        - --max-output-tokens
+        - "128"
+        - --default-output-tokens
+        - "32"
+        image: local/base-metric-llamacpp:0.1.0
+        imagePullPolicy: Never
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 2
+        name: api
+        ports:
+        - containerPort: 8000
+          name: http
+        readinessProbe:
+          failureThreshold: 2
+          httpGet:
+            path: /readyz
+            port: http
+          periodSeconds: 2
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: "2"
+            memory: 2Gi
+          requests:
+            cpu: "2"
+            memory: 2Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        startupProbe:
+          failureThreshold: 60
+          httpGet:
+            path: /readyz
+            port: http
+          periodSeconds: 5
+        volumeMounts:
+        - mountPath: /model
+          name: model
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
+      nodeSelector:
+        workload: engine
+      securityContext:
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - hostPath:
+          path: /models/qwen2.5-0.5b
+          type: Directory
+        name: model
+      - emptyDir:
+          sizeLimit: 256Mi
+        name: tmp

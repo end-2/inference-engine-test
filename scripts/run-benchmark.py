@@ -152,11 +152,7 @@ def ensure_image(image, context, target=None):
 
 def render(path):
     path = Path(path)
-    source_flag = "-k" if path.is_dir() and any(
-        (path / name).is_file()
-        for name in ("kustomization.yaml", "kustomization.yml", "Kustomization")
-    ) else "-f"
-    output = kube("create", "--dry-run=client", "--validate=false", source_flag, path,
+    output = kube("create", "--dry-run=client", "--validate=false", "-f", path,
                   "-o", "json", capture=True).stdout
     decoder = json.JSONDecoder()
     items = []
