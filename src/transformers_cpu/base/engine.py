@@ -1,4 +1,4 @@
-"""Local Llama and Qwen3 inference with CPU tensors and per-request decoding state."""
+"""Local SmolLM2 inference with CPU tensors and per-request decoding state."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,7 +12,6 @@ class EngineSettings:
     n_ctx: int = 1024
     n_threads: int = 4
     dtype: str = "float32"
-    enable_thinking: bool = False
 
     def __post_init__(self):
         if min(self.n_ctx, self.n_threads) < 1:
@@ -35,7 +34,7 @@ class Generation:
 class TorchEngine:
     def __init__(self, settings: EngineSettings):
         import torch
-        from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
+        from transformers import AutoConfig, AutoTokenizer, LlamaForCausalLM
 
         if not settings.model_path.is_dir():
             raise ValueError(f"Model directory does not exist: {settings.model_path}")
@@ -45,21 +44,16 @@ class TorchEngine:
         config = AutoConfig.from_pretrained(
             settings.model_path, local_files_only=True, trust_remote_code=False,
         )
-        if config.model_type not in {"llama", "qwen3"}:
-            raise ValueError("This backend supports Llama (including SmolLM2) and Qwen3 models")
-        if settings.enable_thinking and config.model_type != "qwen3":
-            raise ValueError("enable_thinking is only supported for Qwen3")
+        if config.model_type != "llama":
+            raise ValueError("SmolLM2 requires a Llama model configuration")
         if settings.n_ctx > config.max_position_embeddings:
             raise ValueError("n_ctx exceeds the model context length")
-        # Qwen3 can specify a head dimension different from hidden_size / heads.
-        self.head_dim = getattr(config, "head_dim", None) or (
-            config.hidden_size // config.num_attention_heads
-        )
+        self.head_dim = config.hidden_size // config.num_attention_heads
         self.tokenizer = AutoTokenizer.from_pretrained(
             settings.model_path, local_files_only=True, trust_remote_code=False,
         )
-        self.model = AutoModelForCausalLM.from_pretrained(
-            settings.model_path, local_files_only=True, trust_remote_code=False,
+        self.model = LlamaForCausalLM.from_pretrained(
+            settings.model_path, config=config, local_files_only=True,
             use_safetensors=True, dtype=getattr(torch, settings.dtype),
             attn_implementation="sdpa",
         ).to("cpu").eval()
@@ -70,58 +64,31 @@ class TorchEngine:
         self.pad_token = self.tokenizer.pad_token_id
         if self.pad_token is None:
             self.pad_token = next(iter(self.eos_tokens))
+        self.tokenizer.pad_token_id = self.pad_token
+        self.tokenizer.padding_side = "left"
         self.tokenizer_lock = threading.Lock()
 
     def prepare_prompt(self, messages):
         with self.tokenizer_lock:
-            options = ({"enable_thinking": self.settings.enable_thinking}
-                       if self.model.config.model_type == "qwen3" else {})
             return self.tokenizer.apply_chat_template(
                 messages, tokenize=True, add_generation_prompt=True,
-                **options,
             )
 
-    def _forward(self, ids, mask, cache=None):
-        torch = self.torch
-        past = cache.get_seq_length() if cache is not None else 0
-        positions = mask.long().cumsum(-1) - 1
-        positions.masked_fill_(mask == 0, 0)
-        output = self.model(
-            input_ids=ids, attention_mask=mask, past_key_values=cache,
-            position_ids=positions[:, -ids.shape[1]:],
-            cache_position=torch.arange(past, past + ids.shape[1], device="cpu"),
-            use_cache=True, logits_to_keep=1,
-        )
-        return output.logits[:, -1, :], output.past_key_values
+    def _validate(self, request):
+        if not request.prompt or request.max_tokens < 1:
+            raise ValueError("Prompt and output token limit must be positive")
+        if len(request.prompt) + request.max_tokens > self.settings.n_ctx:
+            raise ValueError("Input and output tokens exceed n_ctx")
 
-    def _prefill(self, prompts):
-        torch = self.torch
-        width = max(map(len, prompts))
-        ids = torch.full((len(prompts), width), self.pad_token, dtype=torch.long)
-        mask = torch.zeros_like(ids)
-        for index, prompt in enumerate(prompts):
-            ids[index, -len(prompt):] = torch.tensor(prompt, dtype=torch.long)
-            mask[index, -len(prompt):] = 1
-        logits, cache = self._forward(ids, mask)
-        return logits, cache, mask
+    def _result(self, request, tokens, reason):
+        return {
+            "text": self.tokenizer.decode(tokens, skip_special_tokens=True,
+                                          clean_up_tokenization_spaces=False),
+            "finish_reason": reason, "prompt_tokens": len(request.prompt),
+            "completion_tokens": len(tokens),
+        }
 
-    def _sample(self, logits, request):
-        torch = self.torch
-        scores = logits.float().clone()
-        if request.ignore_eos:
-            scores[list(self.eos_tokens)] = -float("inf")
-        if request.temperature == 0:
-            return int(scores.argmax())
-        scores /= request.temperature
-        if request.top_p < 1:
-            ordered, indices = scores.sort(descending=True)
-            remove = ordered.softmax(-1).cumsum(-1) > request.top_p
-            remove[1:] = remove[:-1].clone()
-            remove[0] = False
-            scores[indices[remove]] = -float("inf")
-        return int(torch.multinomial(scores.softmax(-1), 1))
-
-    def _streamer(self, emit):
+    def _streamer(self, emit, skip_prompt=False):
         from transformers import TextStreamer
 
         class CallbackStreamer(TextStreamer):
@@ -129,72 +96,59 @@ class TorchEngine:
                 if text:
                     emit(text)
 
-        # TextStreamer retains incomplete UTF-8 and words until they can be decoded.
-        return CallbackStreamer(self.tokenizer, skip_special_tokens=True,
-                                clean_up_tokenization_spaces=False)
+        return CallbackStreamer(self.tokenizer, skip_prompt=skip_prompt,
+                                skip_special_tokens=True, clean_up_tokenization_spaces=False)
 
-    def generate_batch(self, requests):
-        torch = self.torch
-        for request in requests:
-            if not request.prompt or request.max_tokens < 1:
-                raise ValueError("Prompt and output token limit must be positive")
-            if len(request.prompt) + request.max_tokens > self.settings.n_ctx:
-                raise ValueError("Input and output tokens exceed n_ctx")
-        tokens = [[] for _ in requests]
-        reasons = ["stop"] * len(requests)
-        streamers = [self._streamer(r.emit) if r.emit else None for r in requests]
-        active = [i for i, request in enumerate(requests) if not request.cancel.is_set()]
-        with torch.inference_mode():
-            if active:
-                logits, cache, mask = self._prefill([requests[i].prompt for i in active])
-            while active:
-                remaining, rows, next_tokens = [], [], []
-                for row, index in enumerate(active):
-                    request = requests[index]
-                    if request.cancel.is_set():
-                        continue
-                    token = self._sample(logits[row], request)
-                    if token in self.eos_tokens:
-                        continue
-                    tokens[index].append(token)
-                    if streamers[index]:
-                        streamers[index].put(torch.tensor([token]))
-                    if len(tokens[index]) == request.max_tokens:
-                        reasons[index] = "length"
-                        continue
-                    remaining.append(index)
-                    rows.append(row)
-                    next_tokens.append([token])
-                if not remaining:
-                    break
-                if len(rows) != len(active):
-                    indices = torch.tensor(rows, dtype=torch.long)
-                    cache.batch_select_indices(indices)
-                    mask = mask.index_select(0, indices)
-                mask = torch.cat((mask, torch.ones((len(rows), 1), dtype=mask.dtype)), dim=1)
-                logits, cache = self._forward(torch.tensor(next_tokens), mask, cache)
-                active = remaining
-        results = []
-        for index, request in enumerate(requests):
-            if streamers[index]:
-                streamers[index].end()
-            results.append({
-                "text": self.tokenizer.decode(tokens[index], skip_special_tokens=True,
-                                              clean_up_tokenization_spaces=False),
-                "finish_reason": reasons[index], "prompt_tokens": len(request.prompt),
-                "completion_tokens": len(tokens[index]),
-            })
-        return results
+    def _generate_model(self, request, inputs, options):
+        return self.model.generate(**inputs, **options)
+
+    def generate(self, request):
+        from transformers import GenerationConfig, StoppingCriteria, StoppingCriteriaList
+
+        self._validate(request)
+        if request.cancel.is_set():
+            return self._result(request, [], "stop")
+
+        class Cancelled(StoppingCriteria):
+            def __call__(self, input_ids, scores, **kwargs):
+                return request.cancel.is_set()
+
+        # An explicit config avoids model defaults such as top_k=50 changing sampling.
+        config = GenerationConfig(
+            max_new_tokens=request.max_tokens, do_sample=request.temperature > 0,
+            temperature=request.temperature if request.temperature > 0 else 1.0,
+            top_p=request.top_p if request.temperature > 0 else 1.0,
+            top_k=0 if request.temperature > 0 else None,
+            eos_token_id=sorted(self.eos_tokens), pad_token_id=self.pad_token,
+            suppress_tokens=sorted(self.eos_tokens) if request.ignore_eos else None,
+            use_cache=True,
+        )
+        ids = self.torch.tensor([request.prompt], dtype=self.torch.long)
+        inputs = {"input_ids": ids, "attention_mask": self.torch.ones_like(ids)}
+        options = {
+            "generation_config": config, "use_model_defaults": False,
+            "stopping_criteria": StoppingCriteriaList([Cancelled()]),
+            "streamer": self._streamer(request.emit, skip_prompt=True) if request.emit else None,
+        }
+        with self.torch.inference_mode():
+            output = self._generate_model(request, inputs, options)
+        tokens = output[0, len(request.prompt):].tolist()
+        # API usage excludes the prompt and terminal EOS, including at the length limit.
+        eos = bool(tokens and tokens[-1] in self.eos_tokens)
+        if eos:
+            tokens.pop()
+        reason = "length" if not eos and len(tokens) == request.max_tokens else "stop"
+        return self._result(request, tokens, reason)
 
     def complete(self, prompt, max_tokens, temperature, top_p, ignore_eos, cancel):
-        return self.generate_batch([Generation(
+        return self.generate(Generation(
             prompt, max_tokens, temperature, top_p, ignore_eos, cancel,
-        )])[0]
+        ))
 
     def stream(self, prompt, max_tokens, temperature, top_p, ignore_eos, cancel, emit):
-        return self.generate_batch([Generation(
+        return self.generate(Generation(
             prompt, max_tokens, temperature, top_p, ignore_eos, cancel, emit,
-        )])[0]
+        ))
 
     def close(self):
         self.model = None

@@ -105,16 +105,17 @@ class TorchEngine(BaseEngine):
             logging.exception("KV snapshot failed")
             self.cache.stats["errors"] += 1
 
-    def _prefill(self, prompts):
-        if len(prompts) != 1:
-            raise ValueError("Prefix cache requires serial requests")
-        prompt = prompts[0]
-        cache, shared = self._restore(prompt)
-        ids = self.torch.tensor([prompt[shared:]], dtype=self.torch.long)
-        mask = self.torch.ones((1, len(prompt)), dtype=self.torch.long)
-        logits, cache = self._forward(ids, mask, cache)
-        self._capture(prompt, cache)
-        return logits, cache, mask
+    def _generate_model(self, request, inputs, options):
+        from transformers import DynamicCache
+
+        cache, _ = self._restore(request.prompt)
+        if cache is None:
+            cache = DynamicCache(config=self.model.config)
+        output = self.model.generate(**inputs, **options, past_key_values=cache)
+        # Generation mutates the cache; persist only the fully evaluated prompt.
+        cache.crop(len(request.prompt))
+        self._capture(request.prompt, cache)
+        return output
 
     def close(self):
         try:

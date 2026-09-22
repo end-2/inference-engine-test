@@ -1,4 +1,4 @@
-"""Serve local SmolLM2 or Qwen3 weights on CPU through the shared chat API."""
+"""Serve local SmolLM2 weights on CPU through the shared chat API."""
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor
@@ -17,7 +17,6 @@ class Settings:
     n_ctx: int = 1024
     n_threads: int = 4
     dtype: str = "float32"
-    enable_thinking: bool = False
     max_input_tokens: int = 768
     max_output_tokens: int = 128
     default_output_tokens: int = 32
@@ -31,8 +30,7 @@ class Settings:
 
     def engine_settings(self):
         return EngineSettings(model_path=self.model, n_ctx=self.n_ctx,
-                              n_threads=self.n_threads, dtype=self.dtype,
-                              enable_thinking=self.enable_thinking)
+                              n_threads=self.n_threads, dtype=self.dtype)
 
     def create_executor(self):
         return ThreadPoolExecutor(max_workers=1, thread_name_prefix="torch")
@@ -53,7 +51,6 @@ def create_parser(description=__doc__):
     parser.add_argument("--n-ctx", type=api.positive_int, default=1024)
     parser.add_argument("--n-threads", type=api.positive_int, default=4)
     parser.add_argument("--dtype", choices=("float32", "bfloat16"), default="float32")
-    parser.add_argument("--enable-thinking", action="store_true", help="Qwen3 only")
     parser.add_argument("--max-input-tokens", type=api.positive_int, default=768)
     parser.add_argument("--max-output-tokens", type=api.positive_int, default=128)
     parser.add_argument("--default-output-tokens", type=api.positive_int, default=32)
