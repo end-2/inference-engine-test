@@ -1,0 +1,9 @@
+{
+  "directory": "/cache",
+  "removed_entries": 1,
+  "removed_files": 20,
+  "removed_bytes": 131571424,
+  "remaining_entries": 0,
+  "pvc": "transformers-enhanced-cache",
+  "completed_at": "2026-09-22T06:36:40.981726+00:00"
+}

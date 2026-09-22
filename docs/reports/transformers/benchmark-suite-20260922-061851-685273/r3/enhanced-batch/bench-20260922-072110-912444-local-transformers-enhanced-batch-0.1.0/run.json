@@ -1,0 +1,113 @@
+{
+  "run_id": "bench-20260922-072110-912444",
+  "started_at": "2026-09-22T07:21:10.912444+00:00",
+  "status": "complete",
+  "backend": "transformers",
+  "concurrencies": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "sample_interval_seconds": 5,
+  "cache_policy": "preserve",
+  "inference_node": "local-k8s-control-plane",
+  "benchmark_node": "local-k8s-control-plane",
+  "conditions": [
+    {
+      "concurrency": 1,
+      "status": "complete",
+      "pod_uid": "d54a464b-6bdb-4cc6-8985-dedbde8cf66d",
+      "pod_name": "transformers-base-6db757c475-77nv8",
+      "started_at": "2026-09-22T07:21:26.952239+00:00",
+      "resource_collection": {
+        "node_samples": 23,
+        "pod_cpu_samples": {
+          "inference": 23,
+          "aiperf": 20
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-22T07:23:16.889487+00:00"
+    },
+    {
+      "concurrency": 2,
+      "status": "complete",
+      "pod_uid": "42ec5e0f-e148-4a09-9cf6-4775a0e7e07b",
+      "pod_name": "transformers-base-5b48b5d948-8d9kc",
+      "started_at": "2026-09-22T07:23:23.300404+00:00",
+      "resource_collection": {
+        "node_samples": 18,
+        "pod_cpu_samples": {
+          "inference": 18,
+          "aiperf": 15
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-22T07:24:46.650620+00:00"
+    },
+    {
+      "concurrency": 4,
+      "status": "complete",
+      "pod_uid": "e41116a2-8b89-448a-937d-8aa5ebff3b3b",
+      "pod_name": "transformers-base-6b8d96c9d-6svvr",
+      "started_at": "2026-09-22T07:24:53.564185+00:00",
+      "resource_collection": {
+        "node_samples": 15,
+        "pod_cpu_samples": {
+          "inference": 15,
+          "aiperf": 12
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-22T07:26:01.679726+00:00"
+    },
+    {
+      "concurrency": 8,
+      "status": "complete",
+      "pod_uid": "4915ea90-db94-44be-89f9-c7ce9de54711",
+      "pod_name": "transformers-base-748748dfc-5w6jb",
+      "started_at": "2026-09-22T07:26:07.790090+00:00",
+      "resource_collection": {
+        "node_samples": 15,
+        "pod_cpu_samples": {
+          "inference": 15,
+          "aiperf": 12
+        }
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-22T07:27:16.383591+00:00"
+    }
+  ],
+  "inference": {
+    "image": "local/transformers-enhanced-batch:0.1.0",
+    "id": "sha256:5461c8613b00afad0e8dc458dc6616db9cd6aa2234b8b02d0f1caed8cf524b2a",
+    "source_sha256": null,
+    "build_context": null,
+    "build_target": null
+  },
+  "benchmark": {
+    "image": "local/aiperf:0.12.0",
+    "id": "sha256:42b47559e8d1c6b1d908627a94e0988fb9c6007b156c6ff427f57fa60d6baecb",
+    "source_sha256": null,
+    "build_context": null,
+    "build_target": null
+  },
+  "finished_at": "2026-09-22T07:27:16.384017+00:00"
+}
