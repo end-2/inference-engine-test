@@ -9,7 +9,7 @@ import threading
 import time
 
 from transformers_cpu.base.engine import EngineSettings as BaseSettings, Generation
-from transformers_cpu.base.engine import TorchEngine as BaseEngine
+from .backend import BatchBackend
 
 
 @dataclass(frozen=True)
@@ -24,7 +24,7 @@ class EngineSettings(BaseSettings):
 
 
 class TorchEngine:
-    def __init__(self, settings, backend_factory=BaseEngine):
+    def __init__(self, settings, backend_factory=BatchBackend):
         self.settings = settings
         self.backend = backend_factory(settings)
         self.pending = queue.Queue()
