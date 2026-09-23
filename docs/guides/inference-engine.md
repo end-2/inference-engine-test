@@ -107,10 +107,10 @@ CPU, 메모리와 `--n-threads`는 각 Deployment에서 설정합니다.
 
 ### 검증
 
-테스트는 위 Python 환경에 `httpx`를 추가해 실행합니다. SmolLM2와 같은 Llama 구조의 작은 가중치를 임시 생성하여 CPU 연산, 배치 패딩과 완료 행 제거, 취소, 캐시 복원과 손상 복구를 검증합니다.
+테스트는 위 Python 환경에 `httpx`와 메트릭 의존성을 추가해 실행합니다. SmolLM2와 같은 Llama 구조의 작은 가중치를 임시 생성하여 CPU 연산, 배치 패딩과 완료 행 제거, 취소, 캐시 복원과 손상 복구를 검증합니다.
 
 ```sh
-python -m pip install httpx
+python -m pip install -r src/transformers_cpu/base_metric/requirements.txt httpx
 python -m unittest discover -s tests -p 'test_transformers_*.py' -v
 sh tests/test-download-transformers-model.sh
 # 실행 중인 로컬 클러스터의 API discovery를 사용합니다.

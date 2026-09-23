@@ -36,7 +36,7 @@ llama.cpp는 [엔진 전환](docs/guides/inference-engine.md#엔진-전환) 후 
 
 ### 스크립트 직접 실행
 
-`make` 명령은 `scripts/` 실행 파일을 감싼 형태입니다. 동일하게 직접 실행할 수 있습니다. `VARIANT`는 `make` 전용 편의 변수이며, 스크립트에서는 이미지와 매니페스트를 직접 지정합니다.
+`make` 명령은 `scripts/` 실행 파일을 감싼 형태입니다. 동일하게 직접 실행할 수 있습니다. `VARIANT`는 `make` 전용 편의 변수이며, 스크립트에서는 이미지, 빌드 타깃과 매니페스트를 직접 지정합니다.
 
 ```sh
 ./scripts/local-k8s.sh install # make install과 동일
@@ -47,8 +47,8 @@ python3 scripts/run-benchmark-suite.py --backend llamacpp # llama.cpp 전체 반
 ./scripts/run-benchmark.py # make benchmark와 동일
 ./scripts/run-benchmark.py --help # 전체 옵션 확인
 # enhanced 예시
-./scripts/run-benchmark.py --image local/transformers-enhanced-batch:0.1.0 --manifests k8s/transformers-enhanced-batch
-./scripts/run-benchmark.py --image local/transformers-enhanced-cache:0.1.0 --manifests k8s/transformers-enhanced-cache --cache-policy clear-per-concurrency
+./scripts/run-benchmark.py --image local/transformers-enhanced-batch:0.1.0 --build-target transformers-enhanced-batch --manifests k8s/transformers-enhanced-batch
+./scripts/run-benchmark.py --image local/transformers-enhanced-cache:0.1.0 --build-target transformers-enhanced-cache --manifests k8s/transformers-enhanced-cache --cache-policy clear-per-concurrency
 ```
 
 | 목적 | make | 스크립트 직접 실행 |
