@@ -1,6 +1,8 @@
 # 벤치마크 실행과 결과 분석
 
-기본 엔진은 Transformers CPU이며 base, batch, prefix KV cache 구현의 처리량과 지연을 AIPerf로 비교합니다. llama.cpp도 선택할 수 있습니다. 추론 구현과 API는 [추론 엔진 가이드](inference-engine.md)를 참고하세요.
+AIPerf로 base, batch, prefix KV cache 구현의 처리량과 지연을 비교합니다. 기본 엔진은 Transformers CPU이며 llama.cpp도 선택할 수 있습니다.
+
+추론 구현과 API는 [추론 엔진 가이드](inference-engine.md)를 참고합니다.
 
 ## 구성
 
@@ -23,7 +25,9 @@ Docker, POSIX 셸, Python 3.10 이상과 make가 필요합니다. 모델과 이�
 ./scripts/local-k8s.sh install
 ```
 
-모델과 토크나이저 다운로드, 클러스터 생성, 이미지 빌드와 로드는 자동 runner가 수행합니다. 토크나이저를 수동으로 준비하려면 [AIPerf 가이드](aiperf.md#토크나이저-준비)를 참고하세요. 측정 중에는 다른 부하 실험을 중지합니다. 같은 클러스터에 다른 엔진을 이미 배포했다면 [엔진 전환](inference-engine.md#엔진-전환)에 따라 기존 Pod를 중지합니다.
+모델과 토크나이저 다운로드, 클러스터 생성, 이미지 빌드와 로드는 자동 실행 스크립트가 수행합니다. 토크나이저를 수동으로 준비하는 방법은 [AIPerf 가이드](aiperf.md#토크나이저-준비)를 참고합니다.
+
+측정 중에는 다른 부하 실험을 중지합니다. 같은 클러스터에 다른 엔진을 이미 배포했다면 [엔진 전환](inference-engine.md#엔진-전환)에 따라 기존 Pod를 중지합니다.
 
 기본 실행은 단일 노드 클러스터를 사용합니다. 멀티 노드에서는 `--inference-node`와 `--benchmark-node`를 모두 지정하며, 캐시 PV의 node affinity에 맞춰 노드를 선택합니다. `up`은 기존 클러스터의 토폴로지를 변경하지 않습니다.
 
@@ -56,7 +60,9 @@ Transformers cache variant의 기본값은 `clear-before-sweep`이며 나머지 
 make benchmark VARIANT=transformers-enhanced-cache CACHE_POLICY=clear-per-concurrency
 ```
 
-초기화는 추론 Pod 종료와 flush를 기다린 뒤 전용 PVC의 캐시 파일을 삭제합니다. 모델과 결과 PVC는 유지합니다. 워밍업과 본 요청 사이에는 캐시를 재사용하므로 모든 요청의 cache miss를 측정하는 조건은 아닙니다. 사용한 정책은 `run.json`에 기록됩니다.
+캐시 초기화는 추론 Pod 종료와 flush를 기다린 뒤 전용 PVC의 캐시 파일을 삭제하는 방식으로 수행합니다. 모델과 결과 PVC는 유지하며, 사용한 정책은 `run.json`에 기록합니다.
+
+워밍업과 본 요청 사이에는 캐시를 재사용하므로 모든 요청의 cache miss를 측정하는 조건은 아닙니다.
 
 ### 전체 구현 반복 측정
 
@@ -87,7 +93,9 @@ llama.cpp suite는 base, batch, cache 초기화와 cache 보존의 네 조건을
 
 단일 측정 결과는 `docs/reports/<backend>/bench-<UTC 시각>-<이미지>/`에 저장합니다. `<backend>`는 `transformers` 또는 `llamacpp`입니다.
 
-집계는 `docs/reports/<backend>/benchmark-suite-<UTC 시각>/`에 저장합니다. p95 집계는 실행별 p95의 평균입니다. `profiling_seconds`는 본 요청 시간, `job_and_collection_seconds`는 Job 생성부터 수집 완료까지의 시간입니다. 전체 sweep에는 Pod 준비와 캐시 초기화 시간이 포함됩니다.
+반복 측정의 집계 결과는 `docs/reports/<backend>/benchmark-suite-<UTC 시각>/`에 저장합니다. p95 집계는 실행별 p95의 평균입니다.
+
+`profiling_seconds`는 본 요청 시간, `job_and_collection_seconds`는 Job 생성부터 수집 완료까지의 시간입니다. 전체 sweep에는 Pod 준비와 캐시 초기화 시간이 포함됩니다.
 
 | 파일 | 내용 |
 | --- | --- |

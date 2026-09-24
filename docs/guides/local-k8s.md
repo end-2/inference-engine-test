@@ -1,6 +1,8 @@
 # 로컬 Kubernetes 사용 가이드
 
-`scripts/local-k8s.sh`로 Docker 기반 kind 클러스터를 생성하고 워크로드와 이미지를 관리합니다. 클러스터는 CPU 전용입니다. 아래 명령은 저장소 루트에서 실행하며, 전체 명령 목록은 `./scripts/local-k8s.sh help`로 확인합니다.
+`scripts/local-k8s.sh`로 Docker 기반 kind 클러스터를 생성하고 워크로드와 이미지를 관리합니다. 클러스터는 CPU 전용입니다.
+
+아래 명령은 저장소 루트에서 실행합니다. 전체 명령 목록은 `./scripts/local-k8s.sh help`에서 확인할 수 있습니다.
 
 ## 환경 준비
 
@@ -13,13 +15,15 @@
 ./scripts/local-k8s.sh test
 ```
 
-오프라인에서는 도구와 노드 이미지를 미리 준비합니다. 노드 이미지는 Docker에 `load`하고 같은 참조를 `KIND_NODE_IMAGE`로 지정합니다. workload 이미지도 같은 방법으로 준비합니다. [kind 오프라인 안내](https://kind.sigs.k8s.io/docs/user/working-offline/)
+오프라인에서는 도구와 노드 이미지를 미리 준비합니다. 노드 이미지는 Docker에 `load`하고 같은 참조를 `KIND_NODE_IMAGE`로 지정합니다. 워크로드 이미지도 같은 방법으로 준비합니다. 자세한 절차는 [kind 오프라인 안내](https://kind.sigs.k8s.io/docs/user/working-offline/)를 참고합니다.
 
 ## 클러스터 설정
 
 기본 [kind 설정](../../config/cluster/kind.yaml)은 CPU 전용 단일 노드, 기본 CNI와 스토리지를 사용합니다. API 서버는 `127.0.0.1`의 임의 포트로 노출합니다. `up`은 노드와 CoreDNS 준비를 기다립니다.
 
-버전과 노드 이미지 digest는 [versions.env](../../config/versions.env)에서 관리합니다. 변경 시 [kind 릴리스](https://github.com/kubernetes-sigs/kind/releases)에 명시된 kind와 노드 이미지 조합을 사용하고 kubectl 버전도 맞춥니다. `install`은 다운로드한 도구의 SHA-256을 검증하며, 스크립트는 `.bin/`의 도구를 PATH보다 우선합니다.
+버전과 노드 이미지 digest는 [versions.env](../../config/versions.env)에서 관리합니다. 변경 시 [kind 릴리스](https://github.com/kubernetes-sigs/kind/releases)에 명시된 kind와 노드 이미지 조합을 사용하고 kubectl 버전도 맞춥니다.
+
+`install`은 다운로드한 도구의 SHA-256을 검증합니다. 스크립트는 도구를 실행할 때 `.bin/`을 PATH보다 먼저 탐색합니다.
 
 | 환경 변수 | 기본값 | 용도 |
 | --- | --- | --- |
@@ -41,7 +45,7 @@ KIND_CONFIG=config/cluster/kind-multi-node.yaml ./scripts/local-k8s.sh up
 ./scripts/local-k8s.sh status
 ```
 
-`up`은 같은 이름의 클러스터를 재사용합니다. 기존 클러스터의 노드 구성과 이미지는 변경하지 않습니다. 설정 변경에는 재생성이 필요합니다. 필요한 노드 데이터를 백업한 뒤 `down`하고 원하는 설정으로 `up`합니다.
+`up`은 같은 이름의 클러스터를 재사용하며 기존 노드 구성과 이미지는 변경하지 않습니다. 노드 구성이나 이미지를 변경하려면 클러스터를 다시 생성합니다. 필요한 노드 데이터를 백업한 뒤 `down`하고 원하는 설정으로 `up`합니다.
 
 Docker context와 `DOCKER_HOST`는 생성할 때와 동일하게 유지합니다. 로컬 Docker 데몬에 접속해야 합니다.
 
@@ -57,7 +61,7 @@ export KUBECONFIG="$(./scripts/local-k8s.sh kubeconfig)"
 ./.bin/kubectl get pods -A
 ```
 
-빌드와 kind에서 같은 Docker 데몬을 사용합니다. 로드한 이미지를 사용할 workload에는 `imagePullPolicy: IfNotPresent` 또는 `Never`를 지정하고, `latest` 대신 명시적인 태그를 사용합니다.
+빌드와 kind에서 같은 Docker 데몬을 사용합니다. 로드한 이미지를 사용할 워크로드에는 `imagePullPolicy: IfNotPresent` 또는 `Never`를 지정하고, `latest` 대신 명시적인 태그를 사용합니다.
 
 ```sh
 docker build -t inference:test /path/to/application

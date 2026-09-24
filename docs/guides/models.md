@@ -1,6 +1,8 @@
 # 로컬 모델 관리
 
-SmolLM2-135M-Instruct와 Qwen2.5-0.5B-Instruct의 다운로드, SHA-256 검증과 Kubernetes 볼륨 연결을 설명합니다. 모델은 호스트에 저장하고 kind 노드와 Pod에 읽기 전용으로 마운트합니다. 다운로드에는 `curl`, 인터넷 연결과 `sha256sum` 또는 `shasum`이 필요합니다. 디스크와 실행 자원은 [요구사항](requirements.md#cpu-메모리와-디스크)을 참고하세요.
+추론에 사용할 SmolLM2-135M-Instruct와 Qwen2.5-0.5B-Instruct를 다운로드하고 SHA-256을 검증합니다. 모델은 호스트에 저장하고 kind 노드와 Pod에 읽기 전용으로 마운트합니다.
+
+다운로드에는 `curl`, 인터넷 연결과 `sha256sum` 또는 `shasum`이 필요합니다. 디스크와 실행 자원은 [요구사항](requirements.md#cpu-메모리와-디스크)을 참고합니다.
 
 ## 모델과 설정
 
@@ -51,7 +53,7 @@ make download-tokenizer VARIANT=base-llamacpp
 
 ## 클러스터와 볼륨 연결
 
-모델을 준비한 뒤 클러스터를 생성합니다. 클러스터 도구 설치와 설정은 [클러스터 가이드](local-k8s.md)를 참고하세요.
+모델을 준비한 뒤 클러스터를 생성합니다. 클러스터 도구 설치와 설정은 [클러스터 가이드](local-k8s.md)를 참고합니다.
 
 ```sh
 make up
@@ -66,7 +68,9 @@ make up
 | Qwen2.5 추론 | `.models/qwen2.5-0.5b/` | `/models/qwen2.5-0.5b/` | `/model/` |
 | Qwen2.5 AIPerf 토크나이저 | `.models/qwen2.5-0.5b/tokenizer/` | `/models/qwen2.5-0.5b/tokenizer/` | `/tokenizer/` |
 
-Transformers 서버의 `--model`은 `/model`, llama.cpp 서버의 `--model`은 `/model/qwen2.5-0.5b-instruct-q4_k_m.gguf`입니다. 실제 볼륨 설정은 [Transformers Deployment](../../k8s/transformers-base/deployment.yaml), [llama.cpp Deployment](../../k8s/base-llamacpp/deployment.yaml)와 [AIPerf 가이드](aiperf.md)를 참고하세요. 서버 실행 방법은 [추론 엔진 가이드](inference-engine.md)에 있습니다.
+Transformers 서버의 `--model`은 `/model`, llama.cpp 서버의 `--model`은 `/model/qwen2.5-0.5b-instruct-q4_k_m.gguf`입니다.
+
+실제 볼륨 설정은 [Transformers Deployment](../../k8s/transformers-base/deployment.yaml), [llama.cpp Deployment](../../k8s/base-llamacpp/deployment.yaml)와 [AIPerf 가이드](aiperf.md)를 참고합니다. 서버 실행 방법은 [추론 엔진 가이드](inference-engine.md)에서 확인할 수 있습니다.
 
 ### 저장 위치 변경
 

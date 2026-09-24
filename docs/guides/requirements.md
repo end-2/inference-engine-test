@@ -1,6 +1,8 @@
 # 실행을 위한 최소 요구사항
 
-CPU 전용 kind 클러스터와 추론, 측정 워크로드를 실행하기 위한 준비 조건입니다. 기본 버전은 [도구 설정](../../config/versions.env)을 기준으로 합니다. 다른 버전의 지원 여부는 실제 실행으로 확인해야 합니다.
+CPU 전용 kind 클러스터와 추론, 측정 워크로드에 필요한 호스트 환경, 도구와 자원 조건입니다.
+
+기본 버전은 [도구 설정](../../config/versions.env)을 기준으로 합니다. 다른 버전의 지원 여부는 실제 실행으로 확인해야 합니다.
 
 ## 호스트 OS와 컨테이너 환경
 
@@ -33,13 +35,15 @@ CPU 전용 kind 클러스터와 추론, 측정 워크로드를 실행하기 위�
 
 ## CPU, 메모리와 디스크
 
-선택한 추론 Deployment와 [AIPerf Job](../../k8s/aiperf/job.yaml)의 자원 요청량을 합산하고 Kubernetes 시스템 Pod의 여유분을 확보합니다. 추론 설정은 [Transformers](../../k8s/transformers-base/deployment.yaml) 또는 [llama.cpp](../../k8s/base-llamacpp/deployment.yaml) 매니페스트에서 확인합니다. Docker를 VM에서 실행하면 VM에 할당한 자원도 확인합니다. 측정 자원은 실행 환경에 맞춰 조정하되 `requests=limits`를 유지합니다.
+선택한 추론 Deployment와 [AIPerf Job](../../k8s/aiperf/job.yaml)의 자원 요청량을 합산하고 Kubernetes 시스템 Pod의 여유분을 확보합니다. 추론 설정은 [Transformers](../../k8s/transformers-base/deployment.yaml) 또는 [llama.cpp](../../k8s/base-llamacpp/deployment.yaml) 매니페스트에서 확인합니다.
+
+Docker를 VM에서 실행하면 VM에 할당한 자원도 확인합니다. 측정 자원은 실행 환경에 맞춰 조정하되 `requests=limits`를 유지합니다.
 
 디스크에는 [모델 파일](models.md#다운로드), Docker 이미지와 빌드 캐시, kind 노드의 이미지 사본, 임시 아카이브와 결과를 저장할 공간이 필요합니다. `TMPDIR`와 Docker 데이터 경로의 여유 공간도 확인합니다.
 
 ## 네트워크
 
-최초 설치, 이미지 빌드와 모델과 토크나이저 다운로드에는 사용하는 파일의 배포처에 HTTPS로 접근할 수 있어야 합니다.
+최초 설치와 이미지 빌드, 모델 및 토크나이저 다운로드에는 각 파일의 배포처에 HTTPS로 접근할 수 있어야 합니다.
 
 | 대상 | 주요 배포처 |
 | --- | --- |
@@ -48,7 +52,9 @@ CPU 전용 kind 클러스터와 추론, 측정 워크로드를 실행하기 위�
 | 이미지 빌드 의존성 | Debian 패키지 저장소, PyPI |
 | 모델과 토크나이저 | Hugging Face |
 
-프록시나 방화벽 환경에서는 리다이렉트되는 다운로드 호스트와 CDN도 허용해야 합니다. 오프라인 실행에는 [도구와 이미지](local-k8s.md#환경-준비), 추론용 [모델](models.md), AIPerf 측정용 [토크나이저](aiperf.md#토크나이저-준비)를 미리 준비합니다.
+프록시나 방화벽 환경에서는 리다이렉트되는 다운로드 호스트와 CDN도 허용해야 합니다.
+
+오프라인 실행에는 [도구와 이미지](local-k8s.md#환경-준비), 추론용 [모델](models.md), AIPerf 측정용 [토크나이저](aiperf.md#토크나이저-준비)를 미리 준비합니다.
 
 기본 네트워크는 IPv4이며 Kubernetes API는 로컬 `127.0.0.1`에 바인딩됩니다. Docker 네트워크와 클러스터 DNS가 동작하고 Pod 및 Service 대역이 호스트나 VPN 대역과 충돌하지 않아야 합니다. 원격 접속이나 IPv6 구성이 필요하면 [클러스터 설정](local-k8s.md#클러스터-설정)을 변경해야 합니다.
 

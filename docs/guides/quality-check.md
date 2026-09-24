@@ -1,12 +1,14 @@
 # 간단한 응답 품질 확인
 
-[품질 확인 스크립트](../../scripts/check-quality.py)는 대표 질문 7개를 순차 전송하고 응답, 검사 기준과 판정을 JSON으로 저장합니다. Python 3 표준 라이브러리만 사용하며 base, enhanced-batch와 enhanced-cache의 공통 API에서 실행할 수 있습니다.
+대표 질문 7개로 추론 서버의 응답 품질을 확인합니다. [품질 확인 스크립트](../../scripts/check-quality.py)는 질문을 순차 전송하고 응답, 검사 기준과 판정을 JSON으로 저장합니다.
 
 SmolLM2는 영어 질문을, Qwen은 한국어 질문을 사용합니다. 영어 결과와 한국어 결과의 통과 수를 같은 품질 점수로 비교하지 않습니다.
 
 ## 실행
 
-검사 대상은 `/v1/chat/completions`를 제공하는 실행 중인 서버입니다. Docker와 kind를 사용하는 아래 예제는 SmolLM2 base 서버를 준비하고 로컬 8000번 포트로 연결합니다. 저장소 루트에서 실행합니다.
+검사 대상은 `/v1/chat/completions`를 제공하는 실행 중인 서버입니다. 스크립트는 Python 3 표준 라이브러리만 사용하며 base, enhanced-batch와 enhanced-cache의 공통 API에서 실행할 수 있습니다.
+
+Docker와 kind를 사용하는 아래 예제는 SmolLM2 base 서버를 준비하고 로컬 8000번 포트로 연결합니다. 저장소 루트에서 실행합니다.
 
 ```sh
 ./scripts/local-k8s.sh install
@@ -31,7 +33,9 @@ python3 scripts/check-quality.py --output reports/transformers/quality-base.json
 
 llama.cpp 서버는 해당 서비스에 포트를 연결한 뒤 `python3 scripts/check-quality.py --backend llamacpp`로 검사합니다. 기본 모델은 Qwen2.5입니다.
 
-기본 출력 상한은 128토큰, 요청별 timeout은 60초입니다. `--max-tokens`와 `--timeout`으로 변경하며, 출력 상한은 서버에서 허용하는 값 이하여야 합니다. `--output`을 생략하면 `reports/<backend>/quality-<UTC 시각>.json`에 저장합니다. 같은 경로를 지정하면 기존 파일을 덮어씁니다.
+기본 출력 상한은 128토큰, 요청별 timeout은 60초입니다. `--max-tokens`와 `--timeout`으로 변경하며, 출력 상한은 서버에서 허용하는 값 이하여야 합니다.
+
+`--output`을 생략하면 `reports/<backend>/quality-<UTC 시각>.json`에 저장합니다. 같은 경로를 지정하면 기존 파일을 덮어씁니다.
 
 ## 검사 항목과 판정
 
@@ -47,9 +51,13 @@ llama.cpp 서버는 해당 서비스에 포트를 연결한 뒤 `python3 scripts
 
 질문 세트와 판정 기준은 결과의 `language`, `criterion`, `answer`에 기록합니다. 자동 검사는 정답 내용을 확인하며 요약, 번역과 판단이 모호한 응답은 `REVIEW`로 남깁니다. `REVIEW`는 사람이 응답과 기준을 대조해 판정합니다.
 
-출력에는 `PASS`, `FAIL`, `REVIEW`, `ERROR`를 구분합니다. 자동 검사 실패는 `FAIL`, HTTP 오류, 잘못된 API 응답, 빈 응답이나 출력 상한 도달은 `ERROR`입니다. 한 항목이 실패해도 나머지 질문을 실행하고 결과를 저장합니다. `FAIL` 또는 `ERROR`가 있으면 종료 코드 1, 나머지는 0입니다. 종료 코드 0에도 수동 검토가 남아 있습니다.
+출력에는 `PASS`, `FAIL`, `REVIEW`, `ERROR`를 구분합니다. 자동 검사 실패는 `FAIL`, HTTP 오류, 잘못된 API 응답, 빈 응답이나 출력 상한 도달은 `ERROR`입니다.
 
-요청은 `temperature=0`, `top_p=1`, `ignore_eos=false`를 사용합니다. 정상 종료를 허용하므로 고정 출력 길이 성능 측정과 조건이 다릅니다. 이 검사는 기본 응답을 확인하는 용도이며 종합 품질 점수나 구현 간 품질 동등성을 보장하지 않습니다.
+한 항목이 실패해도 나머지 질문을 실행하고 결과를 저장합니다. `FAIL` 또는 `ERROR`가 있으면 종료 코드 1, 나머지는 0입니다. 종료 코드가 0이어도 `REVIEW` 항목은 수동으로 검토해야 합니다.
+
+요청은 `temperature=0`, `top_p=1`, `ignore_eos=false`를 사용합니다. 정상 종료를 허용하므로 고정 출력 길이 성능 측정과 조건이 다릅니다.
+
+이 검사는 기본 응답을 확인하는 용도이며 종합 품질 점수나 구현 간 품질 동등성을 보장하지 않습니다.
 
 ## 스크립트 검증
 
