@@ -13,6 +13,7 @@ from enhanced_support import ROOT
 from transformer.base.engine import EngineSettings, Generation, TorchEngine
 from transformer.enhanced.batch import engine as batching
 from transformer.enhanced.batch.backend import BatchBackend
+from transformer.enhanced.batch_gpu.backend import GPUBatchBackend
 from transformer.enhanced.cache import engine as caching
 
 try:
@@ -93,6 +94,51 @@ class EngineTests(unittest.TestCase):
             self.assertEqual("".join(chunks), result["text"])
             self.assertEqual(result["prompt_tokens"], len(request.prompt))
             self.assertEqual(result["finish_reason"], "length")
+
+    def test_gpu_batch_compaction_and_streams_match_serial(self):
+        backend = GPUBatchBackend(self.settings)
+        self.addCleanup(backend.close)
+        requests = [self.request([3, 7], 1), self.request([3, 8, 9, 10, 11], 6),
+                    self.request([4, 5, 6], 3)]
+        expected = [self.engine.generate(request) for request in requests]
+        pieces = [[], [], []]
+        for request, chunks in zip(requests, pieces):
+            request.emit = chunks.append
+        actual = backend.generate_batch(requests)
+        self.assertEqual(actual, expected)
+        self.assertEqual(["".join(chunks) for chunks in pieces],
+                         [result["text"] for result in actual])
+
+    def test_gpu_batch_sampling_handles_mixed_options(self):
+        backend = GPUBatchBackend(self.settings)
+        self.addCleanup(backend.close)
+        masked, unmasked = self.request(), self.request()
+        unmasked.ignore_eos = False
+        unmasked.temperature, unmasked.top_p = 0.7, 0.1
+        scores = torch.full((2, 64), -100.0)
+        scores[:, 2], scores[:, 7] = 50, 20
+        self.assertEqual(backend._sample_batch(scores, [masked, unmasked], [0, 1]).tolist(),
+                         [7, 2])
+
+    @unittest.skipIf(torch is None or not torch.cuda.is_available(), "CUDA required")
+    def test_gpu_decode_graph_matches_dynamic_batch(self):
+        settings = replace(self.settings, device="cuda", dtype="float16")
+        graph_backend = GPUBatchBackend(settings)
+        dynamic_backend = BatchBackend(settings)
+        self.addCleanup(graph_backend.close)
+        self.addCleanup(dynamic_backend.close)
+        for _ in range(2):
+            prompts = [[3, 7], [3, 8, 9, 10, 11], [4, 5, 6]]
+            limits = [1, 6, 3]
+            expected = dynamic_backend.generate_batch(
+                [self.request(prompt, limit) for prompt, limit in zip(prompts, limits)])
+            chunks = [[], [], []]
+            requests = [self.request(prompt, limit, emit=pieces.append)
+                        for prompt, limit, pieces in zip(prompts, limits, chunks)]
+            actual = graph_backend.generate_batch(requests)
+            self.assertEqual(actual, expected)
+            self.assertEqual(["".join(pieces) for pieces in chunks],
+                             [result["text"] for result in actual])
 
     def test_stream_matches_complete_and_preserves_usage(self):
         pieces = []

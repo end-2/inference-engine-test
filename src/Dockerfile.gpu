@@ -53,7 +53,8 @@ FROM gpu-runtime-transformers AS transformers-base-gpu
 FROM gpu-runtime-transformers AS transformers-enhanced-batch-gpu
 COPY transformer/enhanced/__init__.py /app/transformer/enhanced/
 COPY transformer/enhanced/batch/*.py /app/transformer/enhanced/batch/
-ENTRYPOINT ["python", "-m", "transformer.enhanced.batch.server"]
+COPY transformer/enhanced/batch_gpu/*.py /app/transformer/enhanced/batch_gpu/
+ENTRYPOINT ["python", "-m", "transformer.enhanced.batch_gpu.server"]
 
 FROM gpu-runtime-transformers AS transformers-enhanced-cache-gpu
 COPY llamacpp/enhanced/__init__.py /app/llamacpp/enhanced/

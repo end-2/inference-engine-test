@@ -10,6 +10,7 @@ from enhanced_support import ROOT
 from test_server_llamacpp import FakeEngine
 from transformer.base import server as base
 from transformer.enhanced.batch import server as batch
+from transformer.enhanced.batch_gpu import server as batch_gpu
 from transformer.enhanced.cache import server as cache
 
 
@@ -62,6 +63,13 @@ class ServerTests(unittest.IsolatedAsyncioTestCase):
         options = base.create_parser().parse_args(["--device", "cuda", "--dtype", "float16"])
         self.assertEqual(options.device, "cuda")
         self.assertEqual(options.dtype, "float16")
+
+    def test_gpu_batch_requires_cuda(self):
+        self.assertEqual(batch_gpu.Settings().engine_settings().dtype, "float16")
+        with self.assertRaisesRegex(ValueError, "requires device=cuda"):
+            batch_gpu.Settings(device="cpu")
+        with self.assertRaisesRegex(ValueError, "requires device=cuda"):
+            batch_gpu.TorchEngine(batch.EngineSettings(Path("weights"), device="cpu"))
 
     def test_cache_settings_preserved(self):
         settings = cache.Settings(model=Path("weights"), cache_dir=Path("cache"),
