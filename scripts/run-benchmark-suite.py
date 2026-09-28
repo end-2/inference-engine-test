@@ -40,7 +40,7 @@ def backend_for(metadata):
 
 def inference_image(metadata, variant):
     backend = backend_for(metadata)
-    image = f"local/{benchmark.variant_name(backend, variant)}:{metadata['image_tag']}"
+    image = f"local/{benchmark.image_name(backend, variant, metadata.get('device', 'cpu'))}:{metadata['image_tag']}"
     legacy = f"local/llama-{variant}:{metadata['image_tag']}"
     # Archived suites retain their measured image references when resumed.
     return legacy if backend == "llamacpp" and legacy in metadata.get("images", {}) else image
@@ -60,7 +60,7 @@ def plan(repetitions, backend="transformers"):
 
 def aggregate(rows):
     output = []
-    metrics = [key for key in rows[0] if key not in {"repetition", "condition", "concurrency", "report"}]
+    metrics = [key for key in rows[0] if key not in {"repetition", "condition", "concurrency", "report", "gpu_uuid"}]
     for label in dict.fromkeys(row["condition"] for row in rows):
         for concurrency in (1, 2, 4, 8):
             group = [row for row in rows if row["condition"] == label and row["concurrency"] == concurrency]
@@ -81,10 +81,11 @@ def aggregate(rows):
 def case_command(case, metadata, destination):
     backend = backend_for(metadata)
     name = benchmark.variant_name(backend)
+    device = metadata.get("device", "cpu")
     return [sys.executable, str(ROOT / "scripts/run-benchmark.py"),
-            "--backend", backend,
+            "--backend", backend, "--device", device,
             "--image", inference_image(metadata, case["variant"]),
-            "--build-context", "", "--manifests", str(ROOT / "k8s" / benchmark.variant_name(backend, case["variant"])),
+            "--build-context", "", "--manifests", str(benchmark.manifests_path(backend, case["variant"], device)),
             "--deployment", name, "--container", "api", "--api-url", f"http://{name}:8000",
             "--concurrencies", "1,2,4,8", "--cache-policy", case["cache_policy"],
             "--benchmark-image", metadata["benchmark_image"],
@@ -102,6 +103,8 @@ def read_case(report, case, metadata):
     backend = backend_for(metadata)
     if backend_for(run) != backend:
         raise RuntimeError(f"Unexpected backend: {report}")
+    if run.get("device", "cpu") != metadata.get("device", "cpu"):
+        raise RuntimeError(f"Unexpected device: {report}")
     for role, image in (("inference", inference_image(metadata, case["variant"])),
                         ("benchmark", metadata["benchmark_image"])):
         if run[role]["id"] != metadata["images"][image]["id"]:
@@ -111,6 +114,8 @@ def read_case(report, case, metadata):
     for index, condition in enumerate(run["conditions"]):
         if condition["status"] != "complete" or condition["output_length_check"]["shortfalls"]:
             raise RuntimeError(f"Invalid condition: {report}")
+        if metadata.get("device") == "gpu" and condition.get("gpu_collection", {}).get("gpu_samples", 0) < 1:
+            raise RuntimeError(f"Missing GPU samples: {report}")
         clear = condition.get("cache_clear")
         if bool(clear) != benchmark.clears_cache(case["cache_policy"], index):
             raise RuntimeError(f"Unexpected cache cleanup schedule: {report}")
@@ -153,9 +158,12 @@ def save_suite(directory, metadata, rows):
             writer.writeheader()
             writer.writerows(records)
     (directory / "summary.jsonl").write_text("".join(json.dumps(row) + "\n" for row in rows))
-    lines = ["# Inference benchmark: repeated sweeps", "",
+    lines = ["# Inference benchmark: " + ("sweeps" if metadata["repetitions"] == 1 else "repeated sweeps"), "",
              f"- Status: {metadata['status']}", f"- Repetitions per condition: {metadata['repetitions']}",
-             f"- Backend: `{backend_for(metadata)}`",
+             f"- Backend: `{backend_for(metadata)}`; device: `{metadata.get('device', 'cpu')}`",
+             (f"- Compute setting: `dtype={'float16' if metadata.get('device') == 'gpu' else 'float32'}`."
+              if backend_for(metadata) == "transformers" else
+              f"- Compute setting: `n_gpu_layers={'-1' if metadata.get('device') == 'gpu' else '0'}`."),
              f"- Inference node: `{metadata['inference_node']}`; AIPerf node: `{metadata['benchmark_node']}`",
              "- Each sweep uses concurrency 1, 2, 4, 8; each step has 2 warmup and 100 profiling requests.",
              "- Each step starts with a fresh inference Pod. Image IDs and node placement are fixed across repetitions.",
@@ -163,8 +171,10 @@ def save_suite(directory, metadata, rows):
               if metadata.get("backend") == "transformers" else
               "- Cache clear: empty PVC before every step. Cache preserve: empty PVC before the sweep, then retain it between steps."),
              "- Cache clearing precedes warmup; cache can fill and be reused within each step.",
-             "- Execution order rotates by one condition each repetition. All sweeps run sequentially.",
-             "- Values are mean ± sample standard deviation across sweeps. TTFT p95 is the mean of per-sweep p95 values, not a pooled p95.", "",
+             ("- All sweeps run sequentially." if metadata["repetitions"] == 1 else
+              "- Execution order rotates by one condition each repetition. All sweeps run sequentially."),
+             ("- Values are from one sweep per condition." if metadata["repetitions"] == 1 else
+              "- Values are mean ± sample standard deviation across sweeps. TTFT p95 is the mean of per-sweep p95 values, not a pooled p95."), "",
              "| Condition | Concurrency | Runs | Output tok/s | TTFT avg (ms) | TTFT p95 (ms) | ITL avg (ms) | Profiling (s) |",
              "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"]
     for row in aggregate(rows):
@@ -173,6 +183,13 @@ def save_suite(directory, metadata, rows):
             std = row[f"{metric}_std"]
             cells.append(f"{row[f'{metric}_mean']:.2f}" + (f" ± {std:.2f}" if std is not None else ""))
         lines.append("| " + " | ".join(cells) + " |")
+    if metadata.get("device") == "gpu":
+        lines += ["", "| Condition | Concurrency | GPU avg (%) | GPU max (%) | Memory avg (MiB) | Memory max (MiB) |",
+                  "| --- | ---: | ---: | ---: | ---: | ---: |"]
+        for row in aggregate(rows):
+            lines.append(f"| {row['condition']} | {row['concurrency']} | "
+                         f"{row['gpu_utilization_avg_pct_mean']:.2f} | {row['gpu_utilization_max_pct_max']:.2f} | "
+                         f"{row['gpu_memory_used_avg_mib_mean']:.2f} | {row['gpu_memory_used_max_mib_max']:.2f} |")
     lines += ["", "Profiling excludes warmup, Pod preparation and result collection. Sweep elapsed time includes these tasks.",
               "", "## Sweep reports", "", "| Order | Repetition | Condition | Status | Elapsed (s) | Report |",
               "| ---: | ---: | --- | --- | ---: | --- |"]
@@ -187,13 +204,19 @@ def save_suite(directory, metadata, rows):
 
 def prepare_images(metadata, build):
     backend = backend_for(metadata)
-    images = [(inference_image(metadata, variant), ROOT / "src", benchmark.variant_name(backend, variant))
+    images = [(inference_image(metadata, variant), ROOT / "src",
+               benchmark.image_name(backend, variant, metadata.get("device", "cpu")))
               for variant in dict.fromkeys(variant for _, variant, _ in conditions_for(backend))]
     images.append((metadata["benchmark_image"], ROOT / "src/aiperf", None))
     for image, context, target in images:
         # An interrupted suite must retain already recorded image IDs.
         rebuild = build and image not in metadata["images"]
-        info = benchmark.ensure_image(image, context if rebuild else None, target if rebuild else None)
+        if metadata.get("device") == "gpu":
+            node = metadata["benchmark_node"] if target is None else metadata["inference_node"]
+            info = benchmark.ensure_image(image, context if rebuild else None,
+                                          target if rebuild else None, load_nodes=[node])
+        else:
+            info = benchmark.ensure_image(image, context if rebuild else None, target if rebuild else None)
         if image in metadata["images"] and info["id"] != metadata["images"][image]["id"]:
             raise RuntimeError(f"Image changed since suite started: {image}")
         metadata["images"].setdefault(image, info)
@@ -203,6 +226,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--backend", choices=("llamacpp", "transformers"), type=benchmark.normalize_backend,
                         default=os.environ.get("INFERENCE_BACKEND", "transformers"))
+    parser.add_argument("--device", choices=("cpu", "gpu"), default=os.environ.get("BENCHMARK_DEVICE", "cpu"))
     parser.add_argument("--repetitions", type=int, default=3)
     parser.add_argument("--inference-node", help="Default: the single control-plane node")
     parser.add_argument("--benchmark-node", help="Default: the same single control-plane node")
@@ -217,7 +241,7 @@ def parse_args():
         parser.error("repetitions must be positive")
     if args.backend not in {"llamacpp", "transformers"}:
         parser.error("backend must be llamacpp or transformers")
-    args.reports_dir = args.reports_dir or ROOT / "docs/reports" / args.backend
+    args.reports_dir = args.reports_dir or ROOT / "docs/reports" / ("gpu" if args.device == "gpu" else "") / args.backend
     return args
 
 
@@ -233,19 +257,22 @@ def main():
         directory.mkdir(parents=True, exist_ok=bool(args.resume))
         if args.resume:
             metadata = json.loads((directory / "run.json").read_text())
+            args.device = metadata.get("device", "cpu")
         else:
             metadata = {"started_at": started.isoformat(), "status": "preparing", "backend": args.backend,
+                        "device": args.device,
                         "repetitions": args.repetitions, "image_tag": args.image_tag,
                         "benchmark_image": args.benchmark_image, "inference_node": args.inference_node,
                         "benchmark_node": args.benchmark_node, "images": {}, "cases": plan(args.repetitions, args.backend)}
         rows = []
         print(f"Suite: {directory}", flush=True)
         try:
-            benchmark.run(ROOT / "scripts/local-k8s.sh", "up")
+            os.environ["LOCAL_K8S_SCRIPT"] = str(ROOT / "scripts" / ("local-k8s-gpu.sh" if args.device == "gpu" else "local-k8s.sh"))
+            benchmark.run(benchmark.cluster_script(), "up")
             backend = backend_for(metadata)
             nodes = benchmark.kube_json("get", "nodes")
             metadata["inference_node"], metadata["benchmark_node"] = benchmark.resolve_nodes(
-                metadata["inference_node"], metadata["benchmark_node"], nodes)
+                metadata["inference_node"], metadata["benchmark_node"], nodes, args.device)
             benchmark.write_json(directory / "nodes.json", nodes)
             active = benchmark.kube_json("get", "jobs", "-l", "benchmark=aiperf-cpu")["items"]
             if any(item.get("status", {}).get("active", 0) for item in active):

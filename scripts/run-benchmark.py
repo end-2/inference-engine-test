@@ -17,6 +17,8 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_LABEL = "io.local.inference.source-sha256"
 CACHE_POLICIES = ("preserve", "clear-before-sweep", "clear-per-concurrency")
+CONTROL_PLANE_TOLERATION = {"key": "node-role.kubernetes.io/control-plane",
+                           "operator": "Exists", "effect": "NoSchedule"}
 CLEAR_CACHE_SCRIPT = """
 import json
 from pathlib import Path
@@ -51,8 +53,12 @@ def run(*args, capture=False, check=True):
     return result
 
 
+def cluster_script():
+    return Path(os.environ.get("LOCAL_K8S_SCRIPT", ROOT / "scripts/local-k8s.sh"))
+
+
 def kube(*args, **kwargs):
-    return run(ROOT / "scripts/local-k8s.sh", "kubectl", *args, **kwargs)
+    return run(cluster_script(), "kubectl", *args, **kwargs)
 
 
 def kube_json(*args):
@@ -113,15 +119,35 @@ def image_loaded(node, image, info):
     return False
 
 
-def ensure_image(image, context, target=None):
+def ensure_image(image, context, target=None, load_nodes=None):
     inspected = run("docker", "image", "inspect", image, capture=True, check=False)
     info = json.loads(inspected.stdout)[0] if inspected.returncode == 0 else None
+    if info is None and context is None and load_nodes:
+        ids = []
+        for node in load_nodes:
+            result = run("docker", "exec", node, "crictl", "inspecti", image,
+                         capture=True, check=False)
+            if result.returncode:
+                raise RuntimeError(f"Image missing from host and node {node}: {image}")
+            status = json.loads(result.stdout).get("status", {})
+            image_id = status.get("id")
+            if not image_id:
+                raise RuntimeError(f"Node {node} returned no image ID for {image}")
+            ids.append(image_id)
+        if len(set(ids)) != 1:
+            raise RuntimeError(f"Image ID differs across selected nodes: {image}")
+        print(f"Reusing image loaded on selected nodes: {image} ({ids[0]})", flush=True)
+        return {"image": image, "id": ids[0], "source_sha256": None,
+                "build_context": None, "build_target": None}
     fingerprint = source_hash(context, target) if context else None
     labels = ((info or {}).get("Config") or {}).get("Labels") or {}
     if context and (not info or labels.get(SOURCE_LABEL) != fingerprint):
         print(f"Building {image} from {context}", flush=True)
         target_args = ("--target", target) if target else ()
-        run("docker", "build", "--no-cache", *target_args,
+        gpu_build = bool(target and target.endswith("-gpu"))
+        dockerfile = ("-f", context / "Dockerfile.gpu") if gpu_build else ()
+        cache_args = () if gpu_build else ("--no-cache",)
+        run("docker", "build", *cache_args, *dockerfile, *target_args,
             "--label", f"{SOURCE_LABEL}={fingerprint}", "-t", image, context)
         info = json.loads(run("docker", "image", "inspect", image, capture=True).stdout)[0]
     elif not info:
@@ -129,6 +155,11 @@ def ensure_image(image, context, target=None):
     else:
         print(f"Reusing built image: {image} ({info['Id']})", flush=True)
     nodes = kube_json("get", "nodes")["items"]
+    if load_nodes is not None:
+        available = {node["metadata"]["name"] for node in nodes}
+        if not load_nodes or not set(load_nodes) <= available:
+            raise RuntimeError("Image load nodes must exist in this cluster")
+        nodes = [node for node in nodes if node["metadata"]["name"] in load_nodes]
     missing = []
     for node in nodes:
         name = node["metadata"]["name"]
@@ -140,11 +171,15 @@ def ensure_image(image, context, target=None):
         for node in missing:
             run("docker", "exec", node, "crictl", "rmi", image, capture=True, check=False)
             run("docker", "exec", node, "ctr", "-n", "k8s.io", "images", "rm", image, capture=True, check=False)
-        run(ROOT / "scripts/local-k8s.sh", "load-image", image)
+        if load_nodes is None:
+            run(cluster_script(), "load-image", image)
+        else:
+            for node in missing:
+                run(cluster_script(), "load-image-node", node, image)
         if not all(image_loaded(node["metadata"]["name"], image, info) for node in nodes):
             raise RuntimeError(f"Loaded image does not match the host image: {image}")
     else:
-        print(f"Reusing loaded image on every node: {image}", flush=True)
+        print(f"Reusing loaded image on selected nodes: {image}", flush=True)
     return {"image": image, "id": info["Id"], "source_sha256": fingerprint,
             "build_context": str(context) if context else None,
             "build_target": target if context else None}
@@ -338,6 +373,41 @@ class ResourceSampler:
         return {"node_samples": self.samples, "pod_cpu_samples": self.counts}
 
 
+class GPUSampler:
+    columns = ("sampled_at", "uuid", "utilization_pct", "memory_used_mib", "memory_total_mib")
+
+    def __init__(self, directory):
+        self.path = directory / "gpu.csv"
+        self.rows = []
+        with self.path.open("w", newline="") as output:
+            csv.DictWriter(output, fieldnames=self.columns).writeheader()
+
+    def sample(self):
+        output = run("nvidia-smi", "--query-gpu=uuid,utilization.gpu,memory.used,memory.total",
+                     "--format=csv,noheader,nounits", capture=True).stdout.strip().splitlines()
+        if len(output) != 1:
+            raise RuntimeError("GPU benchmark requires exactly one visible host GPU")
+        fields = [part.strip() for part in output[0].split(",")]
+        if len(fields) != 4:
+            raise RuntimeError("Invalid nvidia-smi GPU sample")
+        row = dict(zip(self.columns, (datetime.now(timezone.utc).isoformat(), fields[0],
+                                      float(fields[1]), float(fields[2]), float(fields[3]))))
+        if self.rows and row["uuid"] != self.rows[0]["uuid"]:
+            raise RuntimeError("GPU UUID changed during measurement")
+        self.rows.append(row)
+        with self.path.open("a", newline="") as output:
+            csv.DictWriter(output, fieldnames=self.columns).writerow(row)
+
+    def summary(self):
+        if not self.rows or max(row["memory_used_mib"] for row in self.rows) <= 0:
+            raise RuntimeError("No GPU memory use was observed during measurement")
+        return {"gpu_uuid": self.rows[0]["uuid"], "gpu_samples": len(self.rows),
+                "gpu_utilization_avg_pct": sum(row["utilization_pct"] for row in self.rows) / len(self.rows),
+                "gpu_utilization_max_pct": max(row["utilization_pct"] for row in self.rows),
+                "gpu_memory_used_avg_mib": sum(row["memory_used_mib"] for row in self.rows) / len(self.rows),
+                "gpu_memory_used_max_mib": max(row["memory_used_mib"] for row in self.rows)}
+
+
 def export_requests(source, destination):
     rows = []
     for line in source.read_text().splitlines():
@@ -355,11 +425,13 @@ def export_requests(source, destination):
         writer.writerows(rows)
 
 
-def wait_job(name, timeout, sampler=None, sample_interval=5):
+def wait_job(name, timeout, sampler=None, sample_interval=5, gpu_sampler=None):
     deadline = time.monotonic() + timeout + 30
     while time.monotonic() < deadline:
         if sampler:
             sampler.sample()
+        if gpu_sampler:
+            gpu_sampler.sample()
         job = kube_json("get", "job", name)
         for condition in job.get("status", {}).get("conditions", []):
             if condition["status"] == "True":
@@ -430,9 +502,11 @@ def save_summary(report, metadata, rows):
         "clear-before-sweep": "clear once before the first condition's warmup",
         "clear-per-concurrency": "clear before each condition's warmup",
     }[cache_policy]
-    lines = ["# AIPerf CPU benchmark", "", f"- Image: `{metadata['inference']['image']}`",
+    device = metadata.get("device", "cpu")
+    lines = [f"# AIPerf {device.upper()} benchmark", "", f"- Image: `{metadata['inference']['image']}`",
              f"- Image ID: `{metadata['inference']['id']}`", f"- Started (UTC): {metadata['started_at']}",
              f"- Status: {metadata['status']}",
+             f"- Device: `{device}`; compute setting: `{metadata.get('compute_setting', '')}`.",
              f"- PVC cache policy: `{cache_policy}` ({cache_description}).",
              "- Each condition starts after a fresh inference Pod becomes ready, followed by the configured warmup.", "",
              "| Concurrency | Requests | Output tok/s | TTFT avg (ms) | TTFT p95 (ms) | ITL avg (ms) | ITL p95 (ms) | Decode avg (ms) | Decode p95 (ms) | Prefill tok/s/user | Latency avg (ms) |",
@@ -444,7 +518,14 @@ def save_summary(report, metadata, rows):
                   "latency_avg_ms")]
         lines.append("| " + " | ".join(f"{value:.2f}" if isinstance(value, float) else str(value)
                                       for value in values) + " |")
-    lines += ["", "Full AIPerf exports, request CSV, resource JSONL/CSV, and logs are saved locally under each `c<concurrency>/` directory; per-request data, resource time series, and logs are excluded from Git.",
+    if device == "gpu":
+        lines += ["", "| Concurrency | GPU UUID | Samples | GPU avg (%) | GPU max (%) | Memory avg (MiB) | Memory max (MiB) |",
+                  "| --- | --- | ---: | ---: | ---: | ---: | ---: |"]
+        for row in rows:
+            lines.append(f"| {row['concurrency']} | {row['gpu_uuid']} | {row['gpu_samples']} | "
+                         f"{row['gpu_utilization_avg_pct']:.2f} | {row['gpu_utilization_max_pct']:.2f} | "
+                         f"{row['gpu_memory_used_avg_mib']:.2f} | {row['gpu_memory_used_max_mib']:.2f} |")
+    lines += ["", "Full AIPerf exports, request CSV, resource JSONL/CSV, GPU CSV when selected, and logs are saved locally under each `c<concurrency>/` directory; per-request data, resource time series, and logs are excluded from Git.",
               "`run.json` and the saved manifests record image IDs, Pod UIDs, and workload settings."]
     (report / "summary.md").write_text("\n".join(lines) + "\n")
 
@@ -457,10 +538,23 @@ def variant_name(backend, variant="base"):
     return f"transformers-{variant}" if backend == "transformers" else f"{variant}-llamacpp"
 
 
+def image_name(backend, variant, device):
+    name = variant_name(backend, variant)
+    return f"{name}-gpu" if device == "gpu" else name
+
+
+def manifests_path(backend, variant, device):
+    directory = ROOT / "k8s"
+    if device == "gpu":
+        directory /= "gpu"
+    return directory / variant_name(backend, variant)
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--backend", choices=("llamacpp", "transformers"), type=normalize_backend,
                         default=os.environ.get("INFERENCE_BACKEND", "transformers"))
+    parser.add_argument("--device", choices=("cpu", "gpu"), default=os.environ.get("BENCHMARK_DEVICE", "cpu"))
     parser.add_argument("--image", default=os.environ.get("INFERENCE_IMAGE"))
     parser.add_argument("--build-context", default=os.environ.get("INFERENCE_CONTEXT", str(ROOT / "src")),
                         help="Empty string reuses a prebuilt local image without building")
@@ -489,10 +583,10 @@ def parse_args():
     args = parser.parse_args()
     if args.backend not in {"llamacpp", "transformers"}:
         parser.error("backend must be llamacpp or transformers")
-    args.reports_dir = args.reports_dir or ROOT / "docs/reports" / args.backend
+    args.reports_dir = args.reports_dir or ROOT / "docs/reports" / ("gpu" if args.device == "gpu" else "") / args.backend
     name = variant_name(args.backend)
-    args.image = args.image or f"local/{name}:0.1.0"
-    args.manifests = args.manifests or str(ROOT / "k8s" / name)
+    args.image = args.image or f"local/{image_name(args.backend, 'base', args.device)}:0.1.0"
+    args.manifests = args.manifests or str(manifests_path(args.backend, "base", args.device))
     args.deployment = args.deployment or name
     args.api_url = args.api_url or f"http://{name}:8000"
     args.model = args.model or ("HuggingFaceTB/SmolLM2-135M-Instruct" if args.backend == "transformers"
@@ -512,7 +606,7 @@ def parse_args():
     args.build_context = Path(args.build_context).resolve() if args.build_context else None
     args.benchmark_build_context = Path(args.benchmark_build_context).resolve() if args.benchmark_build_context else None
     if args.build_target is None and args.build_context == ROOT / "src":
-        args.build_target = name
+        args.build_target = image_name(args.backend, "base", args.device)
     if args.build_context and not (args.build_context / "Dockerfile").is_file():
         parser.error("build context must contain a Dockerfile")
     if args.benchmark_build_context and not (args.benchmark_build_context / "Dockerfile").is_file():
@@ -539,9 +633,16 @@ def prepare_model(backend):
         run(ROOT / "scripts/download-tokenizer-llamacpp.sh")
 
 
-def resolve_nodes(inference_node, benchmark_node, nodes):
+def resolve_nodes(inference_node, benchmark_node, nodes, device="cpu"):
     items = nodes["items"]
-    if not inference_node or not benchmark_node:
+    if device == "gpu" and (not inference_node or not benchmark_node):
+        gpu_nodes = [node for node in items if int(node.get("status", {}).get("allocatable", {}).get("nvidia.com/gpu", 0)) >= 1]
+        controls = [node for node in items if "node-role.kubernetes.io/control-plane" in node["metadata"].get("labels", {})]
+        if len(gpu_nodes) != 1 or len(controls) != 1:
+            raise RuntimeError("Default GPU benchmark requires one GPU worker and one control-plane node")
+        inference_node = inference_node or gpu_nodes[0]["metadata"]["name"]
+        benchmark_node = benchmark_node or controls[0]["metadata"]["name"]
+    elif not inference_node or not benchmark_node:
         if len(items) != 1 or "node-role.kubernetes.io/control-plane" not in items[0]["metadata"].get("labels", {}):
             raise RuntimeError("Default benchmark requires one control-plane node. Existing clusters are reused unchanged; "
                                "use the default kind configuration or explicitly set both --inference-node and --benchmark-node.")
@@ -555,11 +656,30 @@ def resolve_nodes(inference_node, benchmark_node, nodes):
         if not any(condition["type"] == "Ready" and condition["status"] == "True"
                    for condition in by_name[name].get("status", {}).get("conditions", [])):
             raise RuntimeError(f"Requested node is not Ready: {name}")
+    if device == "gpu" and int(by_name[inference_node].get("status", {}).get("allocatable", {}).get("nvidia.com/gpu", 0)) < 1:
+        raise RuntimeError("Inference node has no allocatable NVIDIA GPU")
     return inference_node, benchmark_node
+
+
+def stop_other_gpu_engine(deployment_name, timeout):
+    for name in ("transformers-base", "base-llamacpp"):
+        if name == deployment_name:
+            continue
+        response = kube("get", "deployment", name, "-o", "json", capture=True, check=False)
+        if response.returncode:
+            continue
+        deployment = json.loads(response.stdout)
+        kube("scale", f"deployment/{name}", "--replicas=0")
+        deadline = time.monotonic() + timeout
+        while deployment_pods(deployment):
+            if time.monotonic() >= deadline:
+                raise RuntimeError(f"GPU deployment {name} did not stop")
+            time.sleep(1)
 
 
 def main():
     args = parse_args()
+    os.environ["LOCAL_K8S_SCRIPT"] = str(ROOT / "scripts" / ("local-k8s-gpu.sh" if args.device == "gpu" else "local-k8s.sh"))
     state = Path(os.environ.get("LOCAL_K8S_STATE_DIR", ROOT / ".local-k8s"))
     state.mkdir(parents=True, exist_ok=True)
     lock = (state / "benchmark.lock").open("a")
@@ -575,7 +695,7 @@ def main():
     report = args.reports_dir.resolve() / f"{run_id}-{name}"
     report.mkdir(parents=True)
     metadata = {"run_id": run_id, "started_at": started.isoformat(), "status": "running",
-                "backend": args.backend,
+                "backend": args.backend, "device": args.device,
                 "concurrencies": args.concurrencies, "sample_interval_seconds": args.sample_interval,
                 "cache_policy": args.cache_policy,
                 "inference_node": args.inference_node, "benchmark_node": args.benchmark_node,
@@ -587,16 +707,23 @@ def main():
     print(f"Reports: {report}", flush=True)
     try:
         prepare_model(args.backend)
-        run(ROOT / "scripts/local-k8s.sh", "up")
+        run(cluster_script(), "up")
         active = kube_json("get", "jobs", "-l", "benchmark=aiperf-cpu")["items"]
         if any(item.get("status", {}).get("active", 0) for item in active):
             raise RuntimeError("An AIPerf Job is already active; wait for it before restarting the server.")
         nodes = kube_json("get", "nodes")
-        args.inference_node, args.benchmark_node = resolve_nodes(args.inference_node, args.benchmark_node, nodes)
+        args.inference_node, args.benchmark_node = resolve_nodes(
+            args.inference_node, args.benchmark_node, nodes, args.device)
         metadata.update(inference_node=args.inference_node, benchmark_node=args.benchmark_node)
         write_json(report / "nodes.json", nodes)
-        metadata["inference"] = ensure_image(args.image, args.build_context, args.build_target)
-        metadata["benchmark"] = ensure_image(args.benchmark_image, args.benchmark_build_context)
+        if args.device == "gpu":
+            metadata["inference"] = ensure_image(args.image, args.build_context, args.build_target,
+                                                 load_nodes=[args.inference_node])
+            metadata["benchmark"] = ensure_image(args.benchmark_image, args.benchmark_build_context,
+                                                 load_nodes=[args.benchmark_node])
+        else:
+            metadata["inference"] = ensure_image(args.image, args.build_context, args.build_target)
+            metadata["benchmark"] = ensure_image(args.benchmark_image, args.benchmark_build_context)
         manifests = render(args.manifests)
         items = manifests.get("items", [manifests])
         deployment = next(item for item in items if item["kind"] == "Deployment"
@@ -606,18 +733,41 @@ def main():
         container = next(item for item in deployment["spec"]["template"]["spec"]["containers"]
                          if item["name"] == args.container)
         container["image"] = args.image
+        arguments = container.get("args", [])
+        if args.backend == "transformers":
+            metadata["compute_setting"] = "dtype=" + arguments[arguments.index("--dtype") + 1]
+            if args.device == "gpu" and arguments[arguments.index("--device") + 1] != "cuda":
+                raise RuntimeError("GPU Transformers deployment must select CUDA")
+        else:
+            layers = arguments[arguments.index("--n-gpu-layers") + 1] if "--n-gpu-layers" in arguments else "0"
+            metadata["compute_setting"] = "n_gpu_layers=" + layers
+            if args.device == "gpu" and layers == "0":
+                raise RuntimeError("GPU llama.cpp deployment must offload layers")
+        if args.device == "gpu":
+            resources = container["resources"]
+            if any(str(resources[level].get("nvidia.com/gpu")) != "1" for level in ("requests", "limits")):
+                raise RuntimeError("GPU inference container must request and limit one GPU")
+            if deployment["spec"]["template"]["spec"].get("runtimeClassName") != "nvidia":
+                raise RuntimeError("GPU inference Pod must use the NVIDIA runtime class")
         if args.inference_node:
             deployment["spec"]["template"]["spec"].setdefault("nodeSelector", {})[
                 "kubernetes.io/hostname"] = args.inference_node
         cache = cache_volume(deployment, container) if args.cache_policy != "preserve" else None
         path = report / "inference.json"
         write_json(path, manifests)
+        if args.device == "gpu":
+            stop_other_gpu_engine(args.deployment, args.ready_timeout)
         kube("apply", "-f", path)
         kube("rollout", "status", f"deployment/{args.deployment}", f"--timeout={args.ready_timeout}s")
         profile = benchmark_manifests(args.backend)
         template = next(item for item in profile["items"] if item["kind"] == "Job")
         resources = {"apiVersion": "v1", "kind": "List", "items": [
             item for item in profile["items"] if item["kind"] != "Job"]}
+        if args.device == "gpu":
+            for item in resources["items"]:
+                if item["kind"] == "Pod":
+                    item["spec"].setdefault("nodeSelector", {})["kubernetes.io/hostname"] = args.benchmark_node
+                    item["spec"].setdefault("tolerations", []).append(CONTROL_PLANE_TOLERATION)
         results_reader = next(item["metadata"]["name"] for item in resources["items"] if item["kind"] == "Pod")
         write_json(report / "benchmark-resources.json", resources)
         kube("apply", "-f", report / "benchmark-resources.json")
@@ -625,6 +775,8 @@ def main():
         if args.benchmark_node:
             template["spec"]["template"]["spec"].setdefault("nodeSelector", {})[
                 "kubernetes.io/hostname"] = args.benchmark_node
+        if args.device == "gpu":
+            template["spec"]["template"]["spec"].setdefault("tolerations", []).append(CONTROL_PLANE_TOLERATION)
         for condition_index, concurrency in enumerate(args.concurrencies):
             case_dir = report / f"c{concurrency}"
             case_dir.mkdir()
@@ -645,6 +797,8 @@ def main():
                 raise RuntimeError("Expected exactly one newly restarted inference Pod.")
             write_json(case_dir / "inference-pod.json", pods[0])
             condition.update(pod_uid=pods[0]["metadata"]["uid"], pod_name=pods[0]["metadata"]["name"])
+            if args.device == "gpu":
+                kube("exec", pods[0]["metadata"]["name"], "--", "nvidia-smi", "-L", capture=True)
             job = json.loads(json.dumps(template))
             job_name = f"{run_id}-c{concurrency}"
             job["metadata"]["name"] = job_name
@@ -660,19 +814,35 @@ def main():
             write_json(case_dir / "job.json", job)
             sampler = ResourceSampler(case_dir, [node["metadata"]["name"] for node in nodes["items"]],
                                       condition["pod_uid"], job_name)
+            gpu_sampler = GPUSampler(case_dir) if args.device == "gpu" else None
             sampler.sample()
+            if gpu_sampler:
+                gpu_sampler.sample()
             condition["started_at"] = datetime.now(timezone.utc).isoformat()
             save_summary(report, metadata, rows)
             kube("create", "-f", case_dir / "job.json")
             print(f"Measuring concurrency={concurrency}: {job_name}", flush=True)
-            wait_job(job_name, args.job_timeout, sampler, args.sample_interval)
-            write_json(case_dir / "aiperf-pods.json", kube_json("get", "pods", "-l", f"job-name={job_name}"))
+            wait_job(job_name, args.job_timeout, sampler, args.sample_interval, gpu_sampler)
+            current = next(pod for pod in deployment_pods(deployment)
+                           if pod["metadata"]["uid"] == condition["pod_uid"])
+            write_json(case_dir / "inference-pod.json", current)
+            if any(item["restartCount"] for item in current.get("status", {}).get("containerStatuses", [])):
+                raise RuntimeError("Inference container restarted during measurement")
+            clients = kube_json("get", "pods", "-l", f"job-name={job_name}")
+            write_json(case_dir / "aiperf-pods.json", clients)
+            if any(status["restartCount"] for pod in clients["items"]
+                   for status in pod.get("status", {}).get("containerStatuses", [])):
+                raise RuntimeError("AIPerf container restarted during measurement")
             (case_dir / "aiperf.log").write_text(kube("logs", f"job/{job_name}", capture=True).stdout)
             kube("cp", f"{results_reader}:{artifact_path}/.", case_dir / "artifacts")
             result = case_dir / "artifacts/profile_export_aiperf.json"
             export_requests(result.parent / "profile_export.jsonl", case_dir / "requests.csv")
             condition["resource_collection"] = sampler.validate()
             row = collect_summary(result, concurrency)
+            if gpu_sampler:
+                gpu = gpu_sampler.summary()
+                condition["gpu_collection"] = gpu
+                row.update(gpu)
             expected = int(client["args"][client["args"].index("--request-count") + 1])
             if row["requests"] != expected:
                 raise RuntimeError(f"Expected {expected} successful requests, got {row['requests']}")

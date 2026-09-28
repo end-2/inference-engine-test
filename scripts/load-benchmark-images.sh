@@ -12,6 +12,7 @@ Usage: ./scripts/load-benchmark-images.sh
 
 Environment:
   AIPERF_IMAGE_TAG  Image tag for the AIPerf benchmark image (default: 0.12.0)
+  DEVICE            cpu or gpu (default: cpu)
   TMPDIR            Temporary directory for the image archive.
                     Default: .local-k8s/image-tmp in this repository.
 
@@ -32,13 +33,23 @@ case $AIPERF_IMAGE_TAG in
 esac
 
 image="local/aiperf:$AIPERF_IMAGE_TAG"
+case ${DEVICE:-cpu} in
+    cpu) cluster_name=${CLUSTER_NAME:-local-k8s}; cluster_script="$ROOT/scripts/local-k8s.sh" ;;
+    gpu) cluster_name=${CLUSTER_NAME:-local-k8s-gpu}; cluster_script="$ROOT/scripts/local-k8s-gpu.sh" ;;
+    *) die "DEVICE must be cpu or gpu" ;;
+esac
 
 command -v docker >/dev/null 2>&1 || die "Missing docker."
 docker image inspect "$image" >/dev/null 2>&1 || \
     die "Missing local image: $image. Build it first with ./scripts/build-benchmark-images.sh."
 
 # no-cache for load: remove stale image from nodes before kind load
-for node in $(kind get nodes --name "${CLUSTER_NAME:-local-k8s}" 2>/dev/null); do
+if [ "${DEVICE:-cpu}" = gpu ]; then
+  nodes="$cluster_name-control-plane"
+else
+  nodes=$(kind get nodes --name "$cluster_name" 2>/dev/null)
+fi
+for node in $nodes; do
   docker exec "$node" crictl rmi "$image" >/dev/null 2>&1 || true
   docker exec "$node" ctr -n k8s.io images rm "$image" >/dev/null 2>&1 || true
 done
@@ -51,4 +62,7 @@ esac
 (umask 022; mkdir -p "$TMPDIR")
 export TMPDIR
 
-exec "$ROOT/scripts/local-k8s.sh" load-image "$image"
+if [ "${DEVICE:-cpu}" = gpu ]; then
+  exec "$cluster_script" load-image-node "$cluster_name-control-plane" "$image"
+fi
+exec "$cluster_script" load-image "$image"
