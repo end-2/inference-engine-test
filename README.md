@@ -1,6 +1,6 @@
-# Inference engine test (CPU)
+# Inference engine test
 
-단일 노드 kind에서 SmolLM2를 Transformers + PyTorch CPU로 실행하고, base, batch, prefix KV cache 구현의 성능을 AIPerf로 비교합니다. llama.cpp 구현도 별도로 선택할 수 있습니다.
+kind에서 Transformers와 llama.cpp의 base, batch, prefix KV cache를 측정합니다. CPU가 기본값이며 NVIDIA GPU도 선택할 수 있습니다.
 
 Benchmark, Availablity, HPA 테스트 결과는 [reports-transformers.md](docs/reports-transformers.md) 파일을 참고해주세요.
 
@@ -23,6 +23,8 @@ make benchmark-suite
 ```
 
 기본 실험은 세 구현마다 동시성 `1,2,4,8`을 3회 반복합니다. 결과는 `docs/reports/transformers/benchmark-suite-*/summary.md`에 저장됩니다. 측정값, 캐시 정책과 실행 시간은 [벤치마크 가이드](docs/guides/benchmark.md)을 참고하세요. `make benchmark`와 `make benchmark-suite`는 필요 시 이미지 빌드부터 kind 로드, 배포와 AIPerf 실행까지 포함해 자동 수행합니다.
+
+GPU 실행은 [GPU 벤치마크 준비와 결과](docs/guides/benchmark.md#gpu-벤치마크)를 참고합니다.
 
 단일 sweep만 측정하려면 `VARIANT`로 구현을 선택합니다.
 

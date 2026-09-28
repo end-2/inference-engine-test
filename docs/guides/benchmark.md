@@ -1,6 +1,6 @@
 # 벤치마크 실행과 결과 분석
 
-AIPerf로 base, batch, prefix KV cache 구현의 처리량과 지연을 비교합니다. 기본 엔진은 Transformers CPU이며 llama.cpp도 선택할 수 있습니다.
+AIPerf로 base, batch, prefix KV cache 구현의 처리량과 지연을 비교합니다. 기본 장치는 CPU이며 NVIDIA GPU도 선택할 수 있습니다.
 
 추론 구현과 API는 [추론 엔진 가이드](inference-engine.md)를 참고합니다.
 
@@ -108,6 +108,29 @@ llama.cpp suite는 base, batch, cache 초기화와 cache 보존의 네 조건을
 추론 자원 분석에는 `role=inference`, `scope=pod`를 사용하고 Pod와 컨테이너 값을 중복 합산하지 않습니다. 요청 분석은 `benchmark_phase=profiling`을 선택합니다. 자원 표본은 구간 관측값이며 개별 요청의 CPU 비용을 나타내지 않습니다.
 
 원본과 상세 로그의 Git 보관 범위는 [제외 규칙](../reports/.gitignore)을 따릅니다. `--reports-dir`은 지정한 경로를 그대로 사용합니다.
+
+## GPU 벤치마크
+
+GPU 클러스터는 CPU 클러스터와 별도인 `local-k8s-gpu`입니다. NVIDIA 드라이버, Docker의 NVIDIA 런타임, NVIDIA Container Toolkit, Go와 Helm이 필요합니다. Toolkit의 `accept-nvidia-visible-devices-as-volume-mounts` 값을 활성화해야 합니다. `make install DEVICE=gpu`는 고정 버전의 nvkind와 kind, kubectl을 설치합니다. 시작 시 Docker의 GPU 접근, GPU 할당과 Pod의 `nvidia-smi` 접근을 검사합니다.
+
+```sh
+sudo nvidia-ctk config --set accept-nvidia-visible-devices-as-volume-mounts=true --in-place
+```
+
+```sh
+make install DEVICE=gpu
+make up DEVICE=gpu
+make benchmark-suite DEVICE=gpu
+make benchmark-suite DEVICE=gpu INFERENCE_BACKEND=llamacpp
+```
+
+단일 구현은 `make benchmark DEVICE=gpu VARIANT=transformers-enhanced-cache`처럼 선택합니다. 종료할 때는 `make down DEVICE=gpu`를 사용합니다. GPU 클러스터의 모델 디렉터리는 노드의 `/models`에 읽기 전용으로 마운트됩니다. GPU 하나는 추론 Pod 하나에 할당되고 AIPerf는 control-plane 노드에서 실행됩니다.
+
+GPU 측정은 동시성 `1,2,4,8`에서 같은 모델과 AIPerf 프로필을 사용합니다. Transformers는 `float16`, llama.cpp는 `n_gpu_layers=-1`로 실행합니다.
+
+GPU 결과는 `docs/reports/gpu/<backend>/`에 저장합니다. `run.json`은 장치, dtype 또는 GPU 레이어 설정을 기록합니다. 각 동시성의 `gpu.csv`에는 GPU UUID, 사용률, 사용 메모리의 시계열이 있고 요약에는 평균과 최대값이 있습니다. CPU 결과는 기존 `docs/reports/<backend>/`에 저장합니다. 기존 CPU 결과와 이번 GPU 결과는 호스트 환경이 달라 성능 수치를 직접 비교하면 안 됩니다.
+
+실측 1회차의 결과와 주의 사항은 [GPU 결과](../reports/gpu/README.md)에 있습니다.
 
 ## 검증과 문제 해결
 

@@ -21,7 +21,7 @@ CPU 전용 kind 클러스터와 추론, 측정 워크로드에 필요한 호스�
 
 [versions.env](../../config/versions.env)의 kind, kubectl과 노드 이미지 조합을 사용합니다. 노드 이미지는 호스트와 같은 CPU 아키텍처여야 합니다. 버전을 변경할 때는 [kind 릴리스의 지원 이미지](https://github.com/kubernetes-sigs/kind/releases)와 [kubectl 버전 차이 정책](https://kubernetes.io/releases/version-skew-policy/#kubectl)을 확인합니다.
 
-클러스터는 `local-k8s.sh up`으로 생성하며 GPU, CDI, device plugin 설정은 포함하지 않습니다. `up`은 호스트 모델 디렉터리를 노드의 `/models`에 읽기 전용으로 마운트합니다. 모델 다운로드와 경로 설정은 [모델 볼륨 가이드](models.md), 클러스터 설정 변경은 [클러스터 가이드](local-k8s.md)를 참고합니다.
+CPU 클러스터는 `local-k8s.sh up`으로 생성하며 GPU 설정은 포함하지 않습니다. `up`은 호스트 모델 디렉터리를 노드의 `/models`에 읽기 전용으로 마운트합니다. GPU 클러스터는 [벤치마크 가이드](benchmark.md#gpu-벤치마크)를 참고합니다. 모델 다운로드와 경로 설정은 [모델 볼륨 가이드](models.md), 클러스터 설정 변경은 [클러스터 가이드](local-k8s.md)를 참고합니다.
 
 ## 작업별 추가 도구
 

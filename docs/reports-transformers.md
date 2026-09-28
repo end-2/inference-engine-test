@@ -38,7 +38,7 @@ base에서의 처리량(tok/s)은 43.44, 43.99, 44.33, 44.29 tok/s로 평탄했�
 본 실험 환경에 대한 제약조건은 [requirements.md](../docs/guides/requirements.md) 파일을 참고해주세요.
 Benchmark에 사용되는 Kubernetes Pod의 resource는 추론 Pod가 requests와 limits 모두 CPU 8, memory 16Gi(Guaranteed QoS), AIPerf Pod가 CPU 1, memory 1Gi입니다. 
 
-모델의 리비전과 체크섬은 [모델 설정](../config/models/smollm2-135m-transformers.env), 런타임 의존성은 [requirements.txt](../src/transformers_cpu/requirements.txt)에 작성해두었습니다. 
+모델의 리비전과 체크섬은 [모델 설정](../config/models/smollm2-135m-transformers.env), 런타임 의존성은 [requirements.txt](../src/transformer/requirements.txt)에 작성해두었습니다.
 
 ### 선택 근거
 
@@ -62,7 +62,7 @@ OpenAI API와 호환되는 `/v1/chat/completions`를 구현하여 AIPerf로 해�
 | enhanced-batch | 최대 4개 요청을 모아 배치 처리합니다. 진행 중인 배치가 끝나면 대기 중인 요청으로 다음 배치를 실행합니다. |
 | enhanced-cache | base의 추론 실행 경로에 prefix KV 조회, load와 save를 추가합니다. RAM과 디스크 계층을 사용합니다. |
 
-구현 내용은 [Source code](../src/transformers_cpu)에 작성되어 있으며, 이미지는 [Dockerfile](../src/Dockerfile)에 정의돼 있습니다.
+구현 내용은 [Source code](../src/transformer)에 작성되어 있으며, 이미지는 [Dockerfile](../src/Dockerfile)에 정의돼 있습니다.
 
 ### 배포와 측정 검증
 

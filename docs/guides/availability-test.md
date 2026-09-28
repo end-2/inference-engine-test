@@ -114,7 +114,7 @@ sh tests/test-hpa-manifests-transformers.sh
 ./scripts/local-k8s.sh kubectl delete -f k8s/availability-test-transformers
 ```
 
-metric 단위 테스트에는 Transformers 런타임과 `src/transformers_cpu/base_metric/requirements.txt`의 의존성이 필요합니다. 클러스터를 삭제하려면 같은 `CLUSTER_NAME`으로 `./scripts/local-k8s.sh down`을 실행합니다. 호스트에 수집된 결과와 모델은 유지됩니다.
+metric 단위 테스트에는 Transformers 런타임과 `src/transformer/base_metric/requirements.txt`의 의존성이 필요합니다. 클러스터를 삭제하려면 같은 `CLUSTER_NAME`으로 `./scripts/local-k8s.sh down`을 실행합니다. 호스트에 수집된 결과와 모델은 유지됩니다.
 
 ## llama.cpp
 
