@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from transformers_cpu.base import server
+from transformer.base import server
 from .engine import EngineSettings, TorchEngine
 
 

@@ -8,8 +8,8 @@ from pathlib import Path
 import platform
 
 from llamacpp.enhanced.cache.cache import Snapshot, TieredCache, common_prefix
-from transformers_cpu.base.engine import EngineSettings as BaseSettings
-from transformers_cpu.base.engine import TorchEngine as BaseEngine
+from transformer.base.engine import EngineSettings as BaseSettings
+from transformer.base.engine import TorchEngine as BaseEngine
 
 
 @dataclass(frozen=True)
@@ -41,7 +41,8 @@ class TorchEngine(BaseEngine):
                 "format": "transformers-dynamic-kv-2", "files": hashes,
                 "model_type": self.model.config.model_type, "head_dim": self.head_dim,
                 "torch": self.torch.__version__, "transformers": transformers.__version__,
-                "dtype": settings.dtype, "n_ctx": settings.n_ctx, "arch": platform.machine(),
+                "dtype": settings.dtype, "device": settings.device,
+                "n_ctx": settings.n_ctx, "arch": platform.machine(),
                 "attention": "sdpa", "n_threads": settings.n_threads,
             }, sort_keys=True)
             self.cache = TieredCache(settings.cache_dir, namespace,
@@ -76,7 +77,7 @@ class TorchEngine(BaseEngine):
                     tensor = tensors[f"{index}.{kind}"]
                     if tuple(tensor.shape) != shape or tensor.dtype != self.model.dtype:
                         raise ValueError("Invalid KV tensor shape or dtype")
-                    pair.append(tensor[:, :, :shared, :].clone())
+                    pair.append(tensor[:, :, :shared, :].to(self.settings.device).clone())
                 layers.append(tuple(pair))
             cache = DynamicCache.from_legacy_cache(tuple(layers))
             self.restored_tokens += shared
@@ -98,8 +99,8 @@ class TorchEngine(BaseEngine):
         try:
             tensors = {}
             for index, (key, value) in enumerate(cache.to_legacy_cache()):
-                tensors[f"{index}.key"] = key.contiguous()
-                tensors[f"{index}.value"] = value.contiguous()
+                tensors[f"{index}.key"] = key.detach().to("cpu").contiguous()
+                tensors[f"{index}.value"] = value.detach().to("cpu").contiguous()
             self.cache.put(Snapshot(tokens, save(tensors)))
         except Exception:
             logging.exception("KV snapshot failed")

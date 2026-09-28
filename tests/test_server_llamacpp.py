@@ -10,7 +10,7 @@ import unittest
 import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from llamacpp.base.server import Settings, create_app
+from llamacpp.base.server import Settings, create_app, create_parser
 
 
 class FakeEngine:
@@ -176,6 +176,12 @@ class ServerTests(unittest.IsolatedAsyncioTestCase):
         for options in [{"n_ctx": 0}, {"n_threads": -1}, {"max_output_tokens": 1}]:
             with self.subTest(options=options), self.assertRaises(ValueError):
                 Settings(**options)
+
+    def test_gpu_layer_option_reaches_engine(self):
+        options = create_parser().parse_args(["--n-gpu-layers", "-1"])
+        self.assertEqual(Settings(n_gpu_layers=options.n_gpu_layers).engine_settings().n_gpu_layers, -1)
+        with self.assertRaises(ValueError):
+            Settings(n_gpu_layers=-2)
 
 
 if __name__ == "__main__":

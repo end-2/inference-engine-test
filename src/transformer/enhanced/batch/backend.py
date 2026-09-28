@@ -1,6 +1,6 @@
 """Decode heterogeneous batches and remove finished rows between model calls."""
 
-from transformers_cpu.base.engine import TorchEngine
+from transformer.base.engine import TorchEngine
 
 
 class BatchBackend(TorchEngine):
@@ -8,7 +8,7 @@ class BatchBackend(TorchEngine):
         past = cache.get_seq_length() if cache is not None else 0
         inputs = self.model.prepare_inputs_for_generation(
             ids, attention_mask=mask, past_key_values=cache,
-            cache_position=self.torch.arange(past, past + ids.shape[1]),
+            cache_position=self.torch.arange(past, past + ids.shape[1], device=self.settings.device),
             use_cache=True, logits_to_keep=1,
         )
         output = self.model(**inputs)
@@ -17,8 +17,10 @@ class BatchBackend(TorchEngine):
     def _prefill(self, prompts):
         with self.tokenizer_lock:
             inputs = self.tokenizer.pad({"input_ids": prompts}, padding=True, return_tensors="pt")
-        logits, cache = self._forward(inputs.input_ids, inputs.attention_mask)
-        return logits, cache, inputs.attention_mask
+        ids = inputs.input_ids.to(self.settings.device)
+        mask = inputs.attention_mask.to(self.settings.device)
+        logits, cache = self._forward(ids, mask)
+        return logits, cache, mask
 
     def _processors(self, request):
         from transformers import (LogitsProcessorList, SuppressTokensLogitsProcessor,
@@ -26,7 +28,7 @@ class BatchBackend(TorchEngine):
 
         processors = LogitsProcessorList()
         if request.ignore_eos:
-            processors.append(SuppressTokensLogitsProcessor(sorted(self.eos_tokens), device="cpu"))
+            processors.append(SuppressTokensLogitsProcessor(sorted(self.eos_tokens), device=self.settings.device))
         if request.temperature > 0:
             processors.append(TemperatureLogitsWarper(float(request.temperature)))
             if request.top_p < 1:
@@ -62,7 +64,7 @@ class BatchBackend(TorchEngine):
                         continue
                     tokens[index].append(token)
                     if streamers[index]:
-                        streamers[index].put(torch.tensor([token]))
+                        streamers[index].put(torch.tensor([token], device=self.settings.device))
                     if len(tokens[index]) == request.max_tokens:
                         reasons[index] = "length"
                         continue
@@ -72,11 +74,12 @@ class BatchBackend(TorchEngine):
                 if not remaining:
                     break
                 if len(rows) != len(active):
-                    indices = torch.tensor(rows, dtype=torch.long)
+                    indices = torch.tensor(rows, dtype=torch.long, device=self.settings.device)
                     cache.batch_select_indices(indices)
                     mask = mask.index_select(0, indices)
-                mask = torch.cat((mask, torch.ones((len(rows), 1), dtype=mask.dtype)), dim=1)
-                logits, cache = self._forward(torch.tensor(next_tokens), mask, cache)
+                mask = torch.cat((mask, torch.ones((len(rows), 1), dtype=mask.dtype,
+                                                   device=self.settings.device)), dim=1)
+                logits, cache = self._forward(torch.tensor(next_tokens, device=self.settings.device), mask, cache)
                 active = remaining
         results = []
         for index, request in enumerate(requests):
@@ -84,4 +87,3 @@ class BatchBackend(TorchEngine):
                 streamers[index].end()
             results.append(self._result(request, tokens[index], reasons[index]))
         return results
-

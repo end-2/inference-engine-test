@@ -1,4 +1,4 @@
-"""Serve a local GGUF model on CPU through the chat API used by AIPerf."""
+"""Serve a local GGUF model through the chat API used by AIPerf."""
 
 import argparse
 import asyncio
@@ -68,6 +68,7 @@ class Settings:
     n_ctx: int = 1024
     n_batch: int = 512
     n_threads: int = 4
+    n_gpu_layers: int = 0
     max_input_tokens: int = 768
     max_output_tokens: int = 128
     default_output_tokens: int = 32
@@ -79,12 +80,14 @@ class Settings:
                 raise ValueError(f"{name} must be greater than zero")
         if self.default_output_tokens > self.max_output_tokens:
             raise ValueError("default_output_tokens must not exceed max_output_tokens")
+        if self.n_gpu_layers < -1:
+            raise ValueError("n_gpu_layers must be -1 or greater")
         self.engine_settings()
 
     def engine_settings(self):
         return EngineSettings(
             model_path=self.model, n_ctx=self.n_ctx,
-            n_batch=self.n_batch, n_threads=self.n_threads,
+            n_batch=self.n_batch, n_threads=self.n_threads, n_gpu_layers=self.n_gpu_layers,
         )
 
     def create_executor(self):
@@ -138,7 +141,8 @@ def create_app(settings=None, engine_factory=LlamaEngine):
         finally:
             await asyncio.to_thread(executor.shutdown, wait=True, cancel_futures=True)
 
-    app = FastAPI(title="llama.cpp CPU inference API", lifespan=lifespan)
+    device = "GPU" if getattr(settings, "n_gpu_layers", 0) else "CPU"
+    app = FastAPI(title=f"llama.cpp {device} inference API", lifespan=lifespan)
 
     def run_engine(function, *args):
         return asyncio.get_running_loop().run_in_executor(
@@ -340,6 +344,7 @@ def create_parser(description=__doc__):
     parser.add_argument("--n-ctx", type=positive_int, default=2048)
     parser.add_argument("--n-batch", type=positive_int, default=512)
     parser.add_argument("--n-threads", type=positive_int, default=4)
+    parser.add_argument("--n-gpu-layers", type=int, default=0)
     parser.add_argument("--max-input-tokens", type=positive_int, default=2048)
     parser.add_argument("--max-output-tokens", type=positive_int, default=1024)
     parser.add_argument("--default-output-tokens", type=positive_int, default=128)

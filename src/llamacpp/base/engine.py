@@ -10,6 +10,7 @@ class EngineSettings:
     n_ctx: int = 1024
     n_batch: int = 512
     n_threads: int = 4
+    n_gpu_layers: int = 0
 
 
 class LlamaEngine:
@@ -43,7 +44,7 @@ class LlamaEngine:
             n_ctx=settings.n_ctx,
             n_batch=settings.n_batch,
             n_threads=settings.n_threads,
-            n_gpu_layers=0,
+            n_gpu_layers=settings.n_gpu_layers,
             verbose=False,
         )
         try:

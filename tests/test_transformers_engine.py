@@ -10,10 +10,10 @@ import unittest
 from unittest.mock import patch
 
 from enhanced_support import ROOT
-from transformers_cpu.base.engine import EngineSettings, Generation, TorchEngine
-from transformers_cpu.enhanced.batch import engine as batching
-from transformers_cpu.enhanced.batch.backend import BatchBackend
-from transformers_cpu.enhanced.cache import engine as caching
+from transformer.base.engine import EngineSettings, Generation, TorchEngine
+from transformer.enhanced.batch import engine as batching
+from transformer.enhanced.batch.backend import BatchBackend
+from transformer.enhanced.cache import engine as caching
 
 try:
     import torch
@@ -25,7 +25,7 @@ except ImportError:
     torch = None
 
 
-@unittest.skipIf(torch is None, "Install transformers_cpu/requirements.txt")
+@unittest.skipIf(torch is None, "Install transformer/requirements.txt")
 class EngineTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

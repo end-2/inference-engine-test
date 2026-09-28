@@ -19,7 +19,7 @@ class NativeBackend:
             set_verbose(False)
             api.llama_backend_init()
             model_params = api.llama_model_default_params()
-            model_params.n_gpu_layers = 0
+            model_params.n_gpu_layers = settings.n_gpu_layers
             model_params.load_mode = api.LLAMA_LOAD_MODE_MMAP
             self.model = self.stack.enter_context(closing(LlamaModel(
                 path_model=str(settings.model_path), params=model_params, verbose=False)))

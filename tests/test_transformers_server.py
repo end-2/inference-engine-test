@@ -8,9 +8,9 @@ import httpx
 
 from enhanced_support import ROOT
 from test_server_llamacpp import FakeEngine
-from transformers_cpu.base import server as base
-from transformers_cpu.enhanced.batch import server as batch
-from transformers_cpu.enhanced.cache import server as cache
+from transformer.base import server as base
+from transformer.enhanced.batch import server as batch
+from transformer.enhanced.cache import server as cache
 
 
 class ServerTests(unittest.IsolatedAsyncioTestCase):
@@ -54,6 +54,14 @@ class ServerTests(unittest.IsolatedAsyncioTestCase):
                                (cache, {"cache_ram_mib": -1}), (cache, {"cache_min_prefix": 0})]:
             with self.subTest(values=values), self.assertRaises(ValueError):
                 server.Settings(**values)
+
+    def test_cuda_setting_defaults_to_float16(self):
+        settings = base.Settings(device="cuda")
+        self.assertEqual(settings.engine_settings().device, "cuda")
+        self.assertEqual(settings.engine_settings().dtype, "float16")
+        options = base.create_parser().parse_args(["--device", "cuda", "--dtype", "float16"])
+        self.assertEqual(options.device, "cuda")
+        self.assertEqual(options.dtype, "float16")
 
     def test_cache_settings_preserved(self):
         settings = cache.Settings(model=Path("weights"), cache_dir=Path("cache"),

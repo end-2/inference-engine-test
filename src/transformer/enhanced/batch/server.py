@@ -3,7 +3,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
-from transformers_cpu.base import server
+from transformer.base import server
 from .engine import EngineSettings, TorchEngine
 
 

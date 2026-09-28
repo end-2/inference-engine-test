@@ -8,7 +8,7 @@ import queue
 import threading
 import time
 
-from transformers_cpu.base.engine import EngineSettings as BaseSettings, Generation
+from transformer.base.engine import EngineSettings as BaseSettings, Generation
 from .backend import BatchBackend
 
 
@@ -77,7 +77,7 @@ class TorchEngine:
                 if self.closed:
                     return
         except Exception:
-            logging.exception("CPU batch worker failed")
+            logging.exception("Batch worker failed")
         finally:
             with self.lock:
                 self.closed = True

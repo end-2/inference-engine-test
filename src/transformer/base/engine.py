@@ -1,4 +1,4 @@
-"""Local SmolLM2 inference with CPU tensors and per-request decoding state."""
+"""Local SmolLM2 inference with per-request decoding state."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,13 +11,19 @@ class EngineSettings:
     model_path: Path
     n_ctx: int = 1024
     n_threads: int = 4
-    dtype: str = "float32"
+    dtype: str | None = None
+    device: str = "cpu"
 
     def __post_init__(self):
         if min(self.n_ctx, self.n_threads) < 1:
             raise ValueError("n_ctx and n_threads must be positive")
-        if self.dtype not in {"float32", "bfloat16"}:
-            raise ValueError("dtype must be float32 or bfloat16")
+        if self.device not in {"cpu", "cuda"}:
+            raise ValueError("device must be cpu or cuda")
+        if self.dtype is None:
+            object.__setattr__(self, "dtype", "float16" if self.device == "cuda" else "float32")
+        supported = {"float32", "bfloat16"} if self.device == "cpu" else {"float32", "bfloat16", "float16"}
+        if self.dtype not in supported:
+            raise ValueError(f"dtype {self.dtype} is unsupported on {self.device}")
 
 
 @dataclass
@@ -40,6 +46,8 @@ class TorchEngine:
             raise ValueError(f"Model directory does not exist: {settings.model_path}")
         self.settings = settings
         self.torch = torch
+        if settings.device == "cuda" and not torch.cuda.is_available():
+            raise RuntimeError("CUDA device is unavailable")
         torch.set_num_threads(settings.n_threads)
         config = AutoConfig.from_pretrained(
             settings.model_path, local_files_only=True, trust_remote_code=False,
@@ -56,7 +64,7 @@ class TorchEngine:
             settings.model_path, config=config, local_files_only=True,
             use_safetensors=True, dtype=getattr(torch, settings.dtype),
             attn_implementation="sdpa",
-        ).to("cpu").eval()
+        ).to(settings.device).eval()
         eos = self.model.generation_config.eos_token_id
         self.eos_tokens = set(eos if isinstance(eos, list) else [eos]) - {None}
         if self.tokenizer.eos_token_id is not None:
@@ -123,7 +131,7 @@ class TorchEngine:
             suppress_tokens=sorted(self.eos_tokens) if request.ignore_eos else None,
             use_cache=True,
         )
-        ids = self.torch.tensor([request.prompt], dtype=self.torch.long)
+        ids = self.torch.tensor([request.prompt], dtype=self.torch.long, device=self.settings.device)
         inputs = {"input_ids": ids, "attention_mask": self.torch.ones_like(ids)}
         options = {
             "generation_config": config, "use_model_defaults": False,
