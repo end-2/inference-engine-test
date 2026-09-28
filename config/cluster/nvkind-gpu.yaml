@@ -1,0 +1,21 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  ipFamily: ipv4
+  apiServerAddress: "127.0.0.1"
+  apiServerPort: 0
+nodes:
+  - role: control-plane
+    extraMounts:
+      - hostPath: {{ .modelsDir | quote }}
+        containerPath: /models
+        readOnly: true
+  - role: worker
+    labels:
+      nvidia.com/gpu.present: "true"
+    extraMounts:
+      - hostPath: {{ .modelsDir | quote }}
+        containerPath: /models
+        readOnly: true
+      - hostPath: /dev/null
+        containerPath: /var/run/nvidia-container-devices/0

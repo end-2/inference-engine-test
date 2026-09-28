@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build the CPU inference image. Model weights stay outside the image
+# Build the selected inference image. Model weights stay outside the image
 # and are mounted from the kind node at deploy time.
 set -eu
 umask 022
@@ -16,5 +16,10 @@ command -v docker >/dev/null 2>&1 || die "Missing docker."
 
 ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 tag=${IMAGE_TAG:-0.1.0}
-docker build --no-cache --target "$variant" -t "local/$image_name:$tag" "$ROOT/src"
-printf 'Image ready: local/%s:%s\n' "$image_name" "$tag"
+case ${DEVICE:-cpu} in
+  cpu) target=$variant; image="local/$image_name:$tag"; dockerfile="$ROOT/src/Dockerfile"; cache_flag=--no-cache ;;
+  gpu) target="$variant-gpu"; image="local/$image_name-gpu:$tag"; dockerfile="$ROOT/src/Dockerfile.gpu"; cache_flag= ;;
+  *) die "DEVICE must be cpu or gpu" ;;
+esac
+docker build ${cache_flag:+$cache_flag} -f "$dockerfile" --target "$target" -t "$image" "$ROOT/src"
+printf 'Image ready: %s\n' "$image"

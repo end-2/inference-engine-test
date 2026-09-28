@@ -1,0 +1,63 @@
+ARG CUDA_IMAGE=nvidia/cuda:12.8.1-devel-ubuntu24.04
+FROM ${CUDA_IMAGE} AS gpu-builder
+ENV DEBIAN_FRONTEND=noninteractive CMAKE_ARGS="-DGGML_CUDA=on -DGGML_NATIVE=OFF -DCMAKE_CUDA_ARCHITECTURES=75" CMAKE_BUILD_PARALLEL_LEVEL=8
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv python3-dev build-essential cmake git && rm -rf /var/lib/apt/lists/*
+RUN python3 -m venv /opt/venv
+COPY llamacpp/base/requirements.txt /tmp/llama-requirements.txt
+RUN /opt/venv/bin/pip install --no-cache-dir -r /tmp/llama-requirements.txt && /opt/venv/bin/pip check
+
+FROM nvidia/cuda:12.8.1-runtime-ubuntu24.04 AS gpu-runtime-llamacpp
+ENV DEBIAN_FRONTEND=noninteractive PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 HF_HUB_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1 PATH="/opt/venv/bin:$PATH"
+RUN apt-get update && apt-get install -y --no-install-recommends python3 libgomp1 ca-certificates && rm -rf /var/lib/apt/lists/*
+COPY --from=gpu-builder /opt/venv /opt/venv
+WORKDIR /app
+COPY llamacpp/__init__.py /app/llamacpp/
+COPY llamacpp/base/*.py /app/llamacpp/base/
+RUN getent group 1000 >/dev/null || groupadd --gid 1000 inference; \
+    getent passwd 1000 >/dev/null || useradd --uid 1000 --gid 1000 --no-create-home --home-dir /tmp inference
+USER 1000:1000
+EXPOSE 8000
+ENTRYPOINT ["python", "-m", "llamacpp.base.server"]
+
+FROM gpu-runtime-llamacpp AS base-llamacpp-gpu
+
+FROM gpu-runtime-llamacpp AS enhanced-batch-llamacpp-gpu
+COPY llamacpp/enhanced/__init__.py /app/llamacpp/enhanced/
+COPY llamacpp/enhanced/batch/*.py /app/llamacpp/enhanced/batch/
+ENTRYPOINT ["python", "-m", "llamacpp.enhanced.batch.server"]
+
+FROM gpu-runtime-llamacpp AS enhanced-cache-llamacpp-gpu
+COPY llamacpp/enhanced/__init__.py /app/llamacpp/enhanced/
+COPY llamacpp/enhanced/cache/*.py /app/llamacpp/enhanced/cache/
+ENTRYPOINT ["python", "-m", "llamacpp.enhanced.cache.server"]
+
+FROM python:3.12-slim-bookworm AS gpu-runtime-transformers
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 HF_HUB_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1 HF_HOME=/tmp/huggingface OMP_NUM_THREADS=4 TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 ca-certificates && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY transformer/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir torch==2.10.0 --index-url https://download.pytorch.org/whl/cu128 \
+    && pip install --no-cache-dir -r /tmp/requirements.txt && pip check \
+    && python -c "import torch; assert torch.version.cuda is not None"
+COPY llamacpp/__init__.py /app/llamacpp/
+COPY llamacpp/base/*.py /app/llamacpp/base/
+COPY transformer/__init__.py /app/transformer/
+COPY transformer/base/*.py /app/transformer/base/
+RUN groupadd --gid 1000 inference && useradd --uid 1000 --gid 1000 --no-create-home --home-dir /tmp inference
+USER 1000:1000
+EXPOSE 8000
+ENTRYPOINT ["python", "-m", "transformer.base.server"]
+
+FROM gpu-runtime-transformers AS transformers-base-gpu
+
+FROM gpu-runtime-transformers AS transformers-enhanced-batch-gpu
+COPY transformer/enhanced/__init__.py /app/transformer/enhanced/
+COPY transformer/enhanced/batch/*.py /app/transformer/enhanced/batch/
+ENTRYPOINT ["python", "-m", "transformer.enhanced.batch.server"]
+
+FROM gpu-runtime-transformers AS transformers-enhanced-cache-gpu
+COPY llamacpp/enhanced/__init__.py /app/llamacpp/enhanced/
+COPY llamacpp/enhanced/cache/__init__.py llamacpp/enhanced/cache/cache.py /app/llamacpp/enhanced/cache/
+COPY transformer/enhanced/__init__.py /app/transformer/enhanced/
+COPY transformer/enhanced/cache/*.py /app/transformer/enhanced/cache/
+ENTRYPOINT ["python", "-m", "transformer.enhanced.cache.server"]

@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+: "${LOCAL_K8S_DOCKER:?Use scripts/local-k8s-gpu.sh to configure Docker}"
+command=${1:-}
+if [ "$command" = run ] || [ "$command" = create ]; then
+    shift
+    exec "$LOCAL_K8S_DOCKER" "$command" --runtime=nvidia "$@"
+fi
+exec "$LOCAL_K8S_DOCKER" "$@"
