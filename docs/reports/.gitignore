@@ -28,6 +28,9 @@
 !**/benchmark-suite-*/verification.json
 !**/benchmark-suite-*/environment.json
 
+# GPU console renderings duplicate the structured AIPerf export.
+gpu/**/artifacts/profile_export_console.txt
+
 # Availability: raw evidence and unreferenced data not in summary.md — keep local only.
 **/availability-*/evidence/
 **/availability-*/summary.json

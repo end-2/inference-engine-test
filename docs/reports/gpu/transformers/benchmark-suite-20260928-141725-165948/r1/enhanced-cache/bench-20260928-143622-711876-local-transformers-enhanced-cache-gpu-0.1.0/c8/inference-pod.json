@@ -1,0 +1,390 @@
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {
+    "annotations": {
+      "kubectl.kubernetes.io/restartedAt": "2026-09-28T14:44:51Z"
+    },
+    "creationTimestamp": "2026-09-28T14:44:52Z",
+    "generateName": "transformers-base-74698974b9-",
+    "generation": 1,
+    "labels": {
+      "app": "transformers-base",
+      "inference-variant": "enhanced-cache",
+      "pod-template-hash": "74698974b9"
+    },
+    "name": "transformers-base-74698974b9-d2m64",
+    "namespace": "default",
+    "ownerReferences": [
+      {
+        "apiVersion": "apps/v1",
+        "blockOwnerDeletion": true,
+        "controller": true,
+        "kind": "ReplicaSet",
+        "name": "transformers-base-74698974b9",
+        "uid": "12da36bc-4f81-4a6d-9e86-d89200dee0c0"
+      }
+    ],
+    "resourceVersion": "8906",
+    "uid": "4f89c008-df28-4a60-826b-cdd3ee093ee7"
+  },
+  "spec": {
+    "containers": [
+      {
+        "args": [
+          "--model",
+          "/model",
+          "--served-model-name",
+          "HuggingFaceTB/SmolLM2-135M-Instruct",
+          "--n-threads",
+          "4",
+          "--cache-dir",
+          "/cache",
+          "--cache-ram-mib",
+          "64",
+          "--cache-disk-mib",
+          "1024",
+          "--cache-min-prefix",
+          "32",
+          "--dtype",
+          "float16",
+          "--n-ctx",
+          "1024",
+          "--max-input-tokens",
+          "768",
+          "--max-output-tokens",
+          "128",
+          "--default-output-tokens",
+          "32",
+          "--device",
+          "cuda"
+        ],
+        "image": "local/transformers-enhanced-cache-gpu:0.1.0",
+        "imagePullPolicy": "Never",
+        "livenessProbe": {
+          "failureThreshold": 3,
+          "httpGet": {
+            "path": "/healthz",
+            "port": "http",
+            "scheme": "HTTP"
+          },
+          "periodSeconds": 10,
+          "successThreshold": 1,
+          "timeoutSeconds": 1
+        },
+        "name": "api",
+        "ports": [
+          {
+            "containerPort": 8000,
+            "name": "http",
+            "protocol": "TCP"
+          }
+        ],
+        "readinessProbe": {
+          "failureThreshold": 3,
+          "httpGet": {
+            "path": "/readyz",
+            "port": "http",
+            "scheme": "HTTP"
+          },
+          "periodSeconds": 10,
+          "successThreshold": 1,
+          "timeoutSeconds": 1
+        },
+        "resources": {
+          "limits": {
+            "cpu": "4",
+            "memory": "4Gi",
+            "nvidia.com/gpu": "1"
+          },
+          "requests": {
+            "cpu": "4",
+            "memory": "4Gi",
+            "nvidia.com/gpu": "1"
+          }
+        },
+        "securityContext": {
+          "allowPrivilegeEscalation": false,
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          },
+          "readOnlyRootFilesystem": true
+        },
+        "startupProbe": {
+          "failureThreshold": 60,
+          "httpGet": {
+            "path": "/readyz",
+            "port": "http",
+            "scheme": "HTTP"
+          },
+          "periodSeconds": 5,
+          "successThreshold": 1,
+          "timeoutSeconds": 1
+        },
+        "terminationMessagePath": "/dev/termination-log",
+        "terminationMessagePolicy": "File",
+        "volumeMounts": [
+          {
+            "mountPath": "/model",
+            "name": "model",
+            "readOnly": true
+          },
+          {
+            "mountPath": "/tmp",
+            "name": "tmp"
+          },
+          {
+            "mountPath": "/cache",
+            "name": "cache"
+          },
+          {
+            "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+            "name": "kube-api-access-g2v69",
+            "readOnly": true
+          }
+        ]
+      }
+    ],
+    "dnsPolicy": "ClusterFirst",
+    "enableServiceLinks": true,
+    "nodeName": "local-k8s-gpu-worker",
+    "nodeSelector": {
+      "kubernetes.io/hostname": "local-k8s-gpu-worker"
+    },
+    "preemptionPolicy": "PreemptLowerPriority",
+    "priority": 0,
+    "restartPolicy": "Always",
+    "runtimeClassName": "nvidia",
+    "schedulerName": "default-scheduler",
+    "securityContext": {
+      "fsGroup": 1000,
+      "runAsGroup": 1000,
+      "runAsNonRoot": true,
+      "runAsUser": 1000
+    },
+    "serviceAccount": "default",
+    "serviceAccountName": "default",
+    "terminationGracePeriodSeconds": 60,
+    "tolerations": [
+      {
+        "effect": "NoExecute",
+        "key": "node.kubernetes.io/not-ready",
+        "operator": "Exists",
+        "tolerationSeconds": 300
+      },
+      {
+        "effect": "NoExecute",
+        "key": "node.kubernetes.io/unreachable",
+        "operator": "Exists",
+        "tolerationSeconds": 300
+      }
+    ],
+    "volumes": [
+      {
+        "hostPath": {
+          "path": "/models/smollm2-135m",
+          "type": "Directory"
+        },
+        "name": "model"
+      },
+      {
+        "emptyDir": {
+          "sizeLimit": "1Gi"
+        },
+        "name": "tmp"
+      },
+      {
+        "name": "cache",
+        "persistentVolumeClaim": {
+          "claimName": "transformers-enhanced-cache"
+        }
+      },
+      {
+        "name": "kube-api-access-g2v69",
+        "projected": {
+          "defaultMode": 420,
+          "sources": [
+            {
+              "serviceAccountToken": {
+                "expirationSeconds": 3607,
+                "path": "token"
+              }
+            },
+            {
+              "configMap": {
+                "items": [
+                  {
+                    "key": "ca.crt",
+                    "path": "ca.crt"
+                  }
+                ],
+                "name": "kube-root-ca.crt"
+              }
+            },
+            {
+              "downwardAPI": {
+                "items": [
+                  {
+                    "fieldRef": {
+                      "apiVersion": "v1",
+                      "fieldPath": "metadata.namespace"
+                    },
+                    "path": "namespace"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "status": {
+    "allocatedResources": {
+      "cpu": "4",
+      "memory": "4Gi",
+      "nvidia.com/gpu": "1"
+    },
+    "conditions": [
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2026-09-28T14:44:52Z",
+        "observedGeneration": 1,
+        "status": "True",
+        "type": "PodReadyToStartContainers"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2026-09-28T14:44:52Z",
+        "observedGeneration": 1,
+        "status": "True",
+        "type": "Initialized"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2026-09-28T14:45:03Z",
+        "observedGeneration": 1,
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2026-09-28T14:45:03Z",
+        "observedGeneration": 1,
+        "status": "True",
+        "type": "ContainersReady"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2026-09-28T14:44:52Z",
+        "observedGeneration": 1,
+        "status": "True",
+        "type": "PodScheduled"
+      }
+    ],
+    "containerStatuses": [
+      {
+        "allocatedResources": {
+          "cpu": "4",
+          "memory": "4Gi",
+          "nvidia.com/gpu": "1"
+        },
+        "allocatedResourcesStatus": [
+          {
+            "name": "nvidia.com/gpu",
+            "resources": [
+              {
+                "health": "Healthy",
+                "resourceID": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b"
+              }
+            ]
+          }
+        ],
+        "containerID": "containerd://c5a55ebab5ced23d45cfdda6d5b2763a9f791cb0d8b723ea94bbdbcc9c138116",
+        "image": "docker.io/local/transformers-enhanced-cache-gpu:0.1.0",
+        "imageID": "sha256:d979ca31c5600d26dafcc65edebdea4828ac9aa2d5fa2166785df9fd18a3d0a5",
+        "lastState": {},
+        "name": "api",
+        "ready": true,
+        "resources": {
+          "limits": {
+            "cpu": "4",
+            "memory": "4Gi",
+            "nvidia.com/gpu": "1"
+          },
+          "requests": {
+            "cpu": "4",
+            "memory": "4Gi",
+            "nvidia.com/gpu": "1"
+          }
+        },
+        "restartCount": 0,
+        "started": true,
+        "state": {
+          "running": {
+            "startedAt": "2026-09-28T14:44:53Z"
+          }
+        },
+        "user": {
+          "linux": {
+            "gid": 1000,
+            "supplementalGroups": [
+              1000
+            ],
+            "uid": 1000
+          }
+        },
+        "volumeMounts": [
+          {
+            "mountPath": "/model",
+            "name": "model",
+            "readOnly": true,
+            "recursiveReadOnly": "Disabled"
+          },
+          {
+            "mountPath": "/tmp",
+            "name": "tmp"
+          },
+          {
+            "mountPath": "/cache",
+            "name": "cache"
+          },
+          {
+            "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+            "name": "kube-api-access-g2v69",
+            "readOnly": true,
+            "recursiveReadOnly": "Disabled"
+          }
+        ]
+      }
+    ],
+    "hostIP": "172.23.0.4",
+    "hostIPs": [
+      {
+        "ip": "172.23.0.4"
+      }
+    ],
+    "observedGeneration": 1,
+    "phase": "Running",
+    "podIP": "10.244.1.26",
+    "podIPs": [
+      {
+        "ip": "10.244.1.26"
+      }
+    ],
+    "qosClass": "Guaranteed",
+    "resources": {
+      "limits": {
+        "cpu": "4",
+        "memory": "4Gi"
+      },
+      "requests": {
+        "cpu": "3996m",
+        "memory": "4Gi"
+      }
+    },
+    "startTime": "2026-09-28T14:44:52Z"
+  }
+}

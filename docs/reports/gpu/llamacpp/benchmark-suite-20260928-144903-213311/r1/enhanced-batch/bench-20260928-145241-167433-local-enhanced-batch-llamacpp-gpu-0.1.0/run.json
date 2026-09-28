@@ -1,0 +1,147 @@
+{
+  "run_id": "bench-20260928-145241-167433",
+  "started_at": "2026-09-28T14:52:41.167433+00:00",
+  "status": "complete",
+  "backend": "llamacpp",
+  "device": "gpu",
+  "concurrencies": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "sample_interval_seconds": 5,
+  "cache_policy": "preserve",
+  "inference_node": "local-k8s-gpu-worker",
+  "benchmark_node": "local-k8s-gpu-control-plane",
+  "conditions": [
+    {
+      "concurrency": 1,
+      "status": "complete",
+      "pod_uid": "7dd128b0-2689-4fe6-a935-4e5637a12795",
+      "pod_name": "base-llamacpp-6f6fd89b58-x9j6f",
+      "started_at": "2026-09-28T14:52:59.857341+00:00",
+      "resource_collection": {
+        "node_samples": 20,
+        "pod_cpu_samples": {
+          "inference": 10,
+          "aiperf": 7
+        }
+      },
+      "gpu_collection": {
+        "gpu_uuid": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b",
+        "gpu_samples": 10,
+        "gpu_utilization_avg_pct": 24.6,
+        "gpu_utilization_max_pct": 82.0,
+        "gpu_memory_used_avg_mib": 880.0,
+        "gpu_memory_used_max_mib": 896.0
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-28T14:53:42.057268+00:00"
+    },
+    {
+      "concurrency": 2,
+      "status": "complete",
+      "pod_uid": "fa7d5178-fc01-46bf-a368-6bf9bce0b2a4",
+      "pod_name": "base-llamacpp-864f6678-ltz58",
+      "started_at": "2026-09-28T14:53:48.980245+00:00",
+      "resource_collection": {
+        "node_samples": 18,
+        "pod_cpu_samples": {
+          "inference": 9,
+          "aiperf": 6
+        }
+      },
+      "gpu_collection": {
+        "gpu_uuid": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b",
+        "gpu_samples": 9,
+        "gpu_utilization_avg_pct": 24.22222222222222,
+        "gpu_utilization_max_pct": 78.0,
+        "gpu_memory_used_avg_mib": 880.0,
+        "gpu_memory_used_max_mib": 900.0
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-28T14:54:26.141174+00:00"
+    },
+    {
+      "concurrency": 4,
+      "status": "complete",
+      "pod_uid": "2a465df7-ed09-4d59-86b7-e66c731217df",
+      "pod_name": "base-llamacpp-67b9565b49-8rhz7",
+      "started_at": "2026-09-28T14:54:33.076960+00:00",
+      "resource_collection": {
+        "node_samples": 18,
+        "pod_cpu_samples": {
+          "inference": 9,
+          "aiperf": 5
+        }
+      },
+      "gpu_collection": {
+        "gpu_uuid": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b",
+        "gpu_samples": 9,
+        "gpu_utilization_avg_pct": 17.11111111111111,
+        "gpu_utilization_max_pct": 77.0,
+        "gpu_memory_used_avg_mib": 880.0,
+        "gpu_memory_used_max_mib": 900.0
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-28T14:55:10.208402+00:00"
+    },
+    {
+      "concurrency": 8,
+      "status": "complete",
+      "pod_uid": "ef56d726-55b1-4311-ba7a-cb3b2defbf82",
+      "pod_name": "base-llamacpp-67994fdd45-xkrsj",
+      "started_at": "2026-09-28T14:55:17.186128+00:00",
+      "resource_collection": {
+        "node_samples": 18,
+        "pod_cpu_samples": {
+          "inference": 9,
+          "aiperf": 5
+        }
+      },
+      "gpu_collection": {
+        "gpu_uuid": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b",
+        "gpu_samples": 9,
+        "gpu_utilization_avg_pct": 16.666666666666668,
+        "gpu_utilization_max_pct": 75.0,
+        "gpu_memory_used_avg_mib": 881.7777777777778,
+        "gpu_memory_used_max_mib": 904.0
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-28T14:55:54.403719+00:00"
+    }
+  ],
+  "inference": {
+    "image": "local/enhanced-batch-llamacpp-gpu:0.1.0",
+    "id": "sha256:879f0a215780278d0aeb93338109000cf3794baa972566b55ea743a4d720d521",
+    "source_sha256": null,
+    "build_context": null,
+    "build_target": null
+  },
+  "benchmark": {
+    "image": "local/aiperf:0.12.0",
+    "id": "sha256:1f6cb73827c70a0f5924c769a7f713218cd15792580e4fe453997f2082437c83",
+    "source_sha256": null,
+    "build_context": null,
+    "build_target": null
+  },
+  "compute_setting": "n_gpu_layers=-1",
+  "finished_at": "2026-09-28T14:55:54.404451+00:00"
+}

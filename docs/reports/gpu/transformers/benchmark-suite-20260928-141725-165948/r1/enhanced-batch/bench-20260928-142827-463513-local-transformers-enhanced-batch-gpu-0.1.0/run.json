@@ -1,0 +1,147 @@
+{
+  "run_id": "bench-20260928-142827-463513",
+  "started_at": "2026-09-28T14:28:27.463513+00:00",
+  "status": "complete",
+  "backend": "transformers",
+  "device": "gpu",
+  "concurrencies": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "sample_interval_seconds": 5,
+  "cache_policy": "preserve",
+  "inference_node": "local-k8s-gpu-worker",
+  "benchmark_node": "local-k8s-gpu-control-plane",
+  "conditions": [
+    {
+      "concurrency": 1,
+      "status": "complete",
+      "pod_uid": "fdc1fb8b-6f89-4c48-be5e-cec7c6380353",
+      "pod_name": "transformers-base-744984f964-xkbqj",
+      "started_at": "2026-09-28T14:28:57.419459+00:00",
+      "resource_collection": {
+        "node_samples": 62,
+        "pod_cpu_samples": {
+          "inference": 31,
+          "aiperf": 28
+        }
+      },
+      "gpu_collection": {
+        "gpu_uuid": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b",
+        "gpu_samples": 31,
+        "gpu_utilization_avg_pct": 15.612903225806452,
+        "gpu_utilization_max_pct": 21.0,
+        "gpu_memory_used_avg_mib": 415.5483870967742,
+        "gpu_memory_used_max_mib": 422.0
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-28T14:31:28.437646+00:00"
+    },
+    {
+      "concurrency": 2,
+      "status": "complete",
+      "pod_uid": "73ddee53-a011-4861-bd82-a93731aa41ba",
+      "pod_name": "transformers-base-84559475bc-pc9ws",
+      "started_at": "2026-09-28T14:31:40.674221+00:00",
+      "resource_collection": {
+        "node_samples": 44,
+        "pod_cpu_samples": {
+          "inference": 22,
+          "aiperf": 18
+        }
+      },
+      "gpu_collection": {
+        "gpu_uuid": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b",
+        "gpu_samples": 22,
+        "gpu_utilization_avg_pct": 14.909090909090908,
+        "gpu_utilization_max_pct": 23.0,
+        "gpu_memory_used_avg_mib": 419.1818181818182,
+        "gpu_memory_used_max_mib": 428.0
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-28T14:33:25.219893+00:00"
+    },
+    {
+      "concurrency": 4,
+      "status": "complete",
+      "pod_uid": "f8bd9ab3-455f-4c9c-9160-6c93ec5f2f64",
+      "pod_name": "transformers-base-694d8b9b7b-874nz",
+      "started_at": "2026-09-28T14:33:37.888103+00:00",
+      "resource_collection": {
+        "node_samples": 32,
+        "pod_cpu_samples": {
+          "inference": 16,
+          "aiperf": 13
+        }
+      },
+      "gpu_collection": {
+        "gpu_uuid": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b",
+        "gpu_samples": 16,
+        "gpu_utilization_avg_pct": 13.125,
+        "gpu_utilization_max_pct": 25.0,
+        "gpu_memory_used_avg_mib": 441.125,
+        "gpu_memory_used_max_mib": 468.0
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-28T14:34:51.175342+00:00"
+    },
+    {
+      "concurrency": 8,
+      "status": "complete",
+      "pod_uid": "8cee0d6c-0059-4f9b-bdb0-9afff42b6442",
+      "pod_name": "transformers-base-56dfd8dbd8-rcwws",
+      "started_at": "2026-09-28T14:35:04.033355+00:00",
+      "resource_collection": {
+        "node_samples": 34,
+        "pod_cpu_samples": {
+          "inference": 17,
+          "aiperf": 13
+        }
+      },
+      "gpu_collection": {
+        "gpu_uuid": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b",
+        "gpu_samples": 17,
+        "gpu_utilization_avg_pct": 13.058823529411764,
+        "gpu_utilization_max_pct": 24.0,
+        "gpu_memory_used_avg_mib": 442.5882352941176,
+        "gpu_memory_used_max_mib": 468.0
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-28T14:36:22.648664+00:00"
+    }
+  ],
+  "inference": {
+    "image": "local/transformers-enhanced-batch-gpu:0.1.0",
+    "id": "sha256:135a6e1ff5f565de3e7a40df66df3386e7c3393589abedb0456de01807d461b3",
+    "source_sha256": null,
+    "build_context": null,
+    "build_target": null
+  },
+  "benchmark": {
+    "image": "local/aiperf:0.12.0",
+    "id": "sha256:1f6cb73827c70a0f5924c769a7f713218cd15792580e4fe453997f2082437c83",
+    "source_sha256": null,
+    "build_context": null,
+    "build_target": null
+  },
+  "compute_setting": "dtype=float16",
+  "finished_at": "2026-09-28T14:36:22.649432+00:00"
+}

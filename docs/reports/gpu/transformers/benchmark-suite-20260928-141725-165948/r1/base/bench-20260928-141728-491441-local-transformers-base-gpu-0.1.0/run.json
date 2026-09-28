@@ -1,0 +1,147 @@
+{
+  "run_id": "bench-20260928-141728-491441",
+  "started_at": "2026-09-28T14:17:28.491441+00:00",
+  "status": "complete",
+  "backend": "transformers",
+  "device": "gpu",
+  "concurrencies": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "sample_interval_seconds": 5,
+  "cache_policy": "preserve",
+  "inference_node": "local-k8s-gpu-worker",
+  "benchmark_node": "local-k8s-gpu-control-plane",
+  "conditions": [
+    {
+      "concurrency": 1,
+      "status": "complete",
+      "pod_uid": "82df45bc-8cc6-491b-a155-8c42de6c80c1",
+      "pod_name": "transformers-base-77c747b65f-tnw8b",
+      "started_at": "2026-09-28T14:17:56.494802+00:00",
+      "resource_collection": {
+        "node_samples": 62,
+        "pod_cpu_samples": {
+          "inference": 31,
+          "aiperf": 28
+        }
+      },
+      "gpu_collection": {
+        "gpu_uuid": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b",
+        "gpu_samples": 31,
+        "gpu_utilization_avg_pct": 15.64516129032258,
+        "gpu_utilization_max_pct": 21.0,
+        "gpu_memory_used_avg_mib": 415.5483870967742,
+        "gpu_memory_used_max_mib": 422.0
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-28T14:20:27.590080+00:00"
+    },
+    {
+      "concurrency": 2,
+      "status": "complete",
+      "pod_uid": "20db14a4-e4a9-4042-84e4-9dc8978102b1",
+      "pod_name": "transformers-base-b588bc996-7b2mp",
+      "started_at": "2026-09-28T14:20:39.776176+00:00",
+      "resource_collection": {
+        "node_samples": 60,
+        "pod_cpu_samples": {
+          "inference": 30,
+          "aiperf": 27
+        }
+      },
+      "gpu_collection": {
+        "gpu_uuid": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b",
+        "gpu_samples": 30,
+        "gpu_utilization_avg_pct": 16.8,
+        "gpu_utilization_max_pct": 22.0,
+        "gpu_memory_used_avg_mib": 416.6,
+        "gpu_memory_used_max_mib": 422.0
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-28T14:23:05.717343+00:00"
+    },
+    {
+      "concurrency": 4,
+      "status": "complete",
+      "pod_uid": "ad08d643-884c-421a-ba65-29a5242c57af",
+      "pod_name": "transformers-base-889fcd57f-hkw4c",
+      "started_at": "2026-09-28T14:23:17.899292+00:00",
+      "resource_collection": {
+        "node_samples": 60,
+        "pod_cpu_samples": {
+          "inference": 30,
+          "aiperf": 27
+        }
+      },
+      "gpu_collection": {
+        "gpu_uuid": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b",
+        "gpu_samples": 30,
+        "gpu_utilization_avg_pct": 16.8,
+        "gpu_utilization_max_pct": 21.0,
+        "gpu_memory_used_avg_mib": 416.6,
+        "gpu_memory_used_max_mib": 422.0
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-28T14:25:43.892151+00:00"
+    },
+    {
+      "concurrency": 8,
+      "status": "complete",
+      "pod_uid": "c06b0894-052e-45c3-b621-bc4fc8010de2",
+      "pod_name": "transformers-base-8c58c5655-pb7bz",
+      "started_at": "2026-09-28T14:25:56.120837+00:00",
+      "resource_collection": {
+        "node_samples": 62,
+        "pod_cpu_samples": {
+          "inference": 31,
+          "aiperf": 27
+        }
+      },
+      "gpu_collection": {
+        "gpu_uuid": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b",
+        "gpu_samples": 31,
+        "gpu_utilization_avg_pct": 15.96774193548387,
+        "gpu_utilization_max_pct": 22.0,
+        "gpu_memory_used_avg_mib": 416.7096774193548,
+        "gpu_memory_used_max_mib": 422.0
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-28T14:28:27.401998+00:00"
+    }
+  ],
+  "inference": {
+    "image": "local/transformers-base-gpu:0.1.0",
+    "id": "sha256:7127a3b0a72373a84aa57f114b53afdacaa418aa730bc5f300eead4617717b75",
+    "source_sha256": null,
+    "build_context": null,
+    "build_target": null
+  },
+  "benchmark": {
+    "image": "local/aiperf:0.12.0",
+    "id": "sha256:1f6cb73827c70a0f5924c769a7f713218cd15792580e4fe453997f2082437c83",
+    "source_sha256": null,
+    "build_context": null,
+    "build_target": null
+  },
+  "compute_setting": "dtype=float16",
+  "finished_at": "2026-09-28T14:28:27.402729+00:00"
+}

@@ -1,0 +1,201 @@
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "name": "enhanced-cache-llamacpp",
+        "namespace": "default"
+      },
+      "spec": {
+        "accessModes": [
+          "ReadWriteOnce"
+        ],
+        "resources": {
+          "requests": {
+            "storage": "2Gi"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "name": "base-llamacpp",
+        "namespace": "default"
+      },
+      "spec": {
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "base-llamacpp"
+          }
+        },
+        "strategy": {
+          "type": "Recreate"
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "base-llamacpp",
+              "inference-variant": "enhanced-cache"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "args": [
+                  "--model",
+                  "/model/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+                  "--served-model-name",
+                  "Qwen/Qwen2.5-0.5B-Instruct",
+                  "--n-threads",
+                  "4",
+                  "--cache-dir",
+                  "/cache",
+                  "--cache-ram-mib",
+                  "64",
+                  "--cache-disk-mib",
+                  "1024",
+                  "--cache-min-prefix",
+                  "32",
+                  "--n-ctx",
+                  "1024",
+                  "--max-input-tokens",
+                  "768",
+                  "--max-output-tokens",
+                  "128",
+                  "--default-output-tokens",
+                  "32",
+                  "--n-gpu-layers",
+                  "-1"
+                ],
+                "image": "local/enhanced-cache-llamacpp-gpu:0.1.0",
+                "imagePullPolicy": "Never",
+                "livenessProbe": {
+                  "httpGet": {
+                    "path": "/healthz",
+                    "port": "http"
+                  },
+                  "periodSeconds": 10
+                },
+                "name": "api",
+                "ports": [
+                  {
+                    "containerPort": 8000,
+                    "name": "http"
+                  }
+                ],
+                "readinessProbe": {
+                  "httpGet": {
+                    "path": "/readyz",
+                    "port": "http"
+                  }
+                },
+                "resources": {
+                  "limits": {
+                    "cpu": "4",
+                    "memory": "4Gi",
+                    "nvidia.com/gpu": 1
+                  },
+                  "requests": {
+                    "cpu": "4",
+                    "memory": "4Gi",
+                    "nvidia.com/gpu": 1
+                  }
+                },
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  },
+                  "readOnlyRootFilesystem": true
+                },
+                "startupProbe": {
+                  "failureThreshold": 60,
+                  "httpGet": {
+                    "path": "/readyz",
+                    "port": "http"
+                  },
+                  "periodSeconds": 5
+                },
+                "volumeMounts": [
+                  {
+                    "mountPath": "/model",
+                    "name": "model",
+                    "readOnly": true
+                  },
+                  {
+                    "mountPath": "/tmp",
+                    "name": "tmp"
+                  },
+                  {
+                    "mountPath": "/cache",
+                    "name": "cache"
+                  }
+                ]
+              }
+            ],
+            "runtimeClassName": "nvidia",
+            "securityContext": {
+              "fsGroup": 1000,
+              "runAsGroup": 1000,
+              "runAsNonRoot": true,
+              "runAsUser": 1000
+            },
+            "terminationGracePeriodSeconds": 60,
+            "volumes": [
+              {
+                "hostPath": {
+                  "path": "/models/qwen2.5-0.5b",
+                  "type": "Directory"
+                },
+                "name": "model"
+              },
+              {
+                "emptyDir": {
+                  "sizeLimit": "1Gi"
+                },
+                "name": "tmp"
+              },
+              {
+                "name": "cache",
+                "persistentVolumeClaim": {
+                  "claimName": "enhanced-cache-llamacpp"
+                }
+              }
+            ],
+            "nodeSelector": {
+              "kubernetes.io/hostname": "local-k8s-gpu-worker"
+            }
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "name": "base-llamacpp",
+        "namespace": "default"
+      },
+      "spec": {
+        "ports": [
+          {
+            "name": "http",
+            "port": 8000,
+            "targetPort": "http"
+          }
+        ],
+        "selector": {
+          "app": "base-llamacpp"
+        }
+      }
+    }
+  ]
+}
