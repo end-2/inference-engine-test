@@ -48,6 +48,7 @@ curl http://127.0.0.1:8000/v1/chat/completions \
 | --- | --- | --- |
 | Base | `transformer.base.server` | `transformers-base` |
 | Batch | `transformer.enhanced.batch.server` | `transformers-enhanced-batch` |
+| GPU Batch | `transformer.enhanced.batch_gpu.server` | `transformers-enhanced-batch-gpu` |
 | Cache | `transformer.enhanced.cache.server` | `transformers-enhanced-cache` |
 | Base + Prometheus | `transformer.base_metric.server` | `transformers-base-metric` |
 
@@ -74,6 +75,8 @@ Base + Prometheus는 같은 직렬 엔진에 `/metrics`의 `transformers_*` 요�
 진행 중인 배치에는 새 요청을 추가하지 않습니다. 새 요청은 다음 배치를 기다리므로 긴 출력이 대기 시간을 늘릴 수 있습니다. 요청 간 prefix 캐시는 유지하지 않습니다.
 
 모델 연산은 한 작업자만 실행하고 HTTP 스레드는 결과를 기다립니다. 작업자 오류는 대기 요청에 전달되며 health와 readiness가 실패합니다.
+
+GPU batch는 같은 작업자를 사용합니다. `temperature=0`, `ignore_eos=true`인 요청은 배치 폭별 CUDA Graph로 decode 연산을 재사용합니다. 다른 샘플링 옵션은 일반 GPU 배치 경로에서 처리합니다. GPU용 이미지는 `make build-image DEVICE=gpu VARIANT=transformers-enhanced-batch`로 빌드합니다.
 
 ### Prefix KV 캐시
 

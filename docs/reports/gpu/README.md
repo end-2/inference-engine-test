@@ -11,4 +11,4 @@
 
 각 요약에는 동시성별 처리량, 지연, GPU 사용률과 사용 메모리의 평균 및 최대값이 있습니다. `run.json`에는 실행 설정과 이미지 ID가 있으며, `gpu.csv` 시계열은 로컬 결과 디렉터리에 보관합니다.
 
-Transformers batch의 `max-parallel` 설정 실험은 [설정 실험 보고서](transformers/batch-config-tuning-20260928.md)에 있습니다.
+Transformers batch의 `max-parallel` 설정 실험은 [설정 실험 보고서](transformers/batch-config-tuning-20260928.md)에, GPU 전용 배치 구현의 결과는 [최적화 보고서](transformers/batch-gpu-optimization-20260928.md)에 있습니다.
