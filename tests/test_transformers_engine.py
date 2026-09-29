@@ -14,6 +14,7 @@ from transformer.base.engine import EngineSettings, Generation, TorchEngine
 from transformer.enhanced.batch import engine as batching
 from transformer.enhanced.batch.backend import BatchBackend
 from transformer.enhanced.batch_gpu.backend import GPUBatchBackend
+from transformer.enhanced.batch_gpu.server import TorchEngine as GPUBatchEngine
 from transformer.enhanced.cache import engine as caching
 
 try:
@@ -338,6 +339,68 @@ class EngineTests(unittest.TestCase):
 @unittest.skipUnless(torch is not None and os.environ.get("TEST_TRANSFORMERS_MODEL_PATH"),
                      "Set TEST_TRANSFORMERS_MODEL_PATH to local SmolLM2 weights")
 class ModelIntegrationTests(unittest.TestCase):
+    @unittest.skipUnless(torch is not None and torch.cuda.is_available(), "CUDA required")
+    def test_real_model_gpu_batch_concurrent_outputs_match_base(self):
+        # Float32 avoids near-tied FP16 logits changing greedy tokens across batch shapes.
+        settings = EngineSettings(Path(os.environ["TEST_TRANSFORMERS_MODEL_PATH"]),
+                                  n_ctx=1024, n_threads=4, device="cuda", dtype="float32")
+        reference = TorchEngine(settings)
+        batch_settings = batching.EngineSettings(**vars(settings), max_parallel=4, batch_wait_ms=5)
+        batch = GPUBatchEngine(batch_settings)
+        try:
+            topics = ["libraries", "mountains", "rivers", "computers", "music", "gardens",
+                      "weather", "books", "languages", "cities", "astronomy", "history",
+                      "animals", "cooking", "sports", "painting"]
+            templates = ["Explain {} in one short sentence.",
+                         "In two sentences, describe {} for a beginner.",
+                         "How does {} affect everyday life? Answer briefly.",
+                         "Write a factual note about {} and give one example."]
+            prompts = [reference.prepare_prompt([{"role": "user", "content":
+                        templates[index % len(templates)].format(topic)}])
+                       for index, topic in enumerate(topics)]
+            limits = [8, 16, 24, 32] * 4
+
+            def requests(ignore_eos):
+                return [Generation(prompt, limit, 0, 1, ignore_eos, threading.Event())
+                        for prompt, limit in zip(prompts, limits)]
+
+            for ignore_eos in (True, False):
+                scenario_requests = requests(ignore_eos)
+                expected = [reference.generate(request) for request in scenario_requests]
+                self.assertTrue(all(result["text"] for result in expected))
+                for _ in range(2 if ignore_eos else 1):
+                    barrier = threading.Barrier(len(prompts))
+
+                    def run(index):
+                        barrier.wait(timeout=10)
+                        request = scenario_requests[index]
+                        pieces = []
+                        if index % 2:
+                            result = batch.stream(request.prompt, request.max_tokens,
+                                                  request.temperature, request.top_p,
+                                                  request.ignore_eos, request.cancel, pieces.append)
+                        else:
+                            result = batch.complete(request.prompt, request.max_tokens,
+                                                    request.temperature, request.top_p,
+                                                    request.ignore_eos, request.cancel)
+                        return result, "".join(pieces)
+
+                    with patch.object(batch.backend, "generate_batch",
+                                      wraps=batch.backend.generate_batch) as generate_batch:
+                        with ThreadPoolExecutor(max_workers=len(prompts)) as pool:
+                            actual = list(pool.map(run, range(len(prompts))))
+                    self.assertTrue(any(len(call.args[0]) > 1
+                                        for call in generate_batch.call_args_list))
+                    self.assertEqual(sum(len(call.args[0]) for call in generate_batch.call_args_list),
+                                     len(prompts))
+                    self.assertEqual([result for result, _ in actual], expected)
+                    for index, (result, streamed) in enumerate(actual):
+                        if index % 2:
+                            self.assertEqual(streamed, result["text"])
+        finally:
+            batch.close()
+            reference.close()
+
     def test_real_model_base_batch_cache_and_stream(self):
         settings = EngineSettings(Path(os.environ["TEST_TRANSFORMERS_MODEL_PATH"]),
                                   n_ctx=256, n_threads=4)
