@@ -1,0 +1,11 @@
+{
+  "host_platform": "Linux-6.8.0-110-generic-x86_64-with-glibc2.39",
+  "gpu_before": "name, uuid, driver_version, memory.total [MiB], memory.used [MiB]\nNVIDIA GeForce RTX 2060 SUPER, GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b, 580.126.09, 8192 MiB, 780 MiB\n",
+  "runtime_image": "docker.io/local/transformers-mamba-cache-gpu:0.1.0",
+  "runtime_digest": "sha256:ae22e5dd338d0510f80d38c5e8f66981de905dc41894b3d1406581aaca3d73f9",
+  "source": "Workspace src and scripts mounted read-only over the CUDA runtime image",
+  "base_llamacpp_replicas_before": 1,
+  "execution": "containerd on local-k8s-gpu-worker, NVIDIA runtime, one isolated inference process",
+  "base_llamacpp_replicas_after": 1,
+  "base_llamacpp_ready_replicas_after": 1
+}

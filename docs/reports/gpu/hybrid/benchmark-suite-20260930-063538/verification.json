@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "measured_requests": 1080,
+  "summary_groups": 48,
+  "measured_waves": 288,
+  "output_mismatches": 0,
+  "output_tokens": 34560,
+  "cache_errors": 0,
+  "source_hashes_match_workspace": true,
+  "output_ids_rechecked_against_baseline": true,
+  "output_length_shortfalls": 0,
+  "warm_tier_and_restored_tokens_rechecked": true,
+  "model_matches_pinned_checksums": true
+}

@@ -2,7 +2,7 @@
 
 > **주의:** 기존 CPU 벤치마크와 이번 GPU 벤치마크는 호스트 환경과 클러스터 배치가 달라 성능 수치를 직접 비교하면 안 됩니다.
 
-이번 GPU 측정은 각 구현을 1회 실행했습니다. 동시성은 `1,2,4,8`이며 조건마다 warmup 요청 2개와 측정 요청 100개를 사용했습니다. 추론 Pod는 RTX 2060 SUPER가 할당된 worker에서, AIPerf는 control-plane에서 실행했습니다.
+아래 Transformers와 llama.cpp의 AIPerf 결과는 각 구현을 1회 실행했습니다. 동시성은 `1,2,4,8`이며 조건마다 warmup 요청 2개와 측정 요청 100개를 사용했습니다. 추론 Pod는 RTX 2060 SUPER가 할당된 worker에서, AIPerf는 control-plane에서 실행했습니다.
 
 | 엔진 | 모델 | GPU 설정 | 측정 조건 | 결과 |
 | --- | --- | --- | --- | --- |
@@ -16,3 +16,5 @@ Transformers batch의 `max-parallel` 설정 실험은 [설정 실험 보고서](
 GPU batch의 높은 동시성에서 실제 모델 출력을 대조한 결과는 [출력 검증 보고서](transformers/batch-gpu-output-validation-20260929.md)에 있습니다.
 
 Mamba-130M의 prefix 상태 캐시 구현, 정확성 검사와 동시성 1의 AIPerf 비교는 [Mamba GPU 테스트 결과](mamba/README.md)를 참고하세요.
+
+같은 Jamba-tiny-dev 가중치의 base, 배치와 GPU/RAM/디스크 HiCache 비교는 [Jamba hybrid GPU 결과](hybrid/README.md)를 참고하세요. 이 결과는 HTTP를 제외한 엔진 측정입니다.
