@@ -14,11 +14,13 @@ from transformer.enhanced.batch_gpu import server as batch_gpu
 from transformer.enhanced.cache import server as cache
 from transformer.mamba import server as mamba
 from transformer.mamba.cache import server as mamba_cache
+from transformer.hybrid import server as hybrid
+from transformer.hybrid import base_server as hybrid_base
 
 
 class ServerTests(unittest.IsolatedAsyncioTestCase):
     async def test_api_contract_for_all_variants(self):
-        for server in (base, batch, cache, mamba, mamba_cache):
+        for server in (base, batch, cache, mamba, mamba_cache, hybrid, hybrid_base):
             with self.subTest(server=server.__name__):
                 settings = server.Settings()
                 app = server.create_app(settings, FakeEngine)
@@ -55,7 +57,10 @@ class ServerTests(unittest.IsolatedAsyncioTestCase):
                                (batch, {"max_parallel": 0}), (batch, {"batch_wait_ms": -1}),
                                (batch, {"batch_wait_ms": float("nan")}),
                                (cache, {"cache_ram_mib": -1}), (cache, {"cache_min_prefix": 0}),
-                               (mamba_cache, {"cache_disk_mib": -1}), (mamba_cache, {"cache_min_prefix": 0})]:
+                               (mamba_cache, {"cache_disk_mib": -1}), (mamba_cache, {"cache_min_prefix": 0}),
+                               (hybrid, {"cache_gpu_mib": -1}), (hybrid, {"cache_ram_mib": -1}),
+                               (hybrid, {"cache_disk_mib": -1}), (hybrid, {"cache_min_prefix": 0}),
+                               (hybrid, {"mamba_kernels": "unknown"}), (hybrid, {"max_parallel": 0})]:
             with self.subTest(values=values), self.assertRaises(ValueError):
                 server.Settings(**values)
 
@@ -81,6 +86,23 @@ class ServerTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((engine.model_path, engine.cache_dir, engine.cache_ram_mib,
                           engine.cache_disk_mib, engine.cache_min_prefix),
                          (Path("weights"), Path("cache"), 0, 2, 4))
+
+    def test_hybrid_cli_and_settings_preserve_all_tiers(self):
+        options = vars(hybrid.create_parser().parse_args([
+            "--model", "weights", "--device", "cuda", "--max-parallel", "3",
+            "--cache-gpu-mib", "12", "--cache-ram-mib", "34", "--cache-disk-mib", "56",
+            "--mamba-kernels", "off",
+        ]))
+        options.pop("host")
+        options.pop("port")
+        settings = hybrid.Settings(**options)
+        engine = settings.engine_settings()
+        self.assertEqual((engine.model_path, engine.max_parallel, engine.cache_gpu_mib,
+                          engine.cache_ram_mib, engine.cache_disk_mib, engine.mamba_kernels),
+                         (Path("weights"), 3, 12, 34, 56, "off"))
+        executor = settings.create_executor()
+        self.addCleanup(executor.shutdown)
+        self.assertGreater(executor._max_workers, settings.max_parallel)
 
 
 if __name__ == "__main__":

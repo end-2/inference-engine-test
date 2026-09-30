@@ -126,4 +126,11 @@ COPY llamacpp/enhanced/cache/__init__.py llamacpp/enhanced/cache/cache.py /app/l
 COPY transformer/mamba/cache/*.py /app/transformer/mamba/cache/
 ENTRYPOINT ["python", "-m", "transformer.mamba.cache.server"]
 
+FROM transformers-mamba-cache AS transformers-hybrid
+COPY transformer/enhanced/__init__.py /app/transformer/enhanced/
+COPY transformer/enhanced/batch/*.py /app/transformer/enhanced/batch/
+COPY transformer/enhanced/batch_gpu/*.py /app/transformer/enhanced/batch_gpu/
+COPY transformer/hybrid/*.py /app/transformer/hybrid/
+ENTRYPOINT ["python", "-m", "transformer.hybrid.server"]
+
 FROM transformers-runtime AS transformers-base

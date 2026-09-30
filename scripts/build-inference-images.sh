@@ -5,11 +5,11 @@ set -eu
 umask 022
 
 die() { printf 'Error: %s\n' "$*" >&2; exit 1; }
-[ "$#" -le 1 ] || die "Usage: $0 [base-llamacpp|base-metric-llamacpp|enhanced-batch-llamacpp|enhanced-cache-llamacpp|transformers-base|transformers-base-metric|transformers-enhanced-batch|transformers-enhanced-cache|transformers-mamba-base|transformers-mamba-cache]"
+[ "$#" -le 1 ] || die "Usage: $0 [base-llamacpp|base-metric-llamacpp|enhanced-batch-llamacpp|enhanced-cache-llamacpp|transformers-base|transformers-base-metric|transformers-enhanced-batch|transformers-enhanced-cache|transformers-mamba-base|transformers-mamba-cache|transformers-hybrid]"
 variant=${1:-transformers-base}
 case "$variant" in
   base-llamacpp|base-metric-llamacpp|enhanced-batch-llamacpp|enhanced-cache-llamacpp) image_name="$variant" ;;
-  transformers-base|transformers-base-metric|transformers-enhanced-batch|transformers-enhanced-cache|transformers-mamba-base|transformers-mamba-cache) image_name="$variant" ;;
+  transformers-base|transformers-base-metric|transformers-enhanced-batch|transformers-enhanced-cache|transformers-mamba-base|transformers-mamba-cache|transformers-hybrid) image_name="$variant" ;;
   *) die "Unknown variant: $variant" ;;
 esac
 command -v docker >/dev/null 2>&1 || die "Missing docker."

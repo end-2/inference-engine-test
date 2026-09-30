@@ -5,9 +5,9 @@ umask 022
 
 ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 die() { printf 'Error: %s\n' "$*" >&2; exit 1; }
-[ "$#" -le 1 ] || die "Usage: $0 [smollm2-135m|mamba-130m] (LOCAL_K8S_MODELS_DIR overrides .models)"
+[ "$#" -le 1 ] || die "Usage: $0 [smollm2-135m|mamba-130m|jamba-tiny-dev] (LOCAL_K8S_MODELS_DIR overrides .models)"
 preset=${1:-smollm2-135m}
-case "$preset" in smollm2-135m|mamba-130m) ;; *) die "Unknown model preset: $preset" ;; esac
+case "$preset" in smollm2-135m|mamba-130m|jamba-tiny-dev) ;; *) die "Unknown model preset: $preset" ;; esac
 . "$ROOT/config/models/$preset-transformers.env"
 checksums="$ROOT/config/models/$preset-transformers.sha256"
 if command -v sha256sum >/dev/null 2>&1; then

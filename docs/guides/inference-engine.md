@@ -53,8 +53,11 @@ curl http://127.0.0.1:8000/v1/chat/completions \
 | Base + Prometheus | `transformer.base_metric.server` | `transformers-base-metric` |
 | Mamba | `transformer.mamba.server` | `transformers-mamba-base` |
 | Mamba prefix cache | `transformer.mamba.cache.server` | `transformers-mamba-cache` |
+| Jamba hybrid batch + HiCache | `transformer.hybrid.server` | `transformers-hybrid` |
 
 Mamba는 별도 모델과 상태 checkpoint를 사용합니다. 실행 방법과 캐시 규칙은 [Mamba 상태 캐시](mamba-cache.md)를 참고하세요.
+
+Jamba의 Mamba 상태 버퍼, Attention KV 및 계층형 prefix 캐시를 함께 사용하는 추가 구현은 [Hybrid 배치와 HiCache](hybrid-cache.md)를 참고하세요.
 
 로컬 실행 명령의 모듈을 바꾸어 구현을 선택합니다. 공통 CLI와 기본값은 각 모듈의 `--help`에서 확인할 수 있습니다.
 
