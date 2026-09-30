@@ -78,4 +78,15 @@ reject
 unset MOCK_CORRUPT
 sh "$script" > "$sandbox/output"
 [ -f "$target/tokenizer_config.json" ] || fail 'Retry failed'
+cp "$checksums" "$sandbox/config/models/mamba-130m-transformers.sha256"
+cat > "$sandbox/config/models/mamba-130m-transformers.env" <<'EOF_MAMBA'
+MODEL_ID=example/mamba
+MODEL_REVISION=mamba-pinned
+MODEL_DIRECTORY=mamba
+EOF_MAMBA
+: > "$CURL_TRACE"
+sh "$script" mamba-130m > "$sandbox/output"
+[ -f "$LOCAL_K8S_MODELS_DIR/mamba/model.safetensors" ] || fail 'Mamba preset was not downloaded'
+grep -Fq '/example/mamba/resolve/mamba-pinned/' "$CURL_TRACE" || fail 'Wrong Mamba revision'
+if sh "$script" unknown > "$sandbox/output" 2>&1; then fail 'Unknown model preset was accepted'; fi
 printf 'PASS: model checksums, atomic publication, retries, and offline reuse\n'

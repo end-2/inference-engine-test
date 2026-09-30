@@ -62,3 +62,14 @@ COPY llamacpp/enhanced/cache/__init__.py llamacpp/enhanced/cache/cache.py /app/l
 COPY transformer/enhanced/__init__.py /app/transformer/enhanced/
 COPY transformer/enhanced/cache/*.py /app/transformer/enhanced/cache/
 ENTRYPOINT ["python", "-m", "transformer.enhanced.cache.server"]
+
+FROM gpu-runtime-transformers AS transformers-mamba-base-gpu
+COPY transformer/base/*.py /app/transformer/base/
+COPY transformer/mamba/*.py /app/transformer/mamba/
+ENTRYPOINT ["python", "-m", "transformer.mamba.server"]
+
+FROM transformers-mamba-base-gpu AS transformers-mamba-cache-gpu
+COPY llamacpp/enhanced/__init__.py /app/llamacpp/enhanced/
+COPY llamacpp/enhanced/cache/__init__.py llamacpp/enhanced/cache/cache.py /app/llamacpp/enhanced/cache/
+COPY transformer/mamba/cache/*.py /app/transformer/mamba/cache/
+ENTRYPOINT ["python", "-m", "transformer.mamba.cache.server"]

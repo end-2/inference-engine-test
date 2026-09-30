@@ -535,6 +535,8 @@ def normalize_backend(backend):
 
 
 def variant_name(backend, variant="base"):
+    if backend == "mamba":
+        return f"transformers-mamba-{variant}"
     return f"transformers-{variant}" if backend == "transformers" else f"{variant}-llamacpp"
 
 
@@ -552,7 +554,7 @@ def manifests_path(backend, variant, device):
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--backend", choices=("llamacpp", "transformers"), type=normalize_backend,
+    parser.add_argument("--backend", choices=("llamacpp", "transformers", "mamba"), type=normalize_backend,
                         default=os.environ.get("INFERENCE_BACKEND", "transformers"))
     parser.add_argument("--device", choices=("cpu", "gpu"), default=os.environ.get("BENCHMARK_DEVICE", "cpu"))
     parser.add_argument("--image", default=os.environ.get("INFERENCE_IMAGE"))
@@ -581,16 +583,17 @@ def parse_args():
     parser.add_argument("--reports-dir", type=Path,
                         help="Output root; defaults to docs/reports/<backend>")
     args = parser.parse_args()
-    if args.backend not in {"llamacpp", "transformers"}:
-        parser.error("backend must be llamacpp or transformers")
+    if args.backend not in {"llamacpp", "transformers", "mamba"}:
+        parser.error("backend must be llamacpp, transformers or mamba")
     args.reports_dir = args.reports_dir or ROOT / "docs/reports" / ("gpu" if args.device == "gpu" else "") / args.backend
     name = variant_name(args.backend)
     args.image = args.image or f"local/{image_name(args.backend, 'base', args.device)}:0.1.0"
     args.manifests = args.manifests or str(manifests_path(args.backend, "base", args.device))
     args.deployment = args.deployment or name
     args.api_url = args.api_url or f"http://{name}:8000"
-    args.model = args.model or ("HuggingFaceTB/SmolLM2-135M-Instruct" if args.backend == "transformers"
-                                else "Qwen/Qwen2.5-0.5B-Instruct")
+    args.model = args.model or {"transformers": "HuggingFaceTB/SmolLM2-135M-Instruct",
+                               "mamba": "state-spaces/mamba-130m-hf",
+                               "llamacpp": "Qwen/Qwen2.5-0.5B-Instruct"}[args.backend]
     if args.cache_policy not in CACHE_POLICIES:
         parser.error(f"cache policy must be one of {', '.join(CACHE_POLICIES)}")
     try:
@@ -618,7 +621,8 @@ def parse_args():
 
 
 def benchmark_manifests(backend):
-    return render(ROOT / "k8s" / ("aiperf" if backend == "transformers" else "aiperf-qwen2.5"))
+    profile = {"transformers": "aiperf", "mamba": "aiperf-mamba", "llamacpp": "aiperf-qwen2.5"}[backend]
+    return render(ROOT / "k8s" / profile)
 
 
 def benchmark_template(backend):
@@ -626,7 +630,9 @@ def benchmark_template(backend):
 
 
 def prepare_model(backend):
-    if backend == "transformers":
+    if backend == "mamba":
+        run(ROOT / "scripts/download-transformers-model.sh", "mamba-130m")
+    elif backend == "transformers":
         run(ROOT / "scripts/download-transformers-model.sh")
     else:
         run(ROOT / "scripts/download-model-llamacpp.sh")
@@ -662,7 +668,7 @@ def resolve_nodes(inference_node, benchmark_node, nodes, device="cpu"):
 
 
 def stop_other_gpu_engine(deployment_name, timeout):
-    for name in ("transformers-base", "base-llamacpp"):
+    for name in ("transformers-base", "transformers-mamba-base", "base-llamacpp"):
         if name == deployment_name:
             continue
         response = kube("get", "deployment", name, "-o", "json", capture=True, check=False)
@@ -734,7 +740,7 @@ def main():
                          if item["name"] == args.container)
         container["image"] = args.image
         arguments = container.get("args", [])
-        if args.backend == "transformers":
+        if args.backend in {"transformers", "mamba"}:
             metadata["compute_setting"] = "dtype=" + arguments[arguments.index("--dtype") + 1]
             if args.device == "gpu" and arguments[arguments.index("--device") + 1] != "cuda":
                 raise RuntimeError("GPU Transformers deployment must select CUDA")

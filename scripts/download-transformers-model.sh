@@ -4,11 +4,12 @@ set -eu
 umask 022
 
 ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
-. "$ROOT/config/models/smollm2-135m-transformers.env"
-checksums="$ROOT/config/models/smollm2-135m-transformers.sha256"
-
 die() { printf 'Error: %s\n' "$*" >&2; exit 1; }
-[ "$#" -eq 0 ] || die "Usage: $0 (LOCAL_K8S_MODELS_DIR overrides .models)"
+[ "$#" -le 1 ] || die "Usage: $0 [smollm2-135m|mamba-130m] (LOCAL_K8S_MODELS_DIR overrides .models)"
+preset=${1:-smollm2-135m}
+case "$preset" in smollm2-135m|mamba-130m) ;; *) die "Unknown model preset: $preset" ;; esac
+. "$ROOT/config/models/$preset-transformers.env"
+checksums="$ROOT/config/models/$preset-transformers.sha256"
 if command -v sha256sum >/dev/null 2>&1; then
     hasher=sha256sum
 elif command -v shasum >/dev/null 2>&1; then

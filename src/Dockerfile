@@ -116,4 +116,14 @@ COPY transformer/base_metric/*.py /app/transformer/base_metric/
 USER 1000:1000
 ENTRYPOINT ["python", "-m", "transformer.base_metric.server"]
 
+FROM transformers-runtime AS transformers-mamba-base
+COPY transformer/mamba/*.py /app/transformer/mamba/
+ENTRYPOINT ["python", "-m", "transformer.mamba.server"]
+
+FROM transformers-mamba-base AS transformers-mamba-cache
+COPY llamacpp/enhanced/__init__.py /app/llamacpp/enhanced/
+COPY llamacpp/enhanced/cache/__init__.py llamacpp/enhanced/cache/cache.py /app/llamacpp/enhanced/cache/
+COPY transformer/mamba/cache/*.py /app/transformer/mamba/cache/
+ENTRYPOINT ["python", "-m", "transformer.mamba.cache.server"]
+
 FROM transformers-runtime AS transformers-base

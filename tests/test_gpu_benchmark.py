@@ -83,6 +83,7 @@ class GPUSettingsTests(unittest.TestCase):
     @unittest.skipIf(yaml is None, "PyYAML is needed to inspect manifests")
     def test_all_gpu_deployments_request_one_gpu(self):
         names = ("transformers-base", "transformers-enhanced-batch", "transformers-enhanced-cache",
+                 "transformers-mamba-base", "transformers-mamba-cache",
                  "base-llamacpp", "enhanced-batch-llamacpp", "enhanced-cache-llamacpp")
         for name in names:
             with self.subTest(name=name):
@@ -114,6 +115,52 @@ class GPUSettingsTests(unittest.TestCase):
         nodes["items"][1]["status"]["allocatable"].clear()
         with self.assertRaisesRegex(RuntimeError, "GPU worker"):
             benchmark.resolve_nodes(None, None, nodes, "gpu")
+
+    def test_mamba_routes_model_profile_and_suite(self):
+        with patch.dict(os.environ, {}, clear=True), patch("sys.argv", [
+            "run-benchmark.py", "--backend", "mamba", "--device", "gpu",
+        ]):
+            args = benchmark.parse_args()
+        self.assertEqual(args.model, "state-spaces/mamba-130m-hf")
+        self.assertEqual(args.image, "local/transformers-mamba-base-gpu:0.1.0")
+        self.assertEqual(args.manifests, ROOT / "k8s/gpu/transformers-mamba-base")
+        self.assertEqual(args.reports_dir, ROOT / "docs/reports/gpu/mamba")
+        with patch.object(benchmark, "render", return_value={}) as render:
+            benchmark.benchmark_manifests("mamba")
+        render.assert_called_once_with(ROOT / "k8s/aiperf-mamba")
+        with patch.object(benchmark, "run") as run:
+            benchmark.prepare_model("mamba")
+        run.assert_called_once_with(ROOT / "scripts/download-transformers-model.sh", "mamba-130m")
+        cases = suite.plan(2, "mamba")
+        self.assertEqual(len(cases), 6)
+        self.assertEqual({case["variant"] for case in cases}, {"base", "cache"})
+        metadata = {"backend": "mamba", "device": "gpu", "image_tag": "test",
+                    "benchmark_image": "local/aiperf:test", "inference_node": "worker", "benchmark_node": "control"}
+        command = suite.case_command(cases[1], metadata, Path("reports"))
+        args = dict(zip(command[2::2], command[3::2], strict=True))
+        self.assertEqual(args["--image"], "local/transformers-mamba-cache-gpu:test")
+        self.assertEqual(args["--deployment"], "transformers-mamba-base")
+
+    @unittest.skipIf(yaml is None, "PyYAML is needed to inspect manifests")
+    def test_mamba_manifests_use_own_weights_tokenizer_and_cache(self):
+        for device in ("", "gpu"):
+            for variant in ("base", "cache"):
+                root = ROOT / "k8s" / device / f"transformers-mamba-{variant}"
+                deployment = yaml.safe_load((root / "deployment.yaml").read_text())
+                service = yaml.safe_load((root / "service.yaml").read_text())
+                pod = deployment["spec"]["template"]["spec"]
+                args = pod["containers"][0]["args"]
+                self.assertEqual(args[args.index("--served-model-name") + 1], "state-spaces/mamba-130m-hf")
+                self.assertEqual(service["spec"]["selector"], deployment["spec"]["selector"]["matchLabels"])
+                model = next(v for v in pod["volumes"] if v["name"] == "model")
+                self.assertEqual(model["hostPath"]["path"], "/models/mamba-130m")
+                if variant == "cache":
+                    cache = next(v for v in pod["volumes"] if v["name"] == "cache")
+                    self.assertEqual(cache["persistentVolumeClaim"]["claimName"], "transformers-mamba-cache")
+        profile = yaml.safe_load((ROOT / "k8s/aiperf-mamba/job.yaml").read_text())
+        spec = profile["spec"]["template"]["spec"]
+        self.assertEqual(next(v for v in spec["volumes"] if v["name"] == "tokenizer")["hostPath"]["path"],
+                         "/models/mamba-130m")
 
     def test_gpu_suite_loads_each_image_only_on_its_node(self):
         metadata = {"backend": "transformers", "device": "gpu", "image_tag": "test",

@@ -40,7 +40,7 @@ class Generation:
 class TorchEngine:
     def __init__(self, settings: EngineSettings):
         import torch
-        from transformers import AutoConfig, AutoTokenizer, LlamaForCausalLM
+        from transformers import AutoConfig, AutoTokenizer
 
         if not settings.model_path.is_dir():
             raise ValueError(f"Model directory does not exist: {settings.model_path}")
@@ -52,19 +52,10 @@ class TorchEngine:
         config = AutoConfig.from_pretrained(
             settings.model_path, local_files_only=True, trust_remote_code=False,
         )
-        if config.model_type != "llama":
-            raise ValueError("SmolLM2 requires a Llama model configuration")
-        if settings.n_ctx > config.max_position_embeddings:
-            raise ValueError("n_ctx exceeds the model context length")
-        self.head_dim = config.hidden_size // config.num_attention_heads
+        self.model = self._load_model(config)
         self.tokenizer = AutoTokenizer.from_pretrained(
             settings.model_path, local_files_only=True, trust_remote_code=False,
         )
-        self.model = LlamaForCausalLM.from_pretrained(
-            settings.model_path, config=config, local_files_only=True,
-            use_safetensors=True, dtype=getattr(torch, settings.dtype),
-            attn_implementation="sdpa",
-        ).to(settings.device).eval()
         eos = self.model.generation_config.eos_token_id
         self.eos_tokens = set(eos if isinstance(eos, list) else [eos]) - {None}
         if self.tokenizer.eos_token_id is not None:
@@ -75,6 +66,20 @@ class TorchEngine:
         self.tokenizer.pad_token_id = self.pad_token
         self.tokenizer.padding_side = "left"
         self.tokenizer_lock = threading.Lock()
+
+    def _load_model(self, config):
+        from transformers import LlamaForCausalLM
+
+        if config.model_type != "llama":
+            raise ValueError("SmolLM2 requires a Llama model configuration")
+        if self.settings.n_ctx > config.max_position_embeddings:
+            raise ValueError("n_ctx exceeds the model context length")
+        self.head_dim = config.hidden_size // config.num_attention_heads
+        return LlamaForCausalLM.from_pretrained(
+            self.settings.model_path, config=config, local_files_only=True,
+            use_safetensors=True, dtype=getattr(self.torch, self.settings.dtype),
+            attn_implementation="sdpa",
+        ).to(self.settings.device).eval()
 
     def prepare_prompt(self, messages):
         with self.tokenizer_lock:

@@ -6,11 +6,11 @@ umask 022
 ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 
 die() { printf 'Error: %s\n' "$*" >&2; exit 1; }
-[ "$#" -le 1 ] || die "Usage: $0 [base-llamacpp|base-metric-llamacpp|enhanced-batch-llamacpp|enhanced-cache-llamacpp|transformers-base|transformers-base-metric|transformers-enhanced-batch|transformers-enhanced-cache]"
+[ "$#" -le 1 ] || die "Usage: $0 [base-llamacpp|base-metric-llamacpp|enhanced-batch-llamacpp|enhanced-cache-llamacpp|transformers-base|transformers-base-metric|transformers-enhanced-batch|transformers-enhanced-cache|transformers-mamba-base|transformers-mamba-cache]"
 variant=${1:-transformers-base}
 case "$variant" in
   base-llamacpp|base-metric-llamacpp|enhanced-batch-llamacpp|enhanced-cache-llamacpp) image_name="$variant" ;;
-  transformers-base|transformers-base-metric|transformers-enhanced-batch|transformers-enhanced-cache) image_name="$variant" ;;
+  transformers-base|transformers-base-metric|transformers-enhanced-batch|transformers-enhanced-cache|transformers-mamba-base|transformers-mamba-cache) image_name="$variant" ;;
   *) die "Unknown variant: $variant" ;;
 esac
 

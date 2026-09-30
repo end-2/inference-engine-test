@@ -1,6 +1,6 @@
 # Inference engine test
 
-kind에서 Transformers와 llama.cpp의 base, batch, prefix KV cache를 측정합니다. CPU가 기본값이며 NVIDIA GPU도 선택할 수 있습니다.
+kind에서 Transformers와 llama.cpp의 추론, 배칭과 prefix 캐시를 측정합니다. CPU가 기본값이며 NVIDIA GPU도 선택할 수 있습니다.
 
 Benchmark, Availablity, HPA 테스트 결과는 [reports-transformers.md](docs/reports-transformers.md) 파일을 참고해주세요.
 
@@ -63,4 +63,4 @@ python3 scripts/run-benchmark-suite.py --backend llamacpp # llama.cpp 전체 반
 
 서버만 실행하는 방법은 [추론 엔진 가이드](docs/guides/inference-engine.md), llama.cpp 배포는 같은 문서의 [llama.cpp 절](docs/guides/inference-engine.md#llamacpp)를 참고하세요. 사용 후 `make down` 또는 `./scripts/local-k8s.sh down`으로 클러스터와 노드 내부 PVC 데이터를 삭제합니다. 호스트 모델과 수집된 보고서는 유지됩니다.
 
-상세 내용은 [클러스터 사용](docs/guides/local-k8s.md), [모델 관리](docs/guides/models.md), [AIPerf 설정](docs/guides/aiperf.md), [벤치마크 실행과 결과 분석](docs/guides/benchmark.md), [품질 체크](docs/guides/quality-check.md), [멀티 노드 서비스 안정성 테스트](docs/guides/availability-test.md), [CPU HPA 테스트](docs/guides/hpa-test.md), [테스트 결과](docs/reports/README.md)를 참고하세요.
+상세 내용은 [클러스터 사용](docs/guides/local-k8s.md), [모델 관리](docs/guides/models.md), [Mamba 상태 캐시](docs/guides/mamba-cache.md), [AIPerf 설정](docs/guides/aiperf.md), [벤치마크 실행과 결과 분석](docs/guides/benchmark.md), [품질 체크](docs/guides/quality-check.md), [멀티 노드 서비스 안정성 테스트](docs/guides/availability-test.md), [CPU HPA 테스트](docs/guides/hpa-test.md), [테스트 결과](docs/reports/README.md)를 참고하세요.

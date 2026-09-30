@@ -53,6 +53,17 @@ class CacheTests(unittest.TestCase):
         self.assertEqual(restarted.stats["disk_hits"], 1)
         self.assertIsNone(self.cache(namespace="model-b").get([1, 2, 3]))
 
+    def test_recurrent_lookup_requires_whole_prefix_and_finds_shorter_checkpoint(self):
+        cache = self.cache(ram=1024)
+        longer, shorter = self.snapshot([1, 2, 3, 4]), self.snapshot([1, 2])
+        cache.put(longer)
+        self.assertIsNone(cache.get([1, 2, 3, 9], require_full_prefix=True))
+        cache.put(shorter)
+        self.assertEqual(cache.get([1, 2, 3, 9], require_full_prefix=True), shorter)
+        self.assertEqual(cache.get([1, 2, 3, 4, 5], require_full_prefix=True), longer)
+        self.assertIsNone(cache.get([1], require_full_prefix=True))
+        self.assertIsNone(cache.get([1, 2, 9], min_prefix=3, require_full_prefix=True))
+
     def test_disk_lru_budget_and_oversized_entry(self):
         cache = self.cache(ram=0, disk=250)
         a, b, c = [self.snapshot([x]) for x in [1, 2, 3]]

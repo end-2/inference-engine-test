@@ -87,11 +87,14 @@ class TieredCache:
             raise ValueError("Invalid cached tokens")
         return tokens, header["sha256"], header["size"]
 
-    def get(self, prompt, min_prefix=1):
+    def get(self, prompt, min_prefix=1, *, require_full_prefix=False):
         while True:
             best, length = None, min_prefix - 1
             for tokens in list(self.ram) + list(self.disk):
                 shared = common_prefix(tokens, prompt)
+                # Recurrent states cannot be cropped to an earlier token position.
+                if require_full_prefix and shared != len(tokens):
+                    continue
                 if shared > length:
                     best, length = tokens, shared
             if best is None:

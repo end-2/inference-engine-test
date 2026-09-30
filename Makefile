@@ -7,12 +7,12 @@ $(error DEVICE must be cpu or gpu)
 endif
 AIPERF_IMAGE_TAG ?= 0.12.0
 VARIANT ?= transformers-base
-INFERENCE_BACKEND ?= $(if $(filter transformers-%,$(VARIANT)),transformers,llamacpp)
+INFERENCE_BACKEND ?= $(if $(filter transformers-mamba-%,$(VARIANT)),mamba,$(if $(filter transformers-%,$(VARIANT)),transformers,llamacpp))
 INFERENCE_IMAGE ?= local/$(VARIANT)$(if $(filter gpu,$(DEVICE)),-gpu):$(IMAGE_TAG)
 INFERENCE_CONTEXT ?= src
 INFERENCE_TARGET ?= $(VARIANT)$(if $(filter gpu,$(DEVICE)),-gpu)
 INFERENCE_MANIFESTS ?= k8s/$(if $(filter gpu,$(DEVICE)),gpu/)$(VARIANT)
-CACHE_POLICY ?= $(if $(filter transformers-enhanced-cache,$(VARIANT)),clear-before-sweep,preserve)
+CACHE_POLICY ?= $(if $(filter transformers-enhanced-cache transformers-mamba-cache,$(VARIANT)),clear-before-sweep,preserve)
 REPETITIONS ?= 3
 INFERENCE_NODE ?=
 BENCHMARK_NODE ?=
@@ -29,10 +29,10 @@ install up down test status:
 	./scripts/local-k8s$(if $(filter gpu,$(DEVICE)),-gpu).sh $@
 
 download-model: ## Download the selected model
-	$(if $(filter transformers,$(INFERENCE_BACKEND)),./scripts/download-transformers-model.sh,./scripts/download-model-llamacpp.sh)
+	$(if $(filter mamba,$(INFERENCE_BACKEND)),./scripts/download-transformers-model.sh mamba-130m,$(if $(filter transformers,$(INFERENCE_BACKEND)),./scripts/download-transformers-model.sh,./scripts/download-model-llamacpp.sh))
 
 download-tokenizer: ## Prepare the benchmark tokenizer
-	$(if $(filter transformers,$(INFERENCE_BACKEND)),./scripts/download-transformers-model.sh,./scripts/download-tokenizer-llamacpp.sh)
+	$(if $(filter mamba,$(INFERENCE_BACKEND)),./scripts/download-transformers-model.sh mamba-130m,$(if $(filter transformers,$(INFERENCE_BACKEND)),./scripts/download-transformers-model.sh,./scripts/download-tokenizer-llamacpp.sh))
 
 build-image: ## Build the selected VARIANT
 	IMAGE_TAG=$(IMAGE_TAG) DEVICE=$(DEVICE) ./scripts/build-inference-images.sh $(VARIANT)

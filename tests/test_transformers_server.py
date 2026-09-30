@@ -12,11 +12,13 @@ from transformer.base import server as base
 from transformer.enhanced.batch import server as batch
 from transformer.enhanced.batch_gpu import server as batch_gpu
 from transformer.enhanced.cache import server as cache
+from transformer.mamba import server as mamba
+from transformer.mamba.cache import server as mamba_cache
 
 
 class ServerTests(unittest.IsolatedAsyncioTestCase):
     async def test_api_contract_for_all_variants(self):
-        for server in (base, batch, cache):
+        for server in (base, batch, cache, mamba, mamba_cache):
             with self.subTest(server=server.__name__):
                 settings = server.Settings()
                 app = server.create_app(settings, FakeEngine)
@@ -25,8 +27,8 @@ class ServerTests(unittest.IsolatedAsyncioTestCase):
                     self.assertEqual(app.title, "Transformers CPU inference API")
                     async with httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url="http://test") as client:
                         models = (await client.get("/v1/models")).json()
-                        self.assertEqual(models["data"][0]["id"], "HuggingFaceTB/SmolLM2-135M-Instruct")
-                        body = {"model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+                        self.assertEqual(models["data"][0]["id"], settings.served_model_name)
+                        body = {"model": settings.served_model_name,
                                 "messages": [{"role": "user", "content": "hello"}]}
                         response = await client.post("/v1/chat/completions", json=body)
                         self.assertEqual(response.status_code, 200)
@@ -52,7 +54,8 @@ class ServerTests(unittest.IsolatedAsyncioTestCase):
         for server, values in [(base, {"n_threads": 0}), (base, {"dtype": "float16"}),
                                (batch, {"max_parallel": 0}), (batch, {"batch_wait_ms": -1}),
                                (batch, {"batch_wait_ms": float("nan")}),
-                               (cache, {"cache_ram_mib": -1}), (cache, {"cache_min_prefix": 0})]:
+                               (cache, {"cache_ram_mib": -1}), (cache, {"cache_min_prefix": 0}),
+                               (mamba_cache, {"cache_disk_mib": -1}), (mamba_cache, {"cache_min_prefix": 0})]:
             with self.subTest(values=values), self.assertRaises(ValueError):
                 server.Settings(**values)
 

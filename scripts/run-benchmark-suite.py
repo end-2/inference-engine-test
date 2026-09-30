@@ -28,9 +28,16 @@ TRANSFORMERS_CONDITIONS = (
     ("enhanced-batch", "enhanced-batch", "preserve"),
     ("enhanced-cache", "enhanced-cache", "clear-before-sweep"),
 )
+MAMBA_CONDITIONS = (
+    ("base", "base", "preserve"),
+    ("cache-clear", "cache", "clear-per-concurrency"),
+    ("cache-preserve", "cache", "clear-before-sweep"),
+)
 
 
 def conditions_for(backend):
+    if backend == "mamba":
+        return MAMBA_CONDITIONS
     return TRANSFORMERS_CONDITIONS if backend == "transformers" else CONDITIONS
 
 
@@ -162,7 +169,7 @@ def save_suite(directory, metadata, rows):
              f"- Status: {metadata['status']}", f"- Repetitions per condition: {metadata['repetitions']}",
              f"- Backend: `{backend_for(metadata)}`; device: `{metadata.get('device', 'cpu')}`",
              (f"- Compute setting: `dtype={'float16' if metadata.get('device') == 'gpu' else 'float32'}`."
-              if backend_for(metadata) == "transformers" else
+              if backend_for(metadata) in {"transformers", "mamba"} else
               f"- Compute setting: `n_gpu_layers={'-1' if metadata.get('device') == 'gpu' else '0'}`."),
              f"- Inference node: `{metadata['inference_node']}`; AIPerf node: `{metadata['benchmark_node']}`",
              "- Each sweep uses concurrency 1, 2, 4, 8; each step has 2 warmup and 100 profiling requests.",
@@ -224,7 +231,7 @@ def prepare_images(metadata, build):
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--backend", choices=("llamacpp", "transformers"), type=benchmark.normalize_backend,
+    parser.add_argument("--backend", choices=("llamacpp", "transformers", "mamba"), type=benchmark.normalize_backend,
                         default=os.environ.get("INFERENCE_BACKEND", "transformers"))
     parser.add_argument("--device", choices=("cpu", "gpu"), default=os.environ.get("BENCHMARK_DEVICE", "cpu"))
     parser.add_argument("--repetitions", type=int, default=3)
@@ -239,8 +246,8 @@ def parse_args():
     args = parser.parse_args()
     if args.repetitions < 1:
         parser.error("repetitions must be positive")
-    if args.backend not in {"llamacpp", "transformers"}:
-        parser.error("backend must be llamacpp or transformers")
+    if args.backend not in {"llamacpp", "transformers", "mamba"}:
+        parser.error("backend must be llamacpp, transformers or mamba")
     args.reports_dir = args.reports_dir or ROOT / "docs/reports" / ("gpu" if args.device == "gpu" else "") / args.backend
     return args
 
