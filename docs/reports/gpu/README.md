@@ -14,3 +14,5 @@
 Transformers batch의 `max-parallel` 설정 실험은 [설정 실험 보고서](transformers/batch-config-tuning-20260928.md)에, GPU 전용 배치 구현의 결과는 [최적화 보고서](transformers/batch-gpu-optimization-20260928.md)에 있습니다.
 
 GPU batch의 높은 동시성에서 실제 모델 출력을 대조한 결과는 [출력 검증 보고서](transformers/batch-gpu-output-validation-20260929.md)에 있습니다.
+
+Mamba-130M의 prefix 상태 캐시 구현, 정확성 검사와 동시성 1의 AIPerf 비교는 [Mamba GPU 테스트 결과](mamba/README.md)를 참고하세요.

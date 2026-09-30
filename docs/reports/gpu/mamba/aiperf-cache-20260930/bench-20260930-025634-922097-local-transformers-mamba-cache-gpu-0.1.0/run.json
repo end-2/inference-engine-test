@@ -1,0 +1,79 @@
+{
+  "run_id": "bench-20260930-025634-922097",
+  "started_at": "2026-09-30T02:56:34.922097+00:00",
+  "status": "complete",
+  "backend": "mamba",
+  "device": "gpu",
+  "concurrencies": [
+    1
+  ],
+  "sample_interval_seconds": 5,
+  "cache_policy": "clear-before-sweep",
+  "inference_node": "local-k8s-gpu-worker",
+  "benchmark_node": "local-k8s-gpu-control-plane",
+  "conditions": [
+    {
+      "concurrency": 1,
+      "status": "complete",
+      "cache_clear": {
+        "directory": "/cache",
+        "removed_entries": 1,
+        "removed_files": 1,
+        "removed_bytes": 0,
+        "remaining_entries": 0,
+        "pvc": "transformers-mamba-cache",
+        "completed_at": "2026-09-30T02:57:09.080611+00:00"
+      },
+      "pod_uid": "7a7b0b56-2e44-4295-b15c-d69534cd1af1",
+      "pod_name": "transformers-mamba-base-76d55fbd78-6ggfl",
+      "started_at": "2026-09-30T02:57:21.019197+00:00",
+      "resource_collection": {
+        "node_samples": 50,
+        "pod_cpu_samples": {
+          "inference": 25,
+          "aiperf": 21
+        }
+      },
+      "gpu_collection": {
+        "gpu_uuid": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b",
+        "gpu_samples": 25,
+        "gpu_utilization_avg_pct": 14.08,
+        "gpu_utilization_max_pct": 20.0,
+        "gpu_memory_used_avg_mib": 511.92,
+        "gpu_memory_used_max_mib": 550.0
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-30T02:59:21.205320+00:00"
+    }
+  ],
+  "inference": {
+    "image": "local/transformers-mamba-cache-gpu:0.1.0",
+    "id": "sha256:3a1ef33c9fc27e3bc80476f467ddf20423c1102494a7b8e1d1e8a233524cb0d0",
+    "source_sha256": null,
+    "build_context": null,
+    "build_target": null
+  },
+  "benchmark": {
+    "image": "local/aiperf:0.12.0",
+    "id": "sha256:23fadfb5b457a3ab6e75d9421e4789ea96eacb646501bc3db7f38c2d6841e181",
+    "source_sha256": null,
+    "build_context": null,
+    "build_target": null
+  },
+  "compute_setting": "dtype=float16",
+  "finished_at": "2026-09-30T02:59:21.205793+00:00",
+  "mamba_cache_final_stats": {
+    "ram_hits": 84,
+    "disk_hits": 0,
+    "misses": 18,
+    "spills": 18,
+    "evictions": 0,
+    "errors": 0,
+    "restored_tokens": 10284,
+    "includes_warmup": true
+  }
+}

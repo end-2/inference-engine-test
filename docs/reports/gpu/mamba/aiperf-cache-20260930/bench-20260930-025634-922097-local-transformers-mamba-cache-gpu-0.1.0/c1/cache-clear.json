@@ -1,0 +1,9 @@
+{
+  "directory": "/cache",
+  "removed_entries": 1,
+  "removed_files": 1,
+  "removed_bytes": 0,
+  "remaining_entries": 0,
+  "pvc": "transformers-mamba-cache",
+  "completed_at": "2026-09-30T02:57:09.080611+00:00"
+}

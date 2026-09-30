@@ -1,0 +1,60 @@
+{
+  "run_id": "bench-20260930-025300-141375",
+  "started_at": "2026-09-30T02:53:00.141375+00:00",
+  "status": "complete",
+  "backend": "mamba",
+  "device": "gpu",
+  "concurrencies": [
+    1
+  ],
+  "sample_interval_seconds": 5,
+  "cache_policy": "preserve",
+  "inference_node": "local-k8s-gpu-worker",
+  "benchmark_node": "local-k8s-gpu-control-plane",
+  "conditions": [
+    {
+      "concurrency": 1,
+      "status": "complete",
+      "pod_uid": "56d27768-5971-4802-86e7-4c75cbbc4d70",
+      "pod_name": "transformers-mamba-base-6ddb84775c-p22v6",
+      "started_at": "2026-09-30T02:54:06.725934+00:00",
+      "resource_collection": {
+        "node_samples": 54,
+        "pod_cpu_samples": {
+          "inference": 27,
+          "aiperf": 24
+        }
+      },
+      "gpu_collection": {
+        "gpu_uuid": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b",
+        "gpu_samples": 27,
+        "gpu_utilization_avg_pct": 15.222222222222221,
+        "gpu_utilization_max_pct": 21.0,
+        "gpu_memory_used_avg_mib": 516.8148148148148,
+        "gpu_memory_used_max_mib": 550.0
+      },
+      "output_length_check": {
+        "checked_requests": 100,
+        "shortfalls": 0,
+        "overruns": 0
+      },
+      "completed_at": "2026-09-30T02:56:17.299330+00:00"
+    }
+  ],
+  "inference": {
+    "image": "local/transformers-mamba-base-gpu:0.1.0",
+    "id": "sha256:9be1e1cbd31c67029225272e4c63e28753264465f35b34cd8e05c44d56debdf1",
+    "source_sha256": null,
+    "build_context": null,
+    "build_target": null
+  },
+  "benchmark": {
+    "image": "local/aiperf:0.12.0",
+    "id": "sha256:23fadfb5b457a3ab6e75d9421e4789ea96eacb646501bc3db7f38c2d6841e181",
+    "source_sha256": null,
+    "build_context": null,
+    "build_target": null
+  },
+  "compute_setting": "dtype=float16",
+  "finished_at": "2026-09-30T02:56:17.299851+00:00"
+}
