@@ -1,0 +1,11 @@
+{
+  "input_tokens": [64, 704],
+  "output_tokens": [16, 128],
+  "concurrencies": [4, 16],
+  "requests": 24,
+  "warmup_requests": 4,
+  "dataset_entries": 24,
+  "seed": 42,
+  "repetitions": 2,
+  "mixed_distribution": "64,128:50;704,16:50"
+}

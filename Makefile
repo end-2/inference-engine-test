@@ -1,7 +1,10 @@
-.PHONY: help install up down test status download-model download-tokenizer build-image load-image build-benchmark-image load-benchmark-image benchmark benchmark-suite
+.PHONY: help install up down test status download-model download-tokenizer build-image load-image build-benchmark-image load-benchmark-image benchmark benchmark-suite pd-deploy pd-benchmark
 
 IMAGE_TAG ?= 0.1.0
 DEVICE ?= cpu
+GPU_SHARING ?= none
+MPS_REPLICAS ?= 2
+export GPU_SHARING MPS_REPLICAS
 ifneq ($(filter $(DEVICE),cpu gpu),$(DEVICE))
 $(error DEVICE must be cpu or gpu)
 endif
@@ -16,6 +19,8 @@ CACHE_POLICY ?= $(if $(filter transformers-enhanced-cache transformers-mamba-cac
 REPETITIONS ?= 3
 INFERENCE_NODE ?=
 BENCHMARK_NODE ?=
+PD_MODE ?= aggregated
+PD_BENCHMARK_CONFIG ?= config/benchmarks/pd.json
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-24s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -39,6 +44,12 @@ build-image: ## Build the selected VARIANT
 
 load-image: ## Load the selected VARIANT into kind
 	IMAGE_TAG=$(IMAGE_TAG) DEVICE=$(DEVICE) ./scripts/load-inference-images.sh $(VARIANT)
+
+pd-deploy: ## Deploy aggregated or disaggregated inference on the MPS cluster
+	GPU_SHARING=mps ./scripts/deploy-pd.sh "$(PD_MODE)"
+
+pd-benchmark: ## Compare PD topologies across input, output, and concurrency sweeps
+	python3 scripts/benchmark-pd.py --config "$(PD_BENCHMARK_CONFIG)"
 
 build-benchmark-image: ## Build the AIPerf image
 	AIPERF_IMAGE_TAG=$(AIPERF_IMAGE_TAG) ./scripts/build-benchmark-images.sh
