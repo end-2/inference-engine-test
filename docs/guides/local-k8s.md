@@ -1,6 +1,7 @@
 # 로컬 Kubernetes 사용 가이드
 
 `scripts/local-k8s.sh`로 Docker 기반 kind 클러스터를 생성하고 워크로드와 이미지를 관리합니다. 클러스터는 CPU 전용입니다.
+GPU 공유 리소스 2개를 사용하는 별도 환경은 [MPS 클러스터 가이드](gpu-mps.md)를 참고합니다.
 
 아래 명령은 저장소 루트에서 실행합니다. 전체 명령 목록은 `./scripts/local-k8s.sh help`에서 확인할 수 있습니다.
 

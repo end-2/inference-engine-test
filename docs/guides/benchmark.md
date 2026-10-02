@@ -126,6 +126,8 @@ make benchmark-suite DEVICE=gpu INFERENCE_BACKEND=llamacpp
 
 단일 구현은 `make benchmark DEVICE=gpu VARIANT=transformers-enhanced-cache`처럼 선택합니다. 종료할 때는 `make down DEVICE=gpu`를 사용합니다. GPU 클러스터의 모델 디렉터리는 노드의 `/models`에 읽기 전용으로 마운트됩니다. GPU 하나는 추론 Pod 하나에 할당되고 AIPerf는 control-plane 노드에서 실행됩니다.
 
+두 Pod에 GPU 공유 리소스를 할당하는 별도 환경은 [MPS 클러스터 가이드](gpu-mps.md)를 참고합니다. 이 문서의 벤치마크는 `GPU_SHARING=none`을 사용합니다.
+
 Transformers GPU 배치는 `make benchmark DEVICE=gpu VARIANT=transformers-enhanced-batch`로 측정합니다. GPU 전용 배치 구현과 CUDA Graph 적용 조건은 [추론 엔진 가이드](inference-engine.md#요청-배칭)를 참고합니다.
 
 GPU 측정은 동시성 `1,2,4,8`에서 같은 모델과 AIPerf 프로필을 사용합니다. Transformers는 `float16`, llama.cpp는 `n_gpu_layers=-1`로 실행합니다.

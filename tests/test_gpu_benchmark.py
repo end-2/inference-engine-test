@@ -25,6 +25,12 @@ suite_spec.loader.exec_module(suite)
 
 
 class GPUSettingsTests(unittest.TestCase):
+    def test_exclusive_benchmarks_reject_mps_before_cluster_changes(self):
+        for module in (benchmark, suite):
+            with self.subTest(module=module.__name__), patch.dict(os.environ, {"GPU_SHARING": "mps"}), \
+                    patch("sys.argv", ["benchmark", "--device", "gpu"]), patch("sys.stderr"), self.assertRaises(SystemExit):
+                module.parse_args()
+
     def test_transformers_device_defaults_and_cpu_validation(self):
         from transformer.base.engine import EngineSettings
         self.assertEqual(EngineSettings(Path("model")).dtype, "float32")

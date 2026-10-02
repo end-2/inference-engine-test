@@ -35,7 +35,10 @@ esac
 image="local/aiperf:$AIPERF_IMAGE_TAG"
 case ${DEVICE:-cpu} in
     cpu) cluster_name=${CLUSTER_NAME:-local-k8s}; cluster_script="$ROOT/scripts/local-k8s.sh" ;;
-    gpu) cluster_name=${CLUSTER_NAME:-local-k8s-gpu}; cluster_script="$ROOT/scripts/local-k8s-gpu.sh" ;;
+    gpu)
+        . "$ROOT/scripts/lib/gpu-settings.sh"
+        cluster_name=$CLUSTER_NAME; cluster_script="$ROOT/scripts/local-k8s-gpu.sh"
+        ;;
     *) die "DEVICE must be cpu or gpu" ;;
 esac
 

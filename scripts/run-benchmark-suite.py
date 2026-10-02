@@ -244,6 +244,8 @@ def parse_args():
     parser.add_argument("--skip-build", action="store_true", help="Load existing local images without rebuilding")
     parser.add_argument("--prepare-only", action="store_true", help="Prepare cluster, model and images without running measurements")
     args = parser.parse_args()
+    if args.device == "gpu" and os.environ.get("GPU_SHARING", "none") != "none":
+        parser.error("This benchmark requires GPU_SHARING=none; use docs/guides/gpu-mps.md for MPS workloads")
     if args.repetitions < 1:
         parser.error("repetitions must be positive")
     if args.backend not in {"llamacpp", "transformers", "mamba"}:

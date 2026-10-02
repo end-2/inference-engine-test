@@ -13,6 +13,10 @@ nodes:
   - role: worker
     labels:
       nvidia.com/gpu.present: "true"
+      inference-engine-test.gpu-sharing: {{ .gpuSharing | default "none" | quote }}
+      {{- if eq (.gpuSharing | default "none") "mps" }}
+      inference-engine-test.mps-replicas: {{ .mpsReplicas | default 2 | quote }}
+      {{- end }}
     extraMounts:
       - hostPath: {{ .modelsDir | quote }}
         containerPath: /models

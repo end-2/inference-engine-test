@@ -583,6 +583,8 @@ def parse_args():
     parser.add_argument("--reports-dir", type=Path,
                         help="Output root; defaults to docs/reports/<backend>")
     args = parser.parse_args()
+    if args.device == "gpu" and os.environ.get("GPU_SHARING", "none") != "none":
+        parser.error("This benchmark requires GPU_SHARING=none; use docs/guides/gpu-mps.md for MPS workloads")
     if args.backend not in {"llamacpp", "transformers", "mamba"}:
         parser.error("backend must be llamacpp, transformers or mamba")
     args.reports_dir = args.reports_dir or ROOT / "docs/reports" / ("gpu" if args.device == "gpu" else "") / args.backend
