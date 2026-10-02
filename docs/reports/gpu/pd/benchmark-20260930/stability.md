@@ -1,38 +1,40 @@
-# 측정 중단과 router 메모리 검증
+> Korean version: [한국어](stability-KR.md)
 
-[성능 보고서](summary.md)는 수정 전 코드로 전체 workload를 완료한 첫 번째 반복만 집계합니다. 40개 조건에서 두 mode별 32개씩, 총 2,560개 요청이 성공했습니다. 원래 계획한 3회 반복은 완료하지 못했습니다.
+# Measurement Interruption and Router Memory Verification
 
-## 중단 원인
+The [performance report](summary.md) aggregates only the first repetition that completed the full workload with pre-fix code. 2,560 requests succeeded across 40 conditions, 32 per mode per condition. The originally planned 3 repetitions were not completed.
 
-두 번째 반복의 disaggregated, 합성 입력 704토큰, 출력 256토큰, 동시성 1 조건에서 router가 메모리 상한 1 GiB를 초과했습니다. 실제 입력은 734토큰입니다. Kubernetes는 2026-09-30 18:55:46 UTC에 `OOMKilled`, exit code 137을 기록했습니다. 이 조건의 32개 요청 중 1개가 성공하고 31개가 연결 종료 또는 연결 거부로 실패했습니다. Prefill과 Decode worker의 재시작 횟수는 0입니다.
+## Cause of Interruption
 
-두 번째 반복 전체를 주 성능 집계에서 제외했습니다. 원본 실행의 실패 상태와 오류는 [summary.json](summary.json)에 보존하고, 완료한 반복은 [completed-summary.json](completed-summary.json)에 별도로 기록합니다. Pod 상태와 메모리 검사 수치는 [stability.json](stability.json)에 있습니다.
+On the second repetition, disaggregated, synthetic input 704 tokens, output 256 tokens, and concurrency 1, the router exceeded its 1 GiB memory limit. Actual input is 734 tokens. Kubernetes recorded `OOMKilled`, exit code 137, at 2026-09-30 18:55:46 UTC. Of 32 requests in that condition, 1 succeeded and 31 failed with connection termination or refusal. Prefill and Decode worker restart counts were 0.
 
-## 메모리 수명 수정
+The entire second repetition is excluded from the main performance aggregation. The original run failure status and errors are preserved in [summary.json](summary.json), and the completed repetition is recorded separately in [completed-summary.json](completed-summary.json). Pod status and memory inspection values are in [stability.json](stability.json).
 
-Router가 HTTPX에 `bytes` 본문을 전달하면 응답에 연결된 요청 객체에도 전체 KV 데이터가 남습니다. 요청 메타데이터의 참조가 유지되는 동안 큰 본문도 함께 유지될 수 있습니다. Router는 이제 비동기 iterator와 명시적인 `Content-Length`로 본문을 전달하며, iterator가 소진되면 전송한 데이터를 해제할 수 있습니다. Prefill→Router→Decode 경로, 상태 형식, GPU 연산과 자원 한도는 동일합니다.
+## Memory Lifetime Fix
 
-별도 HTTP 검사에서 요청당 17,120,000 bytes를 전달했습니다. 동시성 1, 2, 4, 8에서 각각 32개 요청을 실행하는 묶음을 4회 반복했습니다. 총 512개 요청의 전달 크기와 응답 완료를 검사했습니다.
+When the Router passes a `bytes` body to HTTPX, the request object tied to the response can retain the full KV data. While the request-metadata reference is held, the large body can be held with it. The Router now passes the body with an async iterator and explicit `Content-Length`, so transmitted data can be released once the iterator is exhausted. The Prefill→Router→Decode path, state format, GPU compute, and resource limits are unchanged.
 
-| Router | 요청 묶음 완료 직후 관측한 최대 RSS |
+A separate HTTP check transferred 17,120,000 bytes per request. Bundles of 32 requests each ran at concurrency 1, 2, 4, and 8, repeated 4 times. Verified transfer size and response completion for 512 total requests.
+
+| Router | Max RSS Observed Just After Request Bundle Completion |
 | --- | ---: |
-| 수정 전 | 866.1 MiB |
-| 수정 후 | 148.2 MiB |
+| Before fix | 866.1 MiB |
+| After fix | 148.2 MiB |
 
-RSS는 각 요청 묶음 직후 `/proc/<pid>/status`에서 읽은 표본입니다. GPU 추론 없이 큰 HTTP 본문의 수명을 확인한 검사이며, 실행 중 모든 순간의 메모리 최고값을 의미하지 않습니다.
+RSS is sampled from `/proc/<pid>/status` just after each request bundle. This is a check of large-HTTP-body lifetime without GPU inference, not the peak over every moment of execution.
 
-회귀 테스트는 완료된 요청 메타데이터 24개를 보관하면서 각 1 MiB 본문이 누적되는지 확인합니다. 기존 router는 실패하고 수정한 router는 통과했습니다. 실행기는 추론 Pod 재시작을 주기적으로 확인하고, 발견 시 측정을 중단하며 현재 로그와 이전 컨테이너 로그를 보존합니다.
+A regression test retains 24 completed request metadata entries and checks whether each 1 MiB body accumulates. The old router fails and the fixed router passes. The runner periodically checks for inference Pod restarts, and on detection stops measurement while preserving current and previous container logs.
 
-수정 전후 성능 자료는 코드가 다르므로 하나의 반복 통계로 합치지 않습니다.
+Pre- and post-fix performance data use different code, so they are not combined into one repetition statistic.
 
-## 수정 후 GPU 검증
+## Post-Fix GPU Verification
 
-입력 64, 704토큰과 출력 16, 256토큰의 조합, 혼합 부하를 동시성 1과 8에서 다시 실행했습니다. Mode와 조건별 요청 8개씩, 총 160개 요청이 모두 성공했고 두 mode의 payload와 실제 토큰 분포도 일치했습니다. 두 가지 대표 요청은 GPU 생성 결과와 사용량도 일치했습니다.
+Reran input 64 and 704 tokens with output 16 and 256 tokens plus mixed load at concurrency 1 and 8. 8 requests per mode per condition, 160 total requests, all succeeded, and payloads and actual token distributions matched between modes. Two representative requests also matched GPU generation results and usage.
 
-추론 Pod 재시작은 없었습니다. Disaggregated router의 cgroup `memory.peak`는 88.3 MiB였으며 메모리 상한은 1 GiB로 유지했습니다. 이 값은 앞선 CPU HTTP 검사와 측정 방식과 부하가 다릅니다. 메모리 회귀 검사와 벤치마크 집계 검사를 포함한 테스트 22개도 통과했습니다.
+There were no inference Pod restarts. The disaggregated router cgroup `memory.peak` was 88.3 MiB with the 1 GiB memory limit retained. This value uses different measurement and load than the earlier CPU HTTP check. 22 tests including memory regression checks and benchmark aggregation checks also passed.
 
-[수정 후 측정 보고서](../memory-fix-20260930/summary.md), [메모리, 이미지 및 실행 환경 검증](../memory-fix-20260930/environment-validation.json)에 상세 결과를 기록했습니다. 측정 후 기존 Deployment 설정과 Helm 값을 복구했고, `base-llamacpp` 1개가 Ready 상태이며 GPU compute mode는 `Default`입니다.
+Details are in the [post-fix measurement report](../memory-fix-20260930/summary.md) and [memory, image, and execution environment verification](../memory-fix-20260930/environment-validation.json). After measurement, restored the existing Deployment configuration and Helm values; one `base-llamacpp` is Ready and GPU compute mode is `Default`.
 
-## 동시 전송과 실패 경로 제한
+## Concurrent Transfer and Failure-Path Limits
 
-현재 Router는 KV 상태를 만드는 전송 슬롯을 2개로 제한하고, 64 KiB 청크 업로드와 실패, 취소 시 명시적 본문 해제를 적용합니다. 메모리 요청은 512 MiB, 상한은 1 GiB입니다. 최대 64 MiB 상태를 포함한 후속 HTTP 검사 768개가 모두 성공했고 cgroup 메모리 최고값은 258.5 MiB였습니다. 이 검사는 GPU 성능 재측정과 분리하며, [추가 검증 보고서](../router-memory-20261001/summary.md)에 설정과 측정 범위를 기록합니다.
+The current Router limits KV-state transfer slots to 2, with 64 KiB chunk uploads and explicit body release on failure and cancellation. Memory request is 512 MiB and limit is 1 GiB. 768 follow-up HTTP checks including up to 64 MiB states all succeeded with a cgroup memory peak of 258.5 MiB. This check is separate from GPU performance re-measurement, with configuration and measurement scope in the [follow-up verification report](../router-memory-20261001/summary.md).

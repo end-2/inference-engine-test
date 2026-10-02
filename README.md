@@ -1,68 +1,69 @@
+> Korean version: [한국어](README-KR.md)
 # Inference engine test
 
-kind에서 Transformers와 llama.cpp의 추론, 배칭과 prefix 캐시를 측정합니다. CPU가 기본값이며 NVIDIA GPU도 선택할 수 있습니다.
+Measures inference, batching, and prefix cache for Transformers and llama.cpp on kind. CPU is the default and NVIDIA GPU is optional.
 
-Benchmark, Availablity, HPA 테스트 결과는 [reports-transformers.md](docs/reports-transformers.md) 파일을 참고해주세요.
+For Benchmark, Availability, and HPA test results see [reports-transformers.md](docs/reports-transformers.md).
 
-## 준비 사항
+## Prerequisites
 
-- Docker가 실행 중인 호스트, POSIX 셸, Python 3.10 이상과 `make`
-- 도구 설치 시 `curl` 또는 `wget`, 체크섬 검증용 `sha256sum` 또는 `shasum`과 인터넷 연결
-- 모델 다운로드 시 `curl`과 인터넷 연결
-- 추론 실행 전 [CPU, 메모리, 디스크 요구사항](docs/guides/requirements.md#cpu-메모리와-디스크)에 맞는 Docker 자원 확보
+- Host with Docker running, POSIX shell, Python 3.10 or later and `make`
+- For tool installation, `curl` or `wget`, `sha256sum` or `shasum` for checksum verification, and internet access
+- For model download, `curl` and internet access
+- Before running inference, secure Docker resources matching [CPU, memory, and disk requirements](docs/guides/requirements.md#cpu-memory-and-disk)
 
-## 빠른 시작
+## Quick start
 
-저장소 루트에서 실행합니다. 모델 다운로드와 검증, 클러스터 생성, 이미지 빌드와 로드, 배포와 반복 측정을 자동 수행합니다.
+Run from the repository root. It automatically performs model download and verification, cluster creation, image build and load, deployment, and repeated measurements.
 
-### make 사용
+### Using make
 
 ```sh
 make install
 make benchmark-suite
 ```
 
-기본 실험은 세 구현마다 동시성 `1,2,4,8`을 3회 반복합니다. 결과는 `docs/reports/transformers/benchmark-suite-*/summary.md`에 저장됩니다. 측정값, 캐시 정책과 실행 시간은 [벤치마크 가이드](docs/guides/benchmark.md)을 참고하세요. `make benchmark`와 `make benchmark-suite`는 필요 시 이미지 빌드부터 kind 로드, 배포와 AIPerf 실행까지 포함해 자동 수행합니다.
+The default experiment repeats concurrency `1,2,4,8` three times for each of three implementations. Results are saved to `docs/reports/transformers/benchmark-suite-*/summary.md`. For metrics, cache policy, and runtime see the [benchmark guide](docs/guides/benchmark.md). `make benchmark` and `make benchmark-suite` automatically include image build through kind load, deployment, and AIPerf execution when needed.
 
-GPU 실행은 [GPU 벤치마크 준비와 결과](docs/guides/benchmark.md#gpu-벤치마크)를 참고합니다.
-GPU 하나를 두 Pod에서 공유하는 환경은 [MPS 클러스터 가이드](docs/guides/gpu-mps.md)를 참고합니다.
-Prefill과 Decode를 합치거나 분리하는 성능 비교는 [PD 비교 가이드](docs/guides/prefill-decode.md)를 참고합니다.
+For GPU runs see [GPU benchmark preparation and results](docs/guides/benchmark.md#gpu-benchmarks).
+For sharing one GPU between two Pods see the [MPS cluster guide](docs/guides/gpu-mps.md).
+For combined versus disaggregated Prefill and Decode performance comparison see the [PD comparison guide](docs/guides/prefill-decode.md).
 
-단일 sweep만 측정하려면 `VARIANT`로 구현을 선택합니다.
+To measure a single sweep only, select the implementation with `VARIANT`.
 
 ```sh
-make benchmark # transformers-base (기본값)
+make benchmark # transformers-base (default)
 make benchmark VARIANT=transformers-enhanced-batch
 make benchmark VARIANT=transformers-enhanced-cache
 ```
 
-llama.cpp는 [엔진 전환](docs/guides/inference-engine.md#엔진-전환) 후 `make benchmark VARIANT=base-llamacpp`로 선택하며, `enhanced-batch-llamacpp`와 `enhanced-cache-llamacpp`도 같은 방식으로 실행합니다. 보고서는 `docs/reports/llamacpp/`와 `docs/reports/transformers/`에 backend별로 저장됩니다.
+Select llama.cpp with `make benchmark VARIANT=base-llamacpp` after [switching engines](docs/guides/inference-engine.md#switching-engines), and run `enhanced-batch-llamacpp` and `enhanced-cache-llamacpp` the same way. Reports are stored per backend in `docs/reports/llamacpp/` and `docs/reports/transformers/`.
 
-### 스크립트 직접 실행
+### Running scripts directly
 
-`make` 명령은 `scripts/` 실행 파일을 감싼 형태입니다. 동일하게 직접 실행할 수 있습니다. `VARIANT`는 `make` 전용 편의 변수이며, 스크립트에서는 이미지, 빌드 타깃과 매니페스트를 직접 지정합니다.
+`make` commands wrap executables in `scripts/`. You can run them directly with the same effect. `VARIANT` is a `make`-only convenience variable, while scripts take image, build target, and manifests directly.
 
 ```sh
-./scripts/local-k8s.sh install # make install과 동일
-./scripts/local-k8s.sh up      # make up과 동일
-python3 scripts/run-benchmark-suite.py # make benchmark-suite와 동일, 기본 backend는 transformers
-python3 scripts/run-benchmark-suite.py --backend llamacpp # llama.cpp 전체 반복
+./scripts/local-k8s.sh install # same as make install
+./scripts/local-k8s.sh up      # same as make up
+python3 scripts/run-benchmark-suite.py # same as make benchmark-suite, default backend is transformers
+python3 scripts/run-benchmark-suite.py --backend llamacpp # full llamacpp repeats
 
-./scripts/run-benchmark.py # make benchmark와 동일
-./scripts/run-benchmark.py --help # 전체 옵션 확인
-# enhanced 예시
+./scripts/run-benchmark.py # same as make benchmark
+./scripts/run-benchmark.py --help # show all options
+# enhanced example
 ./scripts/run-benchmark.py --image local/transformers-enhanced-batch:0.1.0 --build-target transformers-enhanced-batch --manifests k8s/transformers-enhanced-batch
 ./scripts/run-benchmark.py --image local/transformers-enhanced-cache:0.1.0 --build-target transformers-enhanced-cache --manifests k8s/transformers-enhanced-cache --cache-policy clear-per-concurrency
 ```
 
-| 목적 | make | 스크립트 직접 실행 |
+| Purpose | make | Run script directly |
 | --- | --- | --- |
-| 도구 설치 | `make install` | `./scripts/local-k8s.sh install` |
-| 클러스터 생성/삭제 | `make up`, `make down` | `./scripts/local-k8s.sh up`, `./scripts/local-k8s.sh down` |
-| 클러스터 상태 | `make status`, `make test` | `./scripts/local-k8s.sh status`, `./scripts/local-k8s.sh test` |
-| 단일 sweep | `make benchmark` | `./scripts/run-benchmark.py` |
-| 전체 반복 | `make benchmark-suite` | `python3 scripts/run-benchmark-suite.py` |
+| Install tools | `make install` | `./scripts/local-k8s.sh install` |
+| Create/delete cluster | `make up`, `make down` | `./scripts/local-k8s.sh up`, `./scripts/local-k8s.sh down` |
+| Cluster status | `make status`, `make test` | `./scripts/local-k8s.sh status`, `./scripts/local-k8s.sh test` |
+| Single sweep | `make benchmark` | `./scripts/run-benchmark.py` |
+| Full repeats | `make benchmark-suite` | `python3 scripts/run-benchmark-suite.py` |
 
-서버만 실행하는 방법은 [추론 엔진 가이드](docs/guides/inference-engine.md), llama.cpp 배포는 같은 문서의 [llama.cpp 절](docs/guides/inference-engine.md#llamacpp)를 참고하세요. 사용 후 `make down` 또는 `./scripts/local-k8s.sh down`으로 클러스터와 노드 내부 PVC 데이터를 삭제합니다. 호스트 모델과 수집된 보고서는 유지됩니다.
+For running only the server see the [inference engine guide](docs/guides/inference-engine.md), and for llama.cpp deployment see the [llamacpp section](docs/guides/inference-engine.md#llamacpp) of the same document. After use, delete the cluster and PVC data inside nodes with `make down` or `./scripts/local-k8s.sh down`. Host models and collected reports are kept.
 
-상세 내용은 [클러스터 사용](docs/guides/local-k8s.md), [모델 관리](docs/guides/models.md), [Mamba 상태 캐시](docs/guides/mamba-cache.md), [AIPerf 설정](docs/guides/aiperf.md), [벤치마크 실행과 결과 분석](docs/guides/benchmark.md), [품질 체크](docs/guides/quality-check.md), [멀티 노드 서비스 안정성 테스트](docs/guides/availability-test.md), [CPU HPA 테스트](docs/guides/hpa-test.md), [테스트 결과](docs/reports/README.md)를 참고하세요.
+For details see [cluster usage](docs/guides/local-k8s.md), [model management](docs/guides/models.md), [Mamba state cache](docs/guides/mamba-cache.md), [AIPerf settings](docs/guides/aiperf.md), [benchmark execution and result analysis](docs/guides/benchmark.md), [quality checks](docs/guides/quality-check.md), [multi-node service stability test](docs/guides/availability-test.md), [CPU HPA test](docs/guides/hpa-test.md), and [test results](docs/reports/README.md).

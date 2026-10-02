@@ -1,28 +1,30 @@
-# 4분할 성능 비교 해석
+> Korean version: [한국어](analysis-KR.md)
 
-현재 SmolLM2-135M FP16 구성에서는 Aggregation의 평균 처리량이 40개 조건 중 39개에서 높았습니다. Disaggregation이 높았던 64/256, 동시성 2도 A 68.91 ± 0.16, D 69.05 ± 0.98 tok/s로 차이가 0.2%에 그칩니다. 이 정도 차이로 분리 구성의 성능 이득을 확인했다고 판단하기는 어렵습니다. ± 값은 3회 반복의 sample SD입니다.
+# 4-Way Split Performance Comparison Interpretation
 
-동시성 1과 2에서는 긴 출력의 처리량이 비슷하고, 동시성 4와 8에서는 차이가 커집니다. 동시성 8의 출력 256토큰 조건에서 D/A 처리량 비율은 0.756~0.760입니다. Aggregation은 worker 4개가 각각 Decode를 수행하고, Disaggregation은 Decode worker 3개를 사용한다는 차이에 부합합니다.
+In the current SmolLM2-135M FP16 configuration, Aggregation average throughput was higher in 39 of 40 conditions. Disaggregation was higher only for 64/256 at concurrency 2, with A 68.91 ± 0.16 and D 69.05 ± 0.98 tok/s — a 0.2% gap. This small gap is not sufficient to claim a performance benefit for the disaggregated setup. ± values are sample SDs across 3 repetitions.
 
-[단계별 기록](phase-diagnostics.json)에서 실제 입력 734, 출력 256토큰의 Prefill 평균은 138.6ms, Decode는 7,457.8ms입니다. 두 계산 시간 합계에서 Prefill 비중은 약 1.8%입니다. 분리하여 겹쳐 실행할 수 있는 Prefill 시간이 작아서, Decode worker 수 감소와 전송 비용을 상쇄하지 못한 것으로 해석합니다. 이 진단값은 동시성 1, 2, 4, 8과 세 반복을 합친 worker 로그 평균입니다.
+At concurrency 1 and 2, long-output throughput is similar, and the gap widens at concurrency 4 and 8. For 256-token output at concurrency 8, the D/A throughput ratio is 0.756–0.760. This matches the difference that Aggregation uses 4 workers each performing Decode while Disaggregation uses 3 Decode workers.
 
-동시성 8, 704/256의 클라이언트 평균 TTFT는 A 7.18초, D 11.39초이며 p95 요청 지연은 각각 16.54초와 23.81초입니다. 첫 출력 토큰도 Decode worker에서 선택하므로, 긴 생성 작업 앞에 쌓인 대기가 TTFT에 포함됩니다. 해당 실제 토큰 길이의 D 로그에서는 모든 동시성을 합친 평균 Decode 대기가 3,278.7ms로, Prefill 대기 20.5ms와 router 전송 슬롯 대기 38.3ms보다 큽니다. 이 평균들을 특정 동시성의 TTFT에 직접 합산하지 않습니다.
+In [phase records](phase-diagnostics.json), actual input 734 and output 256 tokens average 138.6 ms Prefill and 7,457.8 ms Decode. Prefill is about 1.8% of combined compute time. The Prefill time available for overlapped execution is small, so it did not offset fewer Decode workers and transfer cost. This diagnostic value is a worker-log average summed over concurrency 1, 2, 4, and 8 and three repetitions.
 
-긴 입력에서는 상태 전달 비용도 보입니다. 실제 입력 734토큰의 상태는 약 16.33 MiB이며 GPU에서 CPU로 내보내고 두 HTTP 구간을 거쳐 다시 GPU에 올립니다. 출력 256토큰 그룹의 export 평균은 32.0ms, import는 10.7ms입니다. 동시성 1, 704/16의 TTFT는 A 191.3ms에서 D 288.4ms로 증가했습니다. 이 차이는 전송뿐 아니라 tokenization, 직렬화와 각 서버 처리도 포함합니다. `prefill_rpc_ms`에는 일부 단계가 중복 포함되므로 단계별 시간과 더하지 않습니다.
+At concurrency 8 and 704/256, client-average TTFT is A 7.18 s and D 11.39 s, and p95 request latency is 16.54 s and 23.81 s respectively. The first output token is also selected by the Decode worker, so queueing ahead of long generations is included in TTFT. In D logs for that actual token length, average Decode wait summed over all concurrencies is 3,278.7 ms, larger than 20.5 ms Prefill wait and 38.3 ms router transfer-slot wait. Do not sum these averages directly into the TTFT of a specific concurrency.
 
-혼합 부하는 요청 수가 같아도 worker별 생성 토큰 수가 달랐습니다. 동시성 8에서 반복별 처리량은 다음과 같습니다.
+Long inputs also show state-transfer cost. Actual 734-token input state is about 16.33 MiB, exported from GPU to CPU, passed through two HTTP hops, then loaded back to GPU. The output-256-token group averages 32.0 ms export and 10.7 ms import. At concurrency 1 and 704/16, TTFT rises from A 191.3 ms to D 288.4 ms. This gap includes tokenization, serialization, and per-server handling in addition to transfer. `prefill_rpc_ms` overlaps some stages, so do not add it to per-stage times.
 
-| 반복 | A tok/s | D tok/s | D/A |
+Mixed load had different per-worker generated token counts even with equal request counts. Per-repetition throughput at concurrency 8 is as follows.
+
+| Repetition | A tok/s | D tok/s | D/A |
 | --- | ---: | ---: | ---: |
 | 1 | 101.35 | 91.16 | 0.90 |
 | 2 | 102.96 | 89.39 | 0.87 |
 | 3 | 117.26 | 87.89 | 0.75 |
-| 평균 ± SD | 107.19 ± 8.76 | 89.48 ± 1.64 | 0.83 |
+| Mean ± SD | 107.19 ± 8.76 | 89.48 ± 1.64 | 0.83 |
 
-마지막 행의 D/A는 3회 평균 처리량의 비율입니다.
+The D/A in the last row is the ratio of 3-run average throughputs.
 
-[Worker별 기록](mixed-worker-load.csv)에서 A의 각 worker는 측정 요청을 8개씩 처리했지만, 출력 256토큰 요청의 최대 개수는 1회차와 2회차에 6개, 3회차에 5개였습니다. Round-robin은 요청 수를 분산하며 생성 작업량을 균등하게 만들지는 않습니다. 32개 요청으로 이루어진 유한 부하의 분산과 마지막 요청 완료 대기가 혼합 처리량 변동에 영향을 준 것으로 해석합니다. 반복당 조건별 요청 수를 늘려야 이 변동과 꼬리 지연을 더 정밀하게 추정할 수 있습니다.
+In [per-worker records](mixed-worker-load.csv), each A worker handled 8 measured requests, but the maximum number of 256-token-output requests was 6 in runs 1 and 2 and 5 in run 3. Round-robin spreads request counts but does not equalize generation work. Finite-load spread across 32 requests and completion wait for the last request appear to affect mixed throughput variation. More requests per condition per repetition are needed to estimate this variation and tail latency more precisely.
 
-Worker별 혼합 기록은 각 배포 로그의 마지막 조건인 혼합 부하, 동시성 8을 추출했습니다. 실제 입력 80 또는 720토큰인 워밍업을 제외하고, 측정 입력 94 또는 734토큰의 요청 32개와 길이별 개수가 AIPerf 결과와 일치하는지 확인했습니다.
+Per-worker mixed records extract the last condition of each deployment log — mixed load at concurrency 8. Excluding warmup with actual input 80 or 720 tokens, verified that 32 measured requests with 94- or 734-token inputs and per-length counts match AIPerf results.
 
-이번 실행의 모든 측정 요청은 성공했고 router OOM과 Pod 재시작은 없었습니다. 따라서 관측된 차이를 실패한 요청이나 OOM 복구 시간으로 설명하지 않습니다. 결과는 단일 GPU의 MPS 4분할, 요청별 batch 1과 현재 HTTP 상태 전달 경로에 대한 비교입니다. 전체 수치와 측정 조건은 [결과 보고서](summary.md), 환경 보존 확인은 [실행 검증](validation.md)에 있습니다.
+All measured requests in this run succeeded with no router OOM or Pod restarts. Observed gaps are therefore not explained by failed requests or OOM recovery time. Results compare a single-GPU MPS 4-way split, per-request batch 1, and the current HTTP state-transfer path. Full numbers and measurement conditions are in the [results report](summary.md); environment preservation checks are in [run validation](validation.md).

@@ -1,17 +1,19 @@
-# Jamba base 및 hybrid 벤치마크
+> Korean version: [한국어](summary-KR.md)
 
-상태: `complete`. 모델: `ai21labs/Jamba-tiny-dev`. GPU: `NVIDIA GeForce RTX 2060 SUPER`. dtype: `float16`, Mamba 경로: `pytorch`.
+# Jamba Base and Hybrid Benchmark
 
-같은 모델의 기본 `generate()` 직렬 처리와 hybrid 엔진을 비교합니다. base도 요청 내부의 dynamic KV 및 Mamba cache를 사용합니다.
+Status: `complete`. Model: `ai21labs/Jamba-tiny-dev`. GPU: `NVIDIA GeForce RTX 2060 SUPER`. dtype: `float16`, Mamba path: `pytorch`.
 
-입력 [64, 256]토큰, 출력 32토큰, 동시성 [1, 2, 4, 8], 3회 반복, 반복당 2개 요청 묶음을 측정했습니다. 요청 묶음마다 동시성 수만큼 서로 다른 입력을 동시에 제출합니다.
+Compares serial processing with the base `generate()` of the same model against the hybrid engine. The base also uses dynamic KV and Mamba cache within a request.
 
-- base: 단일 작업자의 기본 generate(), 요청 간 캐시 없음.
-- batch: hybrid 버퍼와 배치 처리, 모든 prefix 캐시 비활성화.
-- cold: 측정 묶음 직전에 캐시 초기화, checkpoint 생성 비용 포함.
-- gpu, ram, disk: 각 묶음 전에 해당 계층의 checkpoint 준비, 측정에는 조회 및 승격 비용 포함.
+Measured inputs [64, 256] tokens, 32 output tokens, concurrency [1, 2, 4, 8], 3 repetitions, 2 requests per repetition bundle. Each request bundle submits as many distinct inputs concurrently as the concurrency level.
 
-| 입력 | 동시성 | 조건 | 요청 수 | 출력 tok/s | base 대비 | 평균 TTFT ms | 평균 지연 ms | p95 지연 ms | GPU 할당 peak MiB |
+- base: default generate() with a single worker, no cache between requests.
+- batch: hybrid buffer and batch processing, all prefix caches disabled.
+- cold: cache cleared just before the measurement bundle, includes checkpoint creation cost.
+- gpu, ram, disk: checkpoint for that tier prepared before each bundle, measurement includes lookup and promotion cost.
+
+| Input | Concurrency | Condition | Requests | Output tok/s | vs Base | Avg TTFT ms | Avg Latency ms | p95 Latency ms | GPU Allocated Peak MiB |
 | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | 64 | 1 | base | 6 | 33.30 | 1.00x | 105.60 | 961.11 | 980.46 | 640.5 |
 | 64 | 1 | batch | 6 | 31.93 | 0.96x | 141.20 | 1002.31 | 1027.56 | 650.3 |
@@ -62,14 +64,14 @@
 | 256 | 8 | ram | 48 | 270.53 | 9.83x | 39.86 | 946.03 | 957.72 | 657.9 |
 | 256 | 8 | disk | 48 | 265.94 | 9.67x | 68.07 | 962.37 | 987.09 | 657.9 |
 
-## 측정 조건
+## Measurement Conditions
 
-HTTP와 토크나이저 처리 시간은 제외하고 엔진의 대기열, 배치 대기, 생성 및 스트리머 비용을 포함합니다. TTFT는 첫 생성 토큰이 CPU 스트리머에 도착한 시점이며 첫 텍스트 청크 시간과 다릅니다.
+Excludes HTTP and tokenizer processing time, and includes engine queueing, batch waiting, generation, and streamer costs. TTFT is the time when the first generated token arrives at the CPU streamer, which differs from first text chunk time.
 
-모델 로딩, 워밍업, 캐시 초기화 및 warm checkpoint 준비는 측정에서 제외합니다. greedy decoding과 EOS 억제로 출력 길이를 고정합니다. 모든 측정 요청의 토큰 ID와 사용량을 같은 모델의 base 출력과 대조합니다. GPU 동기화 후 시간을 측정하며, 반복마다 조건 순서를 순환합니다.
+Excludes model loading, warmup, cache initialization, and warm checkpoint preparation from measurement. Fixes output length with greedy decoding and EOS suppression. Verifies token IDs and usage of every measured request against the base output of the same model. Measures time after GPU synchronization, and rotates condition order each repetition.
 
-평균 지표는 요청 묶음별 지표의 평균입니다. p95는 같은 조건의 모든 반복 요청을 합쳐 nearest-rank로 계산하며, 표본 수가 적으므로 서비스 부하의 p95로 해석하지 않습니다. GPU 메모리는 PyTorch allocator의 peak allocated이며 GPU 전체 사용량이 아닙니다. 표준편차와 reserved 메모리는 summary.csv에 있습니다.
+Average metrics are averages of per-bundle metrics. p95 is computed with nearest-rank over all repeated requests in the same condition; with small samples, do not interpret it as the p95 of service load. GPU memory is the PyTorch allocator peak allocated, not total GPU usage. Standard deviations and reserved memory are in summary.csv.
 
-disk 조건은 직전에 기록한 파일을 읽으므로 OS page cache의 영향을 포함합니다. 물리 디스크의 cold read 벤치마크가 아닙니다. Jamba-tiny-dev는 개발용 모델이며 대형 Jamba 배포의 처리량을 나타내지 않습니다.
+The disk condition reads files written just before, so it includes OS page cache effects. It is not a cold-read benchmark of physical disk. Jamba-tiny-dev is a development model and does not represent the throughput of a larger Jamba deployment.
 
-[실행 메타데이터와 검증](run.json), [요약 CSV](summary.csv), [묶음별 원본 지표](runs.csv). 요청별 토큰 및 타이밍은 로컬 requests.jsonl에 보관합니다.
+[Run metadata and verification](run.json), [summary CSV](summary.csv), [per-bundle raw metrics](runs.csv). Per-request tokens and timings are kept in local requests.jsonl.

@@ -1,18 +1,19 @@
-# llamacpp 테스트 결과
+> Korean version: [한국어](README-KR.md)
+# llamacpp test results
 
 ## Benchmark
 
-2026-09-20 UTC에 Qwen2.5-0.5B-Instruct Q4_K_M 모델로 측정한 llama.cpp 결과입니다.
+llama.cpp results measured on 2026-09-20 UTC with the Qwen2.5-0.5B-Instruct Q4_K_M model.
 
-기본 직렬 추론인 `base`, continuous batching을 적용한 `enhanced-batch`, RAM과 디스크 prefix KV 캐시를 사용하는 `enhanced-cache`의 처리량과 지연을 비교합니다.
+Compares throughput and latency for baseline serial inference `base`, `enhanced-batch` with continuous batching, and `enhanced-cache` using RAM and disk prefix KV cache.
 
-추론 Pod는 12 CPU와 16 GiB를 사용했습니다. 동시성 1, 2, 4, 8에서 네 조건을 각각 3회 측정했으며, 본 요청 4,800건과 워밍업 96건이 모두 성공했습니다. 출력 길이 부족이나 초과는 없었습니다. 캐시 초기화 조건은 각 동시성 전에 비우고, 보존 조건은 첫 동시성 전에만 비웠습니다.
+Inference Pods used 12 CPUs and 16 GiB. Four conditions were each measured 3 times at concurrency 1, 2, 4, 8, with all 4,800 measured requests and 96 warmup requests succeeding. There were no short or excess output lengths. The cache-clear condition cleared cache before each concurrency, and the cache-preserve condition cleared only before the first concurrency.
 
-### 측정 결과
+### Results
 
-표의 값은 3회 측정의 평균입니다.
+Table values are means of 3 measurements.
 
-| 구현 | 동시성 | 출력 처리량 (tok/s) | TTFT 평균 (ms) | ITL 평균 (ms) |
+| Implementation | Concurrency | Output throughput (tok/s) | Mean TTFT (ms) | Mean ITL (ms) |
 | --- | ---: | ---: | ---: | ---: |
 | base | 1 | 43.24 | 628.68 | 8.29 |
 | base | 2 | 43.83 | 1572.32 | 8.19 |
@@ -22,141 +23,141 @@
 | enhanced-batch | 2 | 50.15 | 854.30 | 19.28 |
 | enhanced-batch | 4 | 50.57 | 1334.28 | 48.07 |
 | enhanced-batch | 8 | 51.69 | 2525.54 | 94.60 |
-| enhanced-cache, 초기화 | 1 | 98.93 | 106.16 | 7.71 |
-| enhanced-cache, 초기화 | 2 | 98.53 | 531.55 | 7.70 |
-| enhanced-cache, 초기화 | 4 | 97.20 | 1388.29 | 7.83 |
-| enhanced-cache, 초기화 | 8 | 97.64 | 3032.04 | 7.73 |
-| enhanced-cache, 보존 | 1 | 97.48 | 107.07 | 7.83 |
-| enhanced-cache, 보존 | 2 | 128.15 | 336.58 | 7.68 |
-| enhanced-cache, 보존 | 4 | 129.34 | 969.95 | 7.57 |
-| enhanced-cache, 보존 | 8 | 130.01 | 2190.50 | 7.58 |
+| enhanced-cache, clear | 1 | 98.93 | 106.16 | 7.71 |
+| enhanced-cache, clear | 2 | 98.53 | 531.55 | 7.70 |
+| enhanced-cache, clear | 4 | 97.20 | 1388.29 | 7.83 |
+| enhanced-cache, clear | 8 | 97.64 | 3032.04 | 7.73 |
+| enhanced-cache, preserve | 1 | 97.48 | 107.07 | 7.83 |
+| enhanced-cache, preserve | 2 | 128.15 | 336.58 | 7.68 |
+| enhanced-cache, preserve | 4 | 129.34 | 969.95 | 7.57 |
+| enhanced-cache, preserve | 8 | 130.01 | 2190.50 | 7.58 |
 
-동시성 8에서 enhanced-batch는 base보다 처리량이 16.3% 높고 TTFT가 짧았지만, ITL은 8.05 ms에서 94.60 ms로 길어졌습니다. 캐시 보존은 초기화보다 동시성 2, 4, 8의 처리량이 30.1~33.2% 높았습니다. 캐시 결과는 입력 16개를 반복하는 부하에서 얻었으며, 초기화 조건도 워밍업과 본 측정 안에서는 캐시를 재사용했습니다.
+At concurrency 8, enhanced-batch had 16.3% higher throughput and shorter TTFT than base, but ITL grew from 8.05 ms to 94.60 ms. Cache preserve had 30.1-33.2% higher throughput than cache clear at concurrency 2, 4, 8. Cache results were obtained under load repeating 16 inputs, and the clear condition still reused cache within warmup and measured requests.
 
-### 처리량과 TTFT 비교
+### Throughput and TTFT comparison
 
-[상세 결과](benchmark-suite-20260920-091620-649645/summary.md)
+[Detailed results](benchmark-suite-20260920-091620-649645/summary.md)
 
-![3회 반복 처리량 및 TTFT 비교](benchmark-suite-20260920-091620-649645/figures/benchmark-comparison.png)
+![Throughput and TTFT comparison over 3 repeats](benchmark-suite-20260920-091620-649645/figures/benchmark-comparison.png)
 
-### 고유 입력 32개와 128개: cache 구현
+### 32 and 128 unique inputs: cache implementation
 
-고유 입력을 늘렸을 때의 캐시 성능을 확인하기 위해 두 Job을 각각 한 번 실행했습니다. Job마다 빈 캐시와 새 추론 Pod로 시작하고, 내부의 동시성 1, 2, 4, 8 측정에서는 캐시와 Pod를 유지했습니다.
+To check cache performance with more unique inputs, ran two Jobs once each. Each Job started with an empty cache and new inference Pods, and kept cache and Pods across concurrency 1, 2, 4, 8 inside the Job.
 
-| 고유 입력 설정 | 동시성 | 출력 처리량 (tok/s) | TTFT 평균 (ms) | ITL 평균 (ms) |
+| Unique input setting | Concurrency | Output throughput (tok/s) | Mean TTFT (ms) | Mean ITL (ms) |
 | ---: | ---: | ---: | ---: | ---: |
 | 32 | 1 | 77.47 | 235.62 | 7.93 |
 | 32 | 8 | 129.69 | 2404.92 | 7.52 |
 | 128 | 1 | 43.29 | 721.20 | 7.73 |
 | 128 | 8 | 127.22 | 2499.61 | 7.64 |
 
-본 요청 800건과 워밍업 16건은 모두 성공했습니다. 32개 설정은 출력 길이가 모두 일치했고, 128개 설정은 24건에서 목표 64토큰보다 사용량이 1~2토큰 많았습니다. 128개 설정의 본 측정은 동시성별 100건이므로 실제 사용한 고유 입력도 단계당 100개입니다. 기존 16개 실험과는 Pod 재시작 방식과 입력 길이 비율이 다릅니다.
+All 800 measured requests and 16 warmup requests succeeded. The 32-input setting matched output lengths for all requests, while the 128-input setting reported 1-2 tokens more than the 64-token target in 24 requests. Measured requests per concurrency are 100 in the 128-input setting, so actual unique inputs used per stage are also 100. Pod restart behavior and input length mix differ from the earlier 16-input experiment.
 
-[전체 동시성 결과와 출력 길이 검증](benchmark-cache-datasets-20260920-145858/summary.md)
+[Full concurrency results and output length verification](benchmark-cache-datasets-20260920-145858/summary.md)
 
-### 고유 입력 32개와 128개: 동시성별 캐시 초기화
+### 32 and 128 unique inputs: per-concurrency cache clear
 
-각 동시성을 빈 PVC와 새 추론 Pod에서 시작하는 조건으로 입력 수별 sweep을 한 번씩 측정했습니다. RAM 캐시도 초기화했으며, 입력 집합은 위의 캐시 보존 실험과 동일합니다.
+Measured one sweep per input count where each concurrency starts with an empty PVC and new inference Pods. RAM cache was also cleared, and the input set matches the cache-preserve experiment above.
 
-| 고유 입력 설정 | 동시성 | 보존 출력 tok/s | 초기화 출력 tok/s | 보존 TTFT 평균 (ms) | 초기화 TTFT 평균 (ms) |
+| Unique input setting | Concurrency | Preserve output tok/s | Clear output tok/s | Preserve mean TTFT (ms) | Clear mean TTFT (ms) |
 | ---: | ---: | ---: | ---: | ---: | ---: |
 | 32 | 8 | 129.69 | 78.90 | 2404.92 | 4215.94 |
 | 128 | 8 | 127.22 | 43.18 | 2499.61 | 8088.31 |
 
-초기화 조건의 본 요청 800건과 워밍업 16건은 모두 성공했습니다. 32개 설정은 출력 길이가 모두 일치했고, 128개 설정은 동시성별 6건씩 총 24건에서 목표 64토큰보다 사용량을 1토큰 많이 보고했습니다. 단계 사이의 캐시 보존 여부뿐 아니라 RAM 유지와 Pod 수명도 달라 PVC만의 효과로 분리하지 않았습니다.
+All 800 measured requests and 16 warmup requests in the clear condition succeeded. The 32-input setting matched output lengths for all requests, while the 128-input setting reported 1 token more usage than the 64-token target in 6 requests per concurrency, 24 total. Besides cache preservation between stages, RAM retention and Pod lifetime also differ, so this is not isolated as a PVC-only effect.
 
-[전체 동시성 비교와 초기화 검증](benchmark-cache-datasets-clear-20260920-151923/summary.md)
+[Full concurrency comparison and clear verification](benchmark-cache-datasets-clear-20260920-151923/summary.md)
 
 ## Availability
 
-engine 노드 하나를 pause하거나 SIGKILL로 종료해 요청 오류, Service endpoint 제외, 대체 Pod의 복구 시간을 확인합니다. 추론 Pod 2개를 서로 다른 engine 노드에 배치했고, Pod당 2 CPU와 2 GiB를 사용했습니다. 클라이언트 동시성은 4이며, NoExecute toleration을 300초와 60초로 나눠 조건별로 1회 측정했습니다.
+Pauses or SIGKILLs one engine node to check request errors, Service endpoint removal, and replacement Pod recovery time. Two inference Pods were placed on different engine nodes, using 2 CPUs and 2 GiB per Pod. Client concurrency is 4, with NoExecute toleration split into 300 seconds and 60 seconds, measured once per condition.
 
-### 측정 결과
+### Results
 
-시간은 장애 주입부터의 경과 시간입니다. 요청 수와 오류율은 각 실험의 고정 관찰 구간 기준입니다.
+Times are elapsed from fault injection. Request counts and error rates use each experiment fixed observation interval.
 
-| 장애 | Toleration | Ready endpoint 감소 | 대체 Pod Ready | 성공 요청 | 오류 요청 | 오류율 |
+| Failure | Toleration | Ready endpoint decrease | Replacement Pod Ready | Successful requests | Error requests | Error rate |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| pause | 300초 | 45.1초 | 349.8초 | 196 | 7 | 3.45% |
-| SIGKILL | 300초 | 50.2초 | 354.5초 | 206 | 11 | 5.07% |
-| pause | 60초 | 54.0초 | 118.8초 | 155 | 7 | 4.32% |
-| SIGKILL | 60초 | 43.9초 | 108.9초 | 140 | 16 | 10.26% |
+| pause | 300s | 45.1s | 349.8s | 196 | 7 | 3.45% |
+| SIGKILL | 300s | 50.2s | 354.5s | 206 | 11 | 5.07% |
+| pause | 60s | 54.0s | 118.8s | 155 | 7 | 4.32% |
+| SIGKILL | 60s | 43.9s | 108.9s | 140 | 16 | 10.26% |
 
-60초 toleration 조건에서 대체 Pod 준비까지 걸린 시간은 약 109~119초였고, 300초 조건에서는 약 350~355초였습니다. 네 실험 모두 장애 노드 복구 전에 생존 노드에서 replica 2개를 확보했으며, 대체 Pod Ready 이후 관찰 종료까지 요청 오류는 없었습니다. 노드 복귀 후 관찰 기간에는 Pod의 자동 재분산이 나타나지 않았습니다. 실험별 관찰 구간 길이가 달라 전체 오류율만으로 복구 성능을 비교하지 않습니다.
+With 60-second toleration, replacement Pod readiness took about 109-119 seconds, and with the 300-second condition about 350-355 seconds. All four experiments secured 2 replicas on surviving nodes before failed node recovery, with no request errors after replacement Pod readiness until observation end. No automatic Pod redistribution appeared during the post-return observation period. Observation interval length differs per experiment, so do not compare recovery performance by total error rate alone.
 
-### pause, toleration 300초
+### pause, toleration 300s
 
-[상세 결과](availability-20260920-045929/summary.md)
+[Detailed results](availability-20260920-045929/summary.md)
 
-![AIPerf 요청 지연, TTFT, 오류 시점과 EndpointSlice, CPU](availability-20260920-045929/figures/observed-timeline.png)
+![AIPerf request latency, TTFT, error times and EndpointSlice, CPU](availability-20260920-045929/figures/observed-timeline.png)
 
-### SIGKILL, toleration 300초
+### SIGKILL, toleration 300s
 
-[상세 결과](availability-sigkill-20260920-053546/summary.md)
+[Detailed results](availability-sigkill-20260920-053546/summary.md)
 
-![AIPerf 요청 지연, TTFT, 오류 시점과 EndpointSlice, CPU](availability-sigkill-20260920-053546/figures/observed-timeline.png)
+![AIPerf request latency, TTFT, error times and EndpointSlice, CPU](availability-sigkill-20260920-053546/figures/observed-timeline.png)
 
-### pause, toleration 60초
+### pause, toleration 60s
 
-[상세 결과](availability-pause-60s-20260920-061021/summary.md)
+[Detailed results](availability-pause-60s-20260920-061021/summary.md)
 
-![AIPerf 요청 지연, TTFT, 오류 시점과 EndpointSlice, CPU](availability-pause-60s-20260920-061021/figures/observed-timeline.png)
+![AIPerf request latency, TTFT, error times and EndpointSlice, CPU](availability-pause-60s-20260920-061021/figures/observed-timeline.png)
 
-### SIGKILL, toleration 60초
+### SIGKILL, toleration 60s
 
-[상세 결과](availability-sigkill-60s-20260920-061946/summary.md)
+[Detailed results](availability-sigkill-60s-20260920-061946/summary.md)
 
-![AIPerf 요청 지연, TTFT, 오류 시점과 EndpointSlice, CPU](availability-sigkill-60s-20260920-061946/figures/observed-timeline.png)
+![AIPerf request latency, TTFT, error times and EndpointSlice, CPU](availability-sigkill-60s-20260920-061946/figures/observed-timeline.png)
 
 ## HPA
 
-CPU request 대비 평균 사용률 50%를 목표로 replica가 부하에 따라 증가하고 축소되는지 확인합니다. 추론 Pod당 2 CPU와 2 GiB를 사용했으며, replica 범위는 1~4개였습니다. 고부하는 동시성 8, 저부하는 동시성 1과 0.02 req/s로 측정했습니다.
+Verifies that replicas scale up and down with load toward 50% mean utilization relative to CPU request. Inference Pods used 2 CPUs and 2 GiB each, with replica range 1-4. High load was measured at concurrency 8, low load at concurrency 1 and 0.02 req/s.
 
-### 측정 결과
+### Results
 
-각 시나리오는 1회 실행했습니다. 증가 시간은 고부하 시작 요청부터, 축소 시간은 저부하 전환 요청부터 HPA, Deployment, Pod, endpoint 상태가 목표 수로 일치할 때까지입니다.
+Each scenario ran once. Scale-up time runs from the high-load start request, scale-down time from the low-load switch request, until HPA, Deployment, Pod, and endpoint state match the target count.
 
-| 시나리오 | Replica 변화 | 증가 확인 | 축소 확인 | 유지 확인 |
+| Scenario | Replica change | Scale-up confirmed | Scale-down confirmed | Sustain confirmed |
 | --- | --- | ---: | ---: | --- |
-| 스케일 아웃 | 1→4 | 139.4초 | 측정하지 않음 | 4개 상태 약 62초 |
-| 스케일 아웃→인 | 1→4→1 | 134.5초 | 328.9초 | 4개 상태 60초 이상, 1개 상태 65.1초 |
+| Scale out | 1→4 | 139.4s | Not measured | About 62s at 4 |
+| Scale out to in | 1→4→1 | 134.5s | 328.9s | 60s or more at 4, 65.1s at 1 |
 
-| 시나리오와 부하 | 성공 요청 | 오류 요청 | 오류율 | 성공 요청 TTFT p95 | 성공 요청 지연 p95 |
+| Scenario and load | Successful requests | Error requests | Error rate | Successful request TTFT p95 | Successful request latency p95 |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 스케일 아웃, 고부하 | 84 | 17 | 16.83% | 26.51초 | 27.53초 |
-| 스케일 아웃→인, 고부하 | 88 | 7 | 7.37% | 27.15초 | 28.40초 |
-| 스케일 아웃→인, 저부하 | 7 | 0 | 0.00% | 8.86초 | 10.51초 |
+| Scale out, high load | 84 | 17 | 16.83% | 26.51s | 27.53s |
+| Scale out to in, high load | 88 | 7 | 7.37% | 27.15s | 28.40s |
+| Scale out to in, low load | 7 | 0 | 0.00% | 8.86s | 10.51s |
 
-두 시나리오 모두 replica 증가와 새 Pod의 Service 편입을 확인했습니다. 스케일 아웃→인에서는 replica 1개로 축소한 뒤 유지 구간 안에서 새로 시작하고 완료된 요청 1건도 성공했습니다. 고부하에서는 오류가 발생했으며, 고부하와 저부하의 지연 차이는 요청량이 다른 조건의 결과입니다.
+Both scenarios confirmed replica growth and new Pod admission to the Service. In scale out to in, after scaling down to 1 replica, one request started and completed inside the sustain interval also succeeded. Errors occurred under high load, and latency differences between high and low load reflect different request volumes.
 
-### 스케일 아웃 (1→4)
+### Scale out (1→4)
 
-[상세 결과](hpa-20260920-073006-837104/summary.md)
+[Detailed results](hpa-20260920-073006-837104/summary.md)
 
-![Grafana: CPU request 대비 평균 사용률과 목표 50%](hpa-20260920-073006-837104/figures/grafana-cpu.png)
+![Grafana: mean CPU utilization relative to request and 50% target](hpa-20260920-073006-837104/figures/grafana-cpu.png)
 
-![Grafana: HPA desired/current와 가용 Pod의 1→4 증가](hpa-20260920-073006-837104/figures/grafana-replicas.png)
+![Grafana: HPA desired/current and 1→4 available Pod increase](hpa-20260920-073006-837104/figures/grafana-replicas.png)
 
-![Grafana: 추론 Service의 ready endpoint 수](hpa-20260920-073006-837104/figures/grafana-endpoints.png)
+![Grafana: inference Service ready endpoint count](hpa-20260920-073006-837104/figures/grafana-endpoints.png)
 
-![Grafana: Pod별 처리 중 요청 수](hpa-20260920-073006-837104/figures/grafana-in-flight.png)
+![Grafana: in-flight requests per Pod](hpa-20260920-073006-837104/figures/grafana-in-flight.png)
 
-![Grafana: 서버 outcome별 완료 요청 처리량](hpa-20260920-073006-837104/figures/grafana-requests.png)
+![Grafana: completed request throughput by server outcome](hpa-20260920-073006-837104/figures/grafana-requests.png)
 
-![Grafana: 서버 TTFT p95](hpa-20260920-073006-837104/figures/grafana-ttft.png)
+![Grafana: server TTFT p95](hpa-20260920-073006-837104/figures/grafana-ttft.png)
 
-### 스케일 아웃→인 (1→4→1)
+### Scale out to in (1→4→1)
 
-[상세 결과](hpa-20260920-081357-206946/summary.md)
+[Detailed results](hpa-20260920-081357-206946/summary.md)
 
-![Grafana: 고부하, 저부하의 CPU 사용률과 목표](hpa-20260920-081357-206946/figures/grafana-cpu.png)
+![Grafana: CPU utilization and target under high and low load](hpa-20260920-081357-206946/figures/grafana-cpu.png)
 
-![Grafana: HPA replica와 가용 Pod의 증가와 축소](hpa-20260920-081357-206946/figures/grafana-replicas.png)
+![Grafana: HPA replica and available Pod scale-up and scale-down](hpa-20260920-081357-206946/figures/grafana-replicas.png)
 
-![Grafana: Service ready endpoint 증가와 축소](hpa-20260920-081357-206946/figures/grafana-endpoints.png)
+![Grafana: Service ready endpoint scale-up and scale-down](hpa-20260920-081357-206946/figures/grafana-endpoints.png)
 
-![Grafana: Pod별 처리 중 요청](hpa-20260920-081357-206946/figures/grafana-in-flight.png)
+![Grafana: in-flight requests per Pod](hpa-20260920-081357-206946/figures/grafana-in-flight.png)
 
-![Grafana: 서버 outcome별 완료 요청 처리량](hpa-20260920-081357-206946/figures/grafana-requests.png)
+![Grafana: completed request throughput by server outcome](hpa-20260920-081357-206946/figures/grafana-requests.png)
 
-![Grafana: 서버 TTFT p95](hpa-20260920-081357-206946/figures/grafana-ttft.png)
+![Grafana: server TTFT p95](hpa-20260920-081357-206946/figures/grafana-ttft.png)

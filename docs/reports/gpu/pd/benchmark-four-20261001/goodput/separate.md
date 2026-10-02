@@ -1,25 +1,27 @@
-# TTFT와 ITL(TPOT)를 각각 적용한 goodput
+> Korean version: [한국어](separate-KR.md)
 
-TTFT만 제한하면 Aggregation(A)의 우세가 뚜렷합니다. ITL(TPOT)만 30ms로 제한하면 출력 256토큰 부하에서 Disaggregation(D)의 평균 goodput이 높습니다. 첫 응답 대기와 생성 중 평균 토큰 간격이 서로 다른 결과를 보이므로 각각의 충족률과 goodput을 분리해서 판단해야 합니다.
+# Goodput with TTFT and ITL (TPOT) Applied Separately
 
-vLLM runtime에서 결과가 달라질 수 있는 조건은 [vLLM 소스 분석](../vllm-source-analysis.md)을 참고합니다.
+When only TTFT is constrained, Aggregation (A) dominates clearly. When only ITL (TPOT) is constrained to 30 ms, Disaggregation (D) average goodput is higher on 256-token-output loads. First-response wait and average inter-token interval during generation show different results, so attainment and goodput for each must be judged separately.
 
-기존 2026-10-01 벤치마크의 측정 요청 7,680개를 재계산했습니다. A는 Aggregation worker 4개, D는 Prefill 1개와 Decode 3개이며, 모델과 MPS 환경은 [원본 보고서](../summary.md)와 같습니다. GPU 벤치마크를 새로 실행하지 않았습니다.
+For conditions where vLLM runtime results could differ, see the [vLLM source analysis](../vllm-source-analysis.md).
 
-## 계산 방법
+Recalculated 7,680 measured requests from the existing 2026-10-01 benchmark. A is 4 Aggregation workers, D is 1 Prefill plus 3 Decode workers, with the same model and MPS environment as the [original report](../summary.md). No new GPU benchmark was run.
 
-- TTFT goodput: `TTFT <= 임계값`인 요청 수 / 해당 실행의 전체 관측 시간. TPOT 제한은 적용하지 않습니다.
-- ITL(TPOT) goodput: `요청별 평균 TPOT <= 임계값`인 요청 수 / 같은 전체 관측 시간. TTFT 제한은 적용하지 않습니다.
-- TPOT만 평가해도 분모에서 TTFT나 대기 시간을 빼지 않습니다. SLO를 만족한 요청이 전체 서비스 시간 동안 얼마나 처리됐는지를 비교합니다.
-- Raw data의 AIPerf `inter_token_latency`는 `(요청 지연 - TTFT) / (출력 토큰 수 - 1)`과 일치합니다. 이 보고서의 ITL(TPOT)는 요청별 평균값이며, 개별 토큰 간격의 최대값이나 p99 기준이 아닙니다.
+## Calculation Method
 
-TTFT는 100, 250, 500, 1,000, 2,000, 5,000, 10,000, 20,000ms, TPOT는 25, 30, 35, 50ms를 사용했습니다. 세 반복의 goodput을 산술 평균하고, 충족률은 조건별 mode당 96개 요청을 합쳐 계산했습니다. 워밍업은 제외했습니다. 입력 길이 표기는 합성 입력 설정이며 실제 입력은 64→94, 256→286, 704→734토큰입니다.
+- TTFT goodput: requests with `TTFT <= threshold` / total observation time of that run. No TPOT limit applied.
+- ITL (TPOT) goodput: requests with `per-request average TPOT <= threshold` / same total observation time. No TTFT limit applied.
+- Even for TPOT-only evaluation, TTFT and wait time are not subtracted from the denominator. Compares how many SLO-satisfying requests were processed during total service time.
+- Raw AIPerf `inter_token_latency` matches `(request latency - TTFT) / (output tokens - 1)`. ITL (TPOT) in this report is a per-request average, not a maximum or p99 per-token-interval criterion.
 
-## TTFT만 1초로 제한
+Used TTFT 100, 250, 500, 1,000, 2,000, 5,000, 10,000, 20,000 ms and TPOT 25, 30, 35, 50 ms. Averaged goodput arithmetically across three repetitions, and computed attainment over 96 combined requests per condition per mode. Excluded warmup. Input length labels are synthetic input settings; actual inputs are 64→94, 256→286, 704→734 tokens.
 
-다음 표는 동시성 8이며 TPOT 제한이 없습니다. D 변화는 A 대비 goodput 변화율입니다.
+## TTFT Limited to 1 Second Only
 
-| 입력/출력 | A req/s | D req/s | A 충족률 | D 충족률 | D 변화 |
+The table below is concurrency 8 with no TPOT limit. D change is goodput change vs A.
+
+| Input/Output | A req/s | D req/s | A Attainment | D Attainment | D Change |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | 64/16 | 7.745 | 4.526 | 100.0% | 76.0% | -41.57% |
 | 64/64 | 0.253 | 0.144 | 12.5% | 9.4% | -43.16% |
@@ -30,17 +32,17 @@ TTFT는 100, 250, 500, 1,000, 2,000, 5,000, 10,000, 20,000ms, TPOT는 25, 30, 35
 | 704/16 | 6.074 | 3.420 | 96.9% | 65.6% | -43.70% |
 | 704/64 | 0.236 | 0.138 | 12.5% | 9.4% | -41.68% |
 | 704/256 | 0.062 | 0.035 | 12.5% | 9.4% | -43.14% |
-| 혼합 | 0.311 | 0.191 | 43.8% | 32.3% | -38.45% |
+| mixed | 0.311 | 0.191 | 43.8% | 32.3% | -38.45% |
 
-TTFT 1초에서는 모든 부하에서 A의 goodput이 높습니다. 다만 긴 출력 부하는 A도 충족률이 낮습니다. 704/256에서 A 12.5%, D 9.4%가 통과하므로, A가 상대적으로 높다는 사실과 해당 동시성의 SLO 충족 여부는 구분해야 합니다.
+At 1-second TTFT, A goodput is higher on all loads. Long-output loads have low attainment even for A, however. For 704/256, A 12.5% and D 9.4% pass, so the fact that A is relatively higher must be distinguished from whether the SLO is satisfied at that concurrency.
 
-TTFT를 10초로 완화하면 같은 704/256에서 A는 0.496 req/s와 충족률 100%, D는 0.165 req/s와 충족률 43.8%입니다. D에서는 생성 시작 전 대기의 영향이 크게 남습니다. 기존 구현의 대기와 전달 경로 분석은 [성능 분석](../analysis.md)을 참고합니다.
+Relaxing TTFT to 10 seconds gives A 0.496 req/s at 100% and D 0.165 req/s at 43.8% attainment for the same 704/256. Pre-generation wait remains dominant for D. For wait and transfer-path analysis of the existing implementation, see [performance analysis](../analysis.md).
 
-## ITL(TPOT)만 30ms로 제한
+## ITL (TPOT) Limited to 30 ms Only
 
-다음 표도 동시성 8이며 TTFT 제한이 없습니다.
+The table below is also concurrency 8 with no TTFT limit.
 
-| 입력/출력 | A req/s | D req/s | A 충족률 | D 충족률 | D 변화 |
+| Input/Output | A req/s | D req/s | A Attainment | D Attainment | D Change |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | 64/16 | 7.103 | 5.101 | 91.7% | 85.4% | -28.18% |
 | 64/64 | 1.605 | 1.411 | 79.2% | 91.7% | -12.08% |
@@ -51,60 +53,60 @@ TTFT를 10초로 완화하면 같은 704/256에서 A는 0.496 req/s와 충족률
 | 704/16 | 5.812 | 2.815 | 92.7% | 54.2% | -51.58% |
 | 704/64 | 1.182 | 1.013 | 62.5% | 68.8% | -14.28% |
 | 704/256 | 0.223 | 0.276 | 44.8% | 72.9% | +23.83% |
-| 혼합 | 0.486 | 0.486 | 68.8% | 82.3% | +0.04% |
+| mixed | 0.486 | 0.486 | 68.8% | 82.3% | +0.04% |
 
-출력 256토큰에서는 D가 23.8~61.6% 높습니다. D의 TPOT 30ms 충족 비중이 높아서 전체 완료 처리량이 낮은 차이를 상쇄합니다. 출력 64토큰에서는 D의 충족률이 더 높아도 goodput은 A보다 낮습니다. 충족률만으로 전체 시간당 처리 성능을 판단할 수 없는 예입니다.
+For 256-token output, D is 23.8–61.6% higher. D's larger share under 30 ms TPOT offsets its lower overall completion throughput. For 64-token output, D attainment is higher but goodput is still lower than A. An example where attainment alone cannot judge per-time processing performance.
 
-혼합 부하는 A 0.48616 ± 0.04611, D 0.48636 ± 0.11087 req/s로 사실상 비슷합니다. 0.04% 차이는 반복 간 변동보다 훨씬 작습니다. ±는 세 반복의 sample SD입니다. 같은 조건에서 통과 요청의 출력 토큰 수를 합친 token goodput은 A 60.54, D 72.69 tok/s입니다. 혼합 출력 길이에서는 요청 수 기준과 토큰 수 기준의 결과가 다를 수 있습니다.
+Mixed load is effectively tied at A 0.48616 ± 0.04611 and D 0.48636 ± 0.11087 req/s. The 0.04% gap is far smaller than run-to-run variation. ± is sample SD across three repetitions. Token goodput summing output tokens of passing requests in the same condition is A 60.54 and D 72.69 tok/s. With mixed output lengths, request-count and token-count results can differ.
 
-TPOT 제한을 35ms 또는 50ms로 완화하면 동시성 8의 모든 부하에서 A의 goodput이 높습니다. 25ms에서는 출력 64/256토큰의 여섯 고정 길이 부하가 양쪽 모두 0입니다. 64/16에서는 D가 14.9% 높지만 충족률은 A 8.3%, D 12.5%에 그칩니다.
+Relaxing the TPOT limit to 35 ms or 50 ms makes A goodput higher on all loads at concurrency 8. At 25 ms, the six fixed-length 64/256-token loads are 0 for both sides. For 64/16, D is 14.9% higher but attainment is only A 8.3% and D 12.5%.
 
-![TTFT와 TPOT 독립 goodput](goodput-separated.png)
+![Independent TTFT and TPOT goodput](goodput-separated.png)
 
-## 두 조건을 함께 적용하면
+## When Both Conditions Are Applied
 
-입력/출력 704/256, 동시성 8에서 기준을 분리한 결과와 교집합을 비교하면 다음과 같습니다.
+For input/output 704/256 at concurrency 8, separate criteria and their intersection compare as follows.
 
-| 적용 기준 | A req/s | D req/s | A 충족률 | D 충족률 |
+| Applied Criterion | A req/s | D req/s | A Attainment | D Attainment |
 | --- | ---: | ---: | ---: | ---: |
-| TTFT <= 10초만 | 0.496 | 0.165 | 100.0% | 43.8% |
-| TPOT <= 30ms만 | 0.223 | 0.276 | 44.8% | 72.9% |
-| TTFT <= 10초 AND TPOT <= 30ms | 0.223 | 0.137 | 44.8% | 36.5% |
+| TTFT <= 10s only | 0.496 | 0.165 | 100.0% | 43.8% |
+| TPOT <= 30ms only | 0.223 | 0.276 | 44.8% | 72.9% |
+| TTFT <= 10s AND TPOT <= 30ms | 0.223 | 0.137 | 44.8% | 36.5% |
 
-A에서는 TTFT를 96개 모두 통과하고 TPOT를 통과한 43개가 최종 통과합니다. D에서는 TTFT 42개, TPOT 70개가 각각 통과하지만 둘을 모두 만족하는 요청은 35개입니다. 따라서 D의 평균 TPOT 기준 이점이 두 SLO를 함께 만족하는 goodput 우세로 이어지지는 않습니다. 전체 교집합 결과는 [기존 분석](summary.md)에 있습니다.
+For A, all 96 pass TTFT and the 43 passing TPOT are the final passes. For D, 42 pass TTFT and 70 pass TPOT, but only 35 satisfy both. D's average-TPOT advantage therefore does not carry over to goodput with both SLOs satisfied. Full intersection results are in the [existing analysis](summary.md).
 
-## 95% 충족 기준으로 동시성 선택
+## Concurrency Selection at 95% Attainment
 
-각 지표를 독립적으로 적용하고, 각 반복에서 최소 95%가 통과하는 동시성 1, 2, 4, 8 중 가장 높은 평균 goodput을 선택했습니다. 반복당 32개이므로 각 반복에서 최소 31개가 통과해야 합니다.
+Applied each metric independently and, in each repetition, selected the concurrency 1, 2, 4, or 8 with the highest average goodput among those passing at least 95%. With 32 requests per repetition, at least 31 must pass in each repetition.
 
-| 적용 기준 | 입력/출력 | A 동시성 | A req/s | D 동시성 | D req/s |
+| Applied Criterion | Input/Output | A Concurrency | A req/s | D Concurrency | D req/s |
 | --- | --- | ---: | ---: | ---: | ---: |
-| TTFT <= 1초만 | 704/16 | 4 | 6.137 | 4 | 4.808 |
-| TTFT <= 1초만 | 704/256 | 4 | 0.495 | 2 | 0.261 |
-| TTFT <= 1초만 | 혼합 | 2 | 0.447 | 1 | 0.224 |
-| TPOT <= 30ms만 | 704/16 | 2 | 3.423 | 2 | 2.904 |
-| TPOT <= 30ms만 | 704/256 | 2 | 0.264 | 1 | 0.131 |
-| TPOT <= 30ms만 | 혼합 | 2 | 0.447 | 2 | 0.383 |
+| TTFT <= 1s only | 704/16 | 4 | 6.137 | 4 | 4.808 |
+| TTFT <= 1s only | 704/256 | 4 | 0.495 | 2 | 0.261 |
+| TTFT <= 1s only | mixed | 2 | 0.447 | 1 | 0.224 |
+| TPOT <= 30ms only | 704/16 | 2 | 3.423 | 2 | 2.904 |
+| TPOT <= 30ms only | 704/256 | 2 | 0.264 | 1 | 0.131 |
+| TPOT <= 30ms only | mixed | 2 | 0.447 | 2 | 0.383 |
 
-TPOT 30ms에서 D의 긴 출력 goodput이 높았던 동시성 8은 충족률 72.9~86.5%이므로 이 표의 후보에서 제외됩니다. 64/256과 256/256의 D는 측정한 네 동시성 중 각 반복에서 TPOT 30ms를 95% 이상 만족한 후보가 없습니다. 이 선택은 현재 표본과 측정한 동시성에 대한 결과이며 장기 SLA나 최대 지속 가능 QPS를 보장하지 않습니다.
+Concurrency 8, where D long-output goodput was higher at TPOT 30 ms, has 72.9–86.5% attainment and is therefore excluded from this table. For 64/256 and 256/256, D has no candidate satisfying 95% TPOT 30 ms in every repetition among the four measured concurrencies. This selection is a result for the current samples and measured concurrencies; it does not guarantee a long-term SLA or maximum sustainable QPS.
 
-## 산출물과 재현
+## Artifacts and Reproduction
 
-| 내용 | TTFT만 적용 | TPOT만 적용 |
+| Content | TTFT Only | TPOT Only |
 | --- | --- | --- |
-| 반복별 결과 | [1,920행](ttft-run-results.csv) | [960행](tpot-run-results.csv) |
-| Mode별 집계 | [640행](ttft-summary.csv) | [320행](tpot-summary.csv) |
-| 같은 동시성 A/D 비교 | [320행](ttft-comparison.csv) | [160행](tpot-comparison.csv) |
-| 반복별 95% 통과 후보 중 최고 goodput | [160행](ttft-best-feasible.csv) | [80행](tpot-best-feasible.csv) |
+| Per-repetition results | [1,920 rows](ttft-run-results.csv) | [960 rows](tpot-run-results.csv) |
+| Per-mode aggregation | [640 rows](ttft-summary.csv) | [320 rows](tpot-summary.csv) |
+| Same-concurrency A/D comparison | [320 rows](ttft-comparison.csv) | [160 rows](tpot-comparison.csv) |
+| Best goodput among 95% per-repetition passes | [160 rows](ttft-best-feasible.csv) | [80 rows](tpot-best-feasible.csv) |
 
-CSV의 비활성 SLO 임계값은 빈 칸이며 해당 지표의 pass count는 전체 요청 수와 같습니다. 빈 임계값은 0ms 제한을 의미하지 않습니다. 정의와 검증 정보는 [metadata.json](metadata.json)에 있습니다.
+Inactive SLO thresholds in CSVs are blank; the pass count for that metric equals total requests. A blank threshold does not mean a 0 ms limit. Definitions and verification info are in [metadata.json](metadata.json).
 
-기존 교집합 CSV와 원본 SHA-256 목록은 변경되지 않았습니다. 모든 교집합 결과의 TTFT, TPOT 통과 수가 독립 계산과 일치하고, 두 독립 goodput 이상으로 교집합 goodput이 커지지 않는지 확인했습니다. 원본 722개 파일의 해시 검증과 관련 테스트 36개가 통과했습니다.
+Existing intersection CSVs and the original SHA-256 list are unchanged. Verified that TTFT and TPOT pass counts of all intersection results match independent calculations, and that intersection goodput never exceeds either independent goodput. Hash verification of 722 original files and 36 related tests passed.
 
-저장소 루트에서 Python, matplotlib과 기존 raw data를 사용합니다. 기본 임계값 결과를 재생성하는 명령은 다음과 같습니다.
+Uses Python, matplotlib, and existing raw data from the repository root. Command to regenerate default-threshold results:
 
 ```sh
 python3 scripts/report-pd-goodput.py docs/reports/gpu/pd/benchmark-four-20261001
 ```
 
-이 명령은 기존 교집합 파일과 함께 `ttft-*.csv`, `tpot-*.csv`, `goodput-separated.png`를 생성합니다. 다른 임계값과 별도 출력 경로 사용법은 [재현 안내](summary.md#측정-해석과-재현)에 있습니다.
+This command generates `ttft-*.csv`, `tpot-*.csv`, and `goodput-separated.png` alongside existing intersection files. For other thresholds and separate output paths, see [reproduction guide](summary.md#measurement-interpretation-and-reproduction).

@@ -1,22 +1,24 @@
-# 고유 입력 32개와 128개의 캐시 성능
+> Korean version: [한국어](summary-KR.md)
 
-enhanced-cache에서 고유 입력 수만 32개와 128개로 바꾼 AIPerf Job을 각각 한 번 실행했습니다. 각 Job은 동시성 1, 2, 4, 8을 순서대로 측정했으며, 본 요청 800건과 워밍업 16건이 모두 성공했습니다. 출력 길이 부족은 없었지만, 128개 설정에서 목표 64토큰보다 사용량이 1~2토큰 많은 요청이 24건 있었습니다.
+# Cache performance with 32 and 128 unique inputs
 
-## 측정 조건
+Ran one AIPerf Job each on enhanced-cache with only the unique input count changed to 32 and 128. Each Job measured concurrency 1, 2, 4, 8 in order; all 800 measured and 16 warmup requests succeeded. There were no short outputs, but 24 requests in the 128-input configuration used 1–2 tokens more than the 64-token target.
 
-- 실행일: 2026-09-20 UTC (한국 시간 2026-09-21). [시각과 이미지 ID](run.json).
-- 추론 이미지 `local/llama-enhanced-cache:0.1.0`, 모델 Qwen2.5-0.5B-Instruct Q4_K_M.
-- 추론 Pod 1개, 12 CPU, 16 GiB. AIPerf Pod는 1 CPU, 1 GiB. 두 측정 Pod 모두 Guaranteed QoS입니다.
-- 입력/출력 목표는 64/32토큰과 256/64토큰, 설정 비율은 각 50%, seed 42, 순차 입력입니다.
-- 동시성별 워밍업 2건과 본 요청 100건, `ignore_eos=true`, 스트리밍. 같은 Job 안에서는 같은 입력 집합을 재사용합니다.
-- 각 Job 전에 추론 Pod를 새로 시작하고 독립된 빈 캐시 경로를 사용했습니다. RAM 64 MiB, 디스크 1,024 MiB, 최소 prefix 32토큰입니다. 동시성 단계 사이에는 Pod와 RAM 및 디스크 캐시를 유지했습니다.
-- 별도 클라이언트 부하는 생성하지 않았으며, 기존 모니터링 서비스는 실행 상태였습니다.
+## Measurement conditions
 
-## 측정 결과
+- Run date: 2026-09-20 UTC (2026-09-21 Korea time). [Timestamps and image IDs](run.json).
+- Inference image `local/llama-enhanced-cache:0.1.0`, model Qwen2.5-0.5B-Instruct Q4_K_M.
+- 1 inference Pod with 12 CPU and 16 GiB. AIPerf Pod with 1 CPU and 1 GiB. Both measurement Pods use Guaranteed QoS.
+- Input/output targets are 64/32 and 256/64 tokens, 50% each, seed 42, sequential inputs.
+- 2 warmup and 100 measured requests per concurrency, `ignore_eos=true`, streaming. The same input set is reused within the same Job.
+- Before each Job the inference Pod was restarted fresh with an independent empty cache path. RAM 64 MiB, disk 1,024 MiB, minimum prefix 32 tokens. The Pod and RAM/disk caches were retained between concurrency steps.
+- No separate client load was generated; existing monitoring services were running.
 
-각 행은 한 번의 측정값입니다. TTFT와 ITL은 평균 및 p95를 함께 표시했습니다.
+## Measurement results
 
-| 고유 입력 설정 | 동시성 | 성공 요청 | 출력 tok/s | TTFT 평균 (ms) | TTFT p95 (ms) | ITL 평균 (ms) | ITL p95 (ms) | 요청 지연 평균 (ms) |
+Each row is a single measurement. TTFT and ITL show mean and p95 together.
+
+| Unique input setting | Concurrency | Successful requests | Output tok/s | TTFT mean (ms) | TTFT p95 (ms) | ITL mean (ms) | ITL p95 (ms) | Mean request latency (ms) |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | 32 | 1 | 100 | 77.47 | 235.62 | 1097.43 | 7.93 | 9.56 | 589.69 |
 | 32 | 2 | 100 | 124.14 | 380.01 | 577.37 | 7.90 | 9.52 | 733.90 |
@@ -27,37 +29,37 @@ enhanced-cache에서 고유 입력 수만 32개와 128개로 바꾼 AIPerf Job�
 | 128 | 4 | 100 | 126.34 | 1105.90 | 1587.18 | 7.65 | 8.96 | 1459.36 |
 | 128 | 8 | 100 | 127.22 | 2499.61 | 3071.33 | 7.64 | 8.91 | 2851.77 |
 
-## 실제 입력 구성
+## Actual input composition
 
-생성한 데이터셋은 각각 서로 다른 입력 32개와 128개였습니다. 본 측정은 단계당 100건이므로, 128개 설정에서는 각 단계에 100개의 고유 입력만 사용됐습니다. 동시성별 입력 집합의 체크섬은 각 Job 내에서 동일했습니다.
+The generated datasets had 32 and 128 distinct inputs respectively. Measurement uses 100 requests per step, so the 128-input configuration used only 100 unique inputs per step. The per-concurrency input-set checksums were identical within each Job.
 
-| 입력 설정 | 동시성별 고유 입력 사용 수 | 실제 입력/목표 출력 토큰 | 동시성별 요청 수 |
+| Input setting | Unique inputs used per concurrency | Actual input / target output tokens | Requests per concurrency |
 | ---: | ---: | --- | ---: |
 | 32 | 32 | 93/32 | 57 |
 | 32 | 32 | 285/64 | 43 |
 | 128 | 100 | 93/32 | 54 |
 | 128 | 100 | 285/64 | 46 |
 
-### 출력 길이 불일치
+### Output length mismatch
 
-| 입력 설정 | 동시성 | 목표 초과 요청 | 보고된 출력 토큰 |
+| Input setting | Concurrency | Over-target requests | Reported output tokens |
 | ---: | --- | ---: | --- |
-| 32 | 1, 2, 4, 8 | 각 0건 | 목표와 일치 |
-| 128 | 1 | 6건 | 65토큰 6건 |
-| 128 | 2, 4, 8 | 각 6건 | 각 단계에서 65토큰 5건, 66토큰 1건 |
+| 32 | 1, 2, 4, 8 | 0 each | Match target |
+| 128 | 1 | 6 | 65 tokens, 6 requests |
+| 128 | 2, 4, 8 | 6 each | 65 tokens × 5, 66 tokens × 1 per step |
 
-초과한 요청의 출력 목표는 모두 64토큰입니다. 표의 처리량은 서버의 `usage.completion_tokens`에 따른 원래 AIPerf 측정값을 유지했습니다. 128개 설정은 고정 출력 길이 검증을 완전히 통과하지 않았으므로, 요청 성공 여부와 구분해 해석해야 합니다.
+All over-length requests had a 64-token output target. Throughput keeps the original AIPerf measurement based on the server's `usage.completion_tokens`. The 128-input configuration did not fully pass fixed-output-length validation, so interpret it separately from request success.
 
-현재 서버는 샘플링된 token ID를 세어 사용량을 보고합니다. 실행 이미지의 llama-cpp-python 코드에는 불완전한 UTF-8 바이트 처리에서 출력 상한 검사 전에 다음 토큰을 생성하는 경로가 있습니다. 관측된 초과의 가능한 원인이지만, 요청별 토큰 흐름을 수집하지 않아 직접 원인으로 확정하지 않았습니다. 불일치 요청 ID와 보고된 길이는 각 입력 설정의 `run.json`에 저장했습니다.
+The current server counts sampled token IDs when reporting usage. The run image's llama-cpp-python code has a path that generates the next token before the output-limit check when handling incomplete UTF-8 bytes. This is a possible cause of the observed excess, but per-request token flow was not collected, so it is not confirmed as the direct cause. Mismatched request IDs and reported lengths are stored in each input configuration's `run.json`.
 
-32개 설정은 본 측정 안에서 입력을 반복합니다. 128개 설정은 한 단계 안에서 고유 입력 100개를 사용하지만, 다음 동시성에서는 같은 입력을 다시 보내므로 캐시 재사용이 발생할 수 있습니다. 실제 길이 비율과 캐시 상태가 달라 고유 입력 수만의 효과로 차이를 확정할 수는 없습니다.
+The 32-input configuration repeats inputs within a measurement. The 128-input configuration uses 100 unique inputs within a step but resends the same inputs at the next concurrency, so cache reuse can occur. Actual length ratios and cache state differ, so the difference cannot be attributed solely to the unique input count.
 
-각 조건을 한 번만 실행했으며, cache hit 수나 계층별 복원 시간은 측정하지 않았습니다. 기존 16개 입력의 3회 반복 실험은 동시성마다 추론 Pod를 재시작했으므로 이번 결과와 실행 조건이 다릅니다.
+Each condition was run once, and cache hit counts or per-layer restore times were not measured. The earlier 3-repetition experiment with 16 inputs restarted the inference Pod per concurrency, so its conditions differ from these results.
 
-[동시성마다 PVC와 RAM을 초기화한 비교 결과](../benchmark-cache-datasets-clear-20260920-151923/summary.md)에는 같은 입력 집합으로 측정한 초기화 조건을 정리했습니다.
+[Comparison with per-concurrency PVC and RAM clearing](../benchmark-cache-datasets-clear-20260920-151923/summary.md) summarizes the cleared condition measured with the same input sets.
 
-## 저장된 결과
+## Stored results
 
-- [요약 CSV](summary.csv), [32개 입력 검증](entries-32/run.json), [128개 입력 검증](entries-128/run.json).
-- 각 `entries-*/c*/artifacts/`에 AIPerf 요약 JSON과 콘솔 결과를 저장했습니다.
-- Job manifest와 Pod 기록에는 노드 배치, 이미지와 자원 설정을 보관했습니다.
+- [Summary CSV](summary.csv), [32-input validation](entries-32/run.json), [128-input validation](entries-128/run.json).
+- Each `entries-*/c*/artifacts/` stores the AIPerf summary JSON and console output.
+- Job manifests and Pod records retain node placement, image, and resource settings.

@@ -1,43 +1,45 @@
-# Token budget 스케줄러 검증
+> Korean version: [한국어](analysis-KR.md)
 
-RUNNING 우선 continuous batching과 chunked prefill을 추가하고 실제 GPU에서 A4와 P1D3를 비교했습니다. TPOT SLO를 유지하면서 prefill budget을 크게 설정할 수 있는 조건에서 P1D3의 TTFT 개선을 확인했습니다.
+# Token Budget Scheduler Verification
 
-같은 token budget끼리 비교한 20개 조건에서는 P1D3의 평균 TTFT가 더 낮은 조건이 0개였습니다. 설정 선택의 기준이 중요합니다.
+Added RUNNING-first continuous batching and chunked prefill and compared A4 vs P1D3 on a real GPU. Verified P1D3 TTFT improvement under conditions where the prefill budget can be set large while keeping the TPOT SLO.
 
-측정 요청 1,920개, 오류 0개, worker 재시작 0회, router OOM 0회입니다. 기존 MPS 구성과 보고서를 보존했고 원래 GPU 환경으로 복구했습니다.
+Across 20 same-token-budget comparisons, P1D3 average TTFT was lower in 0 conditions. The basis for configuration selection matters.
 
-## 대표 사례: TPOT 상한을 지키는 설정 비교
+Measured 1,920 requests, 0 errors, 0 worker restarts, 0 router OOMs. Preserved the existing MPS configuration and reports and restored the original GPU environment.
 
-합성 입력 704토큰(실제 prompt 734토큰), 출력 16토큰, 동시성 16입니다. 예시 목표로 요청별 평균 TPOT 40 ms 이하를 각 반복에서 95% 이상 충족하도록 설정을 선택했습니다. 요청 표본은 각 행당 48개이며 아래 충족률은 두 반복을 합산했습니다.
+## Representative Case: Comparison Protecting a TPOT Ceiling
 
-| 구성 | Budget | TTFT ms | 평균 TPOT ms | TPOT 충족률 | 최소 반복 충족률 | Goodput req/s |
+Synthetic input 704 tokens (actual prompt 734 tokens), output 16 tokens, concurrency 16. As an example goal, selected configurations so per-request average TPOT of 40 ms or less passes at 95%+ in every repetition. Each row samples 48 requests and attainment below sums both repetitions.
+
+| Configuration | Budget | TTFT ms | Avg TPOT ms | TPOT Attainment | Min Per-Repetition Attainment | Goodput req/s |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | A4 | 32 | 2464.0 | 32.0 | 100.0% | 100.0% | 4.097 |
 | A4 | 256 | 451.9 | 42.3 | 45.8% | 45.8% | 5.652 |
 | P1D3 | 32 | 8476.5 | 26.7 | 100.0% | 100.0% | 1.256 |
 | P1D3 | 256 | 1581.7 | 34.0 | 97.9% | 95.8% | 5.672 |
 
-목표를 통과한 A4 budget 32와 P1D3 budget 256을 비교하면 평균 TTFT는 **2,464.0→1,581.7 ms로 35.8% 감소**, TPOT-only goodput은 **4.097→5.672 req/s로 38.4% 증가**했습니다. P1D3는 첫 반복 24/24, 두 번째 반복 23/24가 통과했습니다. A4 budget 256은 TTFT가 더 짧지만 TPOT 충족률이 45.8%로 설정 선택 기준을 통과하지 못했습니다.
+Comparing goal-passing A4 budget 32 with P1D3 budget 256, average TTFT **falls 35.8% from 2,464.0 to 1,581.7 ms**, and TPOT-only goodput **rises 38.4% from 4.097 to 5.672 req/s**. P1D3 passed 24/24 in the first repetition and 23/24 in the second. A4 budget 256 has shorter TTFT but fails the selection criterion with 45.8% TPOT attainment.
 
-TPOT 상한을 75 ms로 완화하면 A4 budget 256도 모든 요청이 통과하고 TTFT는 451.9 ms로 P1D3보다 낮습니다. TTFT 이점은 workload와 지연 목표에 따라 달라집니다.
+Relaxing the TPOT ceiling to 75 ms passes all A4 budget 256 requests too, with TTFT 451.9 ms — lower than P1D3. TTFT advantage depends on workload and latency goals.
 
-## 원인 해석
+## Cause Interpretation
 
-A4는 큰 prefill chunk와 decode를 같은 forward에 넣습니다. 대표 사례에서 budget을 32에서 256으로 높이면 TTFT는 줄지만 평균 TPOT는 32.0→42.3 ms로 늘었습니다. P1D3에서는 P의 chunk를 키워도 D는 별도 forward로 실행하므로, 같은 변경 후 평균 TPOT 34.0 ms로 40 ms 목표를 대부분 충족했습니다. 다만 MPS이므로 물리 GPU의 실행 자원은 계속 공유합니다.
+A4 puts large prefill chunks and decode in the same forward pass. In the representative case, raising budget from 32 to 256 shortens TTFT but raises average TPOT from 32.0 to 42.3 ms. In P1D3, enlarging P chunks still runs D in separate forwards, so average TPOT after the same change is 34.0 ms, mostly meeting the 40 ms goal. Physical GPU execution resources remain shared because of MPS, however.
 
-P의 step 로그에서는 같은 220,480개 prefill 토큰을 처리하는 forward 수가 6,950회에서 1,087회로 줄었습니다. 이 집계에는 전체 workload와 워밍업이 포함됩니다. 같은 budget의 TTFT 비교에서는 A4의 prefill 처리 worker 4개와 P1D3의 P worker 1개라는 차이, HTTP KV 전달과 전송 admission 대기의 부담이 나타났습니다.
+In P step logs, forwards handling the same 220,480 prefill tokens fell from 6,950 to 1,087. This aggregation includes the full workload and warmup. Same-budget TTFT comparisons show the difference between 4 A prefill-processing workers vs 1 P1D3 P worker, plus HTTP KV transfer and transfer admission wait burden.
 
-A의 mixed step에서 decode가 사용한 전체 token budget의 비율은 평균 6.1%(budget 32), 0.84%(budget 256)였습니다. 이 로그와 지표를 함께 보면 이번 이점은 TPOT 목표를 지키면서 P의 chunk를 크게 설정할 수 있었던 효과로 해석하는 것이 적절합니다. 다른 workload에서도 같은 결과가 난다는 의미는 아닙니다.
+In A mixed steps, decode's share of total token budget averaged 6.1% (budget 32) and 0.84% (budget 256). Reading these logs and metrics together, this benefit is best interpreted as the effect of setting large P chunks while protecting the TPOT goal. It does not mean the same outcome on other workloads.
 
-Router 전송 동시성은 2로 유지했습니다. 로그에서 P의 동시 실행 요청도 최대 2개였으므로 이 실험에는 해당 backpressure의 영향이 포함됩니다. [Budget 32 단계별 지표](../scheduler-20261002-b32/phase-diagnostics.json)와 [Budget 256 단계별 지표](../scheduler-20261002-b256/phase-diagnostics.json)는 같은 입출력 길이의 여러 동시성 및 혼합 요청을 합친 진단이며, 위 대표 사례 TTFT의 직접적인 시간 분해는 아닙니다.
+Router transfer concurrency stayed at 2. P concurrent running requests in logs were also at most 2, so this experiment includes that backpressure effect. [Budget 32 phase metrics](../scheduler-20261002-b32/phase-diagnostics.json) and [Budget 256 phase metrics](../scheduler-20261002-b256/phase-diagnostics.json) are diagnostics summing multiple concurrencies and mixed requests of the same I/O lengths; they are not direct time decompositions of the representative-case TTFT above.
 
-![TTFT와 TPOT](ttft-tpot.png)
+![TTFT and TPOT](ttft-tpot.png)
 
-## 동시성 16 비교
+## Concurrency 16 Comparison
 
-A는 Aggregation worker 4개, D는 Prefill 1개와 Decode 3개입니다. 모든 worker에 같은 token budget을 적용했습니다. 입력 길이는 합성 입력 기준입니다.
+A is 4 Aggregation workers, D is 1 Prefill plus 3 Decode workers. Applied the same token budget to all workers. Input lengths are synthetic input settings.
 
-| Budget | 입력/출력 | A TTFT ms | D TTFT ms | D TTFT 변화 | A TPOT ms | D TPOT ms | A tok/s | D tok/s |
+| Budget | Input/Output | A TTFT ms | D TTFT ms | D TTFT Change | A TPOT ms | D TPOT ms | A tok/s | D tok/s |
 | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | 32 | i64-o16 | 356.5 | 1145.1 | +221.2% | 35.5 | 30.8 | 226.6 | 120.6 |
 | 32 | i64-o128 | 350.6 | 813.6 | +132.1% | 39.3 | 41.4 | 291.5 | 267.0 |
@@ -50,13 +52,13 @@ A는 Aggregation worker 4개, D는 Prefill 1개와 Decode 3개입니다. 모든 
 | 256 | i704-o128 | 465.8 | 1177.8 | +152.9% | 42.2 | 45.7 | 276.0 | 235.1 |
 | 256 | mixed | 229.6 | 648.1 | +182.2% | 41.0 | 43.3 | 288.8 | 245.5 |
 
-## 같은 TPOT SLO를 지키는 설정의 TTFT
+## TTFT of Configurations Protecting the Same TPOT SLO
 
-동시성 16에서 각 mode의 두 budget 중 모든 반복의 TPOT 충족률이 95% 이상인 것만 남기고 평균 TTFT가 가장 낮은 budget을 선택했습니다. 탐색한 상한은 25, 30, 35, 40, 50과 75 ms입니다. 데이터 확인 후 수행한 제한된 설정 비교이며 보편적인 최적값 탐색은 아닙니다.
+At concurrency 16, kept only budgets among each mode's two budgets whose TPOT attainment is 95%+ in every repetition, and selected the budget with the lowest average TTFT. Searched ceilings were 25, 30, 35, 40, 50, and 75 ms. This is a limited post-data configuration comparison, not a general optimum search.
 
-[모든 workload와 SLO의 설정 선택 결과](tpot-constrained-ttft.csv)에 TTFT, 처리량과 최소 반복 충족률을 기록했습니다. 빈칸은 충족 설정이 없다는 뜻입니다.
+[Configuration selection results for all workloads and SLOs](tpot-constrained-ttft.csv) record TTFT, throughput, and minimum per-repetition attainment. Blanks mean no satisfying configuration.
 
-| 입력/출력 | TPOT 상한 ms | A budget | A TTFT ms | D budget | D TTFT ms |
+| Input/Output | TPOT Ceiling ms | A Budget | A TTFT ms | D Budget | D TTFT ms |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | i64-o16 | 35 | - | - | 32 | 1145.1 |
 | i64-o16 | 40 | - | - | 32 | 1145.1 |
@@ -74,30 +76,30 @@ A는 Aggregation worker 4개, D는 Prefill 1개와 Decode 3개입니다. 모든 
 | mixed | 40 | - | - | - | - |
 | mixed | 50 | 256 | 229.6 | 256 | 648.1 |
 
-## 측정 조건과 한계
+## Measurement Conditions and Limits
 
-- SmolLM2-135M-Instruct, FP16, RTX 2060 SUPER 8 GiB, MPS client 4개입니다. 각 client의 active thread 한도는 25%, 메모리 한도는 2 GiB입니다. 전용 SM 분할은 아닙니다.
-- 입력 64와 704, 출력 16과 128의 조합 및 `64,128:50;704,16:50` 혼합 부하를 사용했습니다. 동시성은 4와 16입니다.
-- 각 조건에서 워밍업 4개 뒤 24개 요청을 측정하고 두 번 반복했습니다. 반복 순서는 A→D와 D→A입니다. 총 1,920개 측정 요청과 320개 워밍업 요청입니다.
-- Greedy decoding, EOS 억제, max_num_seqs 8과 KV 토큰 예약 상한 8,192를 적용했습니다. P와 D의 개별 예산 튜닝은 하지 않았습니다.
-- 결과는 반복별 평균의 산술 평균입니다. p95, 반복 간 표준편차와 payload 및 토큰 길이 일치 여부는 예산별 보고서에 있습니다. 조건별 mode당 48개 표본이므로 작은 차이는 확정적인 우위로 해석하지 않습니다.
-- 고정 동시성에서 유한한 요청 수를 처리하는 시험입니다. 고정 도착률을 장시간 유지한 서비스 용량 검증은 아닙니다.
-- TTFT는 첫 텍스트 chunk까지이며 tokenizer, queue, KV 전송과 TextStreamer 버퍼를 포함합니다. TPOT는 요청별 `(지연 - TTFT) / (출력 토큰 수 - 1)`입니다. 토큰별 ITL tail latency를 측정한 결과는 아닙니다.
-- 밀집 block mask를 쓰는 packed SDPA와 step별 KV 복사를 사용했습니다. vLLM의 PagedAttention, CUDA graph, 비동기 스케줄러와 preemption은 포함하지 않습니다. 이 결과를 실제 vLLM의 성능으로 해석하지 않습니다.
+- SmolLM2-135M-Instruct, FP16, RTX 2060 SUPER 8 GiB, 4 MPS clients. Per-client active thread limit 25%, memory limit 2 GiB. Not dedicated SM partitioning.
+- Used input 64 and 704, output 16 and 128 combinations and `64,128:50;704,16:50` mixed load. Concurrency 4 and 16.
+- Measured 24 requests after 4 warmups per condition, repeated twice. Repetition order is A→D and D→A. 1,920 measured plus 320 warmup requests total.
+- Applied greedy decoding, EOS suppression, max_num_seqs 8, and KV token reservation cap 8,192. No per-P/D budget tuning.
+- Results are arithmetic means of per-repetition averages. p95, run-to-run SD, and payload/token-length agreement are in the per-budget reports. With 48 samples per condition per mode, do not treat small gaps as definitive advantages.
+- A fixed-concurrency test processing a finite request count. Not a service-capacity verification holding fixed arrival rates over time.
+- TTFT is until the first text chunk and includes tokenizer, queue, KV transfer, and TextStreamer buffering. TPOT is per-request `(latency - TTFT) / (output tokens - 1)`. Not a per-token ITL tail-latency measurement.
+- Uses dense block masks with packed SDPA and per-step KV copies. Does not include vLLM PagedAttention, CUDA graphs, async scheduler, or preemption. Do not interpret these results as actual vLLM performance.
 
-## 구현과 검증
+## Implementation and Verification
 
-기본 serial 모드는 유지하고 [별도 scheduler manifest](../../../../../k8s/gpu-mps-4/pd-scheduled/aggregated/kustomization.yaml)를 추가했습니다. 동작과 재현 명령은 [스케줄러 가이드](../../../../guides/prefill-decode-scheduler.md)에 있습니다.
+Kept the default serial mode and added a [separate scheduler manifest](../../../../../k8s/gpu-mps-4/pd-scheduled/aggregated/kustomization.yaml). Behavior and reproduction commands are in the [scheduler guide](../../../../guides/prefill-decode-scheduler.md).
 
-CPU 테스트 54개와 클러스터 테스트 13개가 통과했습니다. 실제 GPU에서는 입력 64, 94, 286과 734토큰에 대해 두 budget의 16토큰 greedy 출력이 기존 serial 경로와 일치했습니다. 734토큰 KV를 전달한 decode 결과도 일치했습니다. [GPU 검증](gpu-validation.json)에 이미지 소스 해시와 CUDA 버전을 기록했습니다.
+54 CPU tests and 13 cluster tests passed. On a real GPU, 16-token greedy outputs for 64, 94, 286, and 734-token inputs matched the existing serial path for both budgets. Decode results after 734-token KV transfer also matched. [GPU validation](gpu-validation.json) records image source hashes and CUDA version.
 
-Router 메모리 최고치는 88.5 MiB였으며 상한은 1 GiB입니다. [환경 검증](validation.json), [MPS 확인](mps.json), [복구 확인](restoration.json)을 남겼습니다.
+Router memory peak was 88.5 MiB with a 1 GiB limit. Kept [environment validation](validation.json), [MPS verification](mps.json), and [restoration verification](restoration.json).
 
-Step 로그에서 token budget, max_num_seqs, 역할별 토큰 종류를 검사했습니다. 계산된 prefill과 decode 토큰의 합계도 완료 요청의 길이와 일치합니다. [스케줄러 로그 집계](scheduler-diagnostics.json)는 워밍업을 포함합니다.
+Verified token budget, max_num_seqs, and per-role token kinds in step logs. Computed prefill and decode token sums also match completed request lengths. [Scheduler log aggregation](scheduler-diagnostics.json) includes warmup.
 
-## 원본과 추가 비교
+## Raw Data and Further Comparisons
 
-- [Budget 32 결과](../scheduler-20261002-b32/summary.md), [TTFT와 TPOT goodput](../scheduler-20261002-b32/goodput/separate.md)
-- [Budget 256 결과](../scheduler-20261002-b256/summary.md), [TTFT와 TPOT goodput](../scheduler-20261002-b256/goodput/separate.md)
-- [전체 조건 CSV](comparison.csv), [그림 PDF](ttft-tpot.pdf)
-- Raw data: `reports/pd/scheduler-20261002-b32/`와 `reports/pd/scheduler-20261002-b256/`. 요청별 지표, payload, GPU 표본과 Pod 로그를 보관합니다.
+- [Budget 32 results](../scheduler-20261002-b32/summary.md), [TTFT and TPOT goodput](../scheduler-20261002-b32/goodput/separate.md)
+- [Budget 256 results](../scheduler-20261002-b256/summary.md), [TTFT and TPOT goodput](../scheduler-20261002-b256/goodput/separate.md)
+- [All-condition CSV](comparison.csv), [figure PDF](ttft-tpot.pdf)
+- Raw data: `reports/pd/scheduler-20261002-b32/` and `reports/pd/scheduler-20261002-b256/`. Keeps per-request metrics, payloads, GPU samples, and Pod logs.

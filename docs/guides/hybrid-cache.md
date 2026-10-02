@@ -1,10 +1,12 @@
-# Jamba hybrid 배치와 HiCache
+> Korean version: [한국어](hybrid-cache-KR.md)
 
-`transformer.hybrid.server`는 Jamba의 Attention KV, Mamba convolution 상태와 SSM 상태를 함께 관리합니다. 기존 Transformers 및 Mamba 엔진과 별도 모듈이며 같은 HTTP와 SSE API를 제공합니다. `model_type=jamba`이고 Attention과 Mamba 레이어를 모두 포함하는 로컬 체크포인트가 필요합니다. 기존 SmolLM2 또는 Mamba-130m 가중치는 사용할 수 없습니다.
+# Jamba hybrid batching and HiCache
 
-## 실행
+`transformer.hybrid.server` manages Jamba Attention KV together with Mamba convolution and SSM states. It is a separate module from the existing Transformers and Mamba engines and provides the same HTTP and SSE API. It needs a local checkpoint with `model_type=jamba` that includes both Attention and Mamba layers. Existing SmolLM2 or Mamba-130m weights cannot be used.
 
-의존성은 [Transformers requirements](../../src/transformer/requirements.txt)를 사용합니다. 모델 디렉터리에는 설정, safetensors 가중치와 토크나이저가 있어야 합니다.
+## Run
+
+Dependencies use the [Transformers requirements](../../src/transformer/requirements.txt). The model directory must contain config, safetensors weights, and tokenizer.
 
 ```sh
 PYTHONPATH=src python -m transformer.hybrid.server \
@@ -15,7 +17,7 @@ PYTHONPATH=src python -m transformer.hybrid.server \
   --cache-gpu-mib 64 --cache-ram-mib 256 --cache-disk-mib 1024
 ```
 
-CPU에서는 `--device cpu --dtype float32`를 사용합니다. CPU 실행은 GPU 캐시 계층을 비활성화합니다. API 요청의 `model`은 `--served-model-name`과 일치해야 합니다.
+On CPU use `--device cpu --dtype float32`. CPU runs disable the GPU cache tier. The API request `model` must match `--served-model-name`.
 
 ```sh
 curl http://127.0.0.1:8000/v1/chat/completions \
@@ -23,7 +25,7 @@ curl http://127.0.0.1:8000/v1/chat/completions \
   -d '{"model":"jamba-hybrid","messages":[{"role":"user","content":"Explain prefix caching."}],"temperature":0,"max_tokens":32}'
 ```
 
-Docker 타깃은 CPU용 `transformers-hybrid`, GPU용 `transformers-hybrid-gpu`입니다.
+Docker targets are `transformers-hybrid` for CPU and `transformers-hybrid-gpu` for GPU.
 
 ```sh
 docker build -f src/Dockerfile.gpu --target transformers-hybrid-gpu \
@@ -34,51 +36,51 @@ docker run --rm --gpus all -p 8000:8000 \
   --model /model --device cuda --dtype float16
 ```
 
-디스크 캐시를 컨테이너 재시작 후 유지하려면 UID 1000이 쓸 수 있는 디렉터리를 연결하고 `--cache-dir`로 지정합니다. Kubernetes AIPerf 매니페스트는 Jamba를 제공하지 않습니다.
+To keep disk cache across container restarts, mount a directory writable by UID 1000 and point to it with `--cache-dir`. Kubernetes AIPerf manifests do not provide Jamba.
 
-## 상태 버퍼와 배치
+## State buffers and batching
 
-[HybridBuffer](../../src/transformer/hybrid/state.py)는 `max_parallel`과 `n_ctx`에 맞춰 Attention KV 및 Mamba 상태 공간을 미리 확보합니다. KV는 기존 버퍼에 추가하므로 decode마다 전체 KV를 `torch.cat()`으로 다시 만들지 않습니다. Jamba의 PyTorch 경로가 교체한 Mamba 상태는 같은 버퍼에 복사하며, SSM의 float32 누적 정밀도를 유지합니다. 커널 내부의 임시 텐서 할당은 남아 있습니다.
+[HybridBuffer](../../src/transformer/hybrid/state.py) pre-allocates Attention KV and Mamba state space for `max_parallel` and `n_ctx`. KV is appended to the existing buffer, so decode does not rebuild the full KV with `torch.cat()` each time. Mamba state replaced by the Jamba PyTorch path is copied into the same buffer, keeping SSM float32 accumulation precision. Temporary tensor allocation inside kernels remains.
 
-[배치 백엔드](../../src/transformer/hybrid/backend.py)는 다음과 같이 처리합니다.
+The [batch backend](../../src/transformer/hybrid/backend.py) processes as follows.
 
-- prefix 길이와 복원 길이가 같은 요청을 묶어 prefill합니다. 캐시 miss는 prefix 전체를 한 번에 계산합니다.
-- checkpoint가 prefix 전체와 일치하면 중간 prefill 버퍼 복사를 생략하고 decode 버퍼에 바로 복원합니다.
-- 복원한 Mamba 상태에 suffix를 추가할 때는 한 토큰씩 계산합니다. 현재 Jamba 구현의 상태 갱신 조건입니다.
-- 길이가 다른 요청은 Attention KV에만 왼쪽 padding을 적용하고, 각 요청의 정확한 Mamba 상태를 넣어 함께 decode합니다.
-- EOS, 출력 제한 또는 취소로 완료된 행은 KV와 Mamba 상태에서 함께 제거합니다.
-- 같은 샘플링 설정은 배치 단위로 처리하고, 생성 토큰은 단계마다 한 번만 CPU로 옮깁니다.
-- padding 때문에 `n_ctx`를 초과할 조합은 하위 배치로 나눕니다. 진행 중인 배치에 새 요청을 추가하지 않습니다.
+- Prefill together requests with the same prefix length and restore length. A cache miss computes the full prefix at once.
+- When a checkpoint matches the full prefix, skip intermediate prefill buffer copies and restore directly into the decode buffer.
+- When appending a suffix to restored Mamba state, compute one token at a time. This is the current Jamba implementation's state update condition.
+- For requests with different lengths, apply left padding to Attention KV only, insert each request's exact Mamba state, and decode together.
+- Rows finished by EOS, output limit, or cancellation are removed from KV and Mamba state together.
+- The same sampling settings are processed per batch, and generated tokens move to CPU once per step.
+- Combinations exceeding `n_ctx` because of padding are split into smaller batches. New requests are not added to a batch in progress.
 
-`--mamba-kernels auto`는 CUDA 장치와 Jamba에서 사용할 수 있는 가속 커널이 모두 있으면 사용합니다. `off`는 PyTorch 경로를 사용하며 `required`는 가속 커널이 없으면 시작을 거부합니다. 제공 Docker 이미지는 `mamba-ssm`과 `causal-conv1d`를 설치하지 않으므로 PyTorch 경로로 동작합니다.
+`--mamba-kernels auto` uses accelerated kernels when both CUDA device and Jamba support them. `off` uses the PyTorch path; `required` refuses to start without accelerated kernels. The provided Docker images do not install `mamba-ssm` or `causal-conv1d`, so they run on the PyTorch path.
 
-CUDA Graph는 이 모듈에 적용하지 않습니다. 현재 Jamba의 mask 생성과 Mamba fallback은 동적인 shape와 텐서 교체를 사용하므로 기존 Llama 전용 그래프를 재사용할 수 없습니다.
+CUDA Graph is not applied to this module. Current Jamba mask generation and Mamba fallback use dynamic shapes and tensor replacement, so the existing Llama-only graph cannot be reused.
 
-## Prefix checkpoint와 계층 이동
+## Prefix checkpoints and tier movement
 
-checkpoint는 **입력의 마지막 토큰 직전**에서 KV, convolution 상태와 SSM 상태를 함께 저장합니다. 마지막 입력 토큰은 다시 계산해 logits를 얻습니다. 생성 토큰의 상태는 prefix 캐시에 저장하지 않습니다.
+A checkpoint stores KV, convolution state, and SSM state together **just before the last token of the input**. The last input token is recomputed to obtain logits. Generated token state is not stored in prefix cache.
 
-Mamba 상태는 과거 위치로 잘라낼 수 없습니다. 따라서 저장된 토큰 전체가 요청 prefix와 일치하는 checkpoint 중 가장 긴 항목만 복원합니다. 예를 들어 `[1, 2, 3]` checkpoint는 `[1, 2, 3, 4]` 입력에 사용할 수 있지만 `[1, 2, 9, 4]` 입력에는 사용할 수 없습니다. 중간 경계 checkpoint는 자동 생성하지 않습니다.
+Mamba state cannot be truncated to an earlier position. So restore only the longest checkpoint whose full stored tokens match the request prefix. For example, a `[1, 2, 3]` checkpoint can serve a `[1, 2, 3, 4]` input but not a `[1, 2, 9, 4]` input. Intermediate boundary checkpoints are not auto-generated.
 
-[HiCache](../../src/transformer/hybrid/hicache.py)의 계층은 다음과 같습니다.
+The [HiCache](../../src/transformer/hybrid/hicache.py) tiers are as follows.
 
-| 계층 | 저장 형태 | 한도 초과 시 |
+| Tier | Stored form | When over limit |
 | --- | --- | --- |
-| GPU | 독립적으로 복사한 KV와 Mamba 텐서 | LRU 항목을 CPU RAM으로 이동 |
-| CPU RAM | GPU 실행 시 pinned 텐서, CPU 실행 시 일반 텐서 | LRU 항목을 safetensors로 직렬화해 디스크로 이동 |
-| 디스크 | 토큰 ID와 checksum을 포함한 `.kv` 파일 | LRU 파일 삭제 |
+| GPU | Independently copied KV and Mamba tensors | Move LRU entries to CPU RAM |
+| CPU RAM | Pinned tensors on GPU runs, regular tensors on CPU runs | Serialize LRU entries to disk as safetensors |
+| Disk | `.kv` files with token IDs and checksum | Delete LRU files |
 
-항목은 한 계층에 보관하며, hit 시 예산이 허용하는 상위 계층으로 이동합니다. GPU와 RAM 예산은 텐서 payload 및 토큰당 8바이트를 합산합니다. 디스크는 파일 크기를 계산합니다. 한 계층의 전체 예산보다 큰 항목은 하위 계층으로 넘기고, 모든 계층에 들어갈 수 없으면 보관하지 않습니다. GPU 캐시 복사 중 CUDA OOM이 발생하면 해당 항목을 RAM 또는 디스크로 넘깁니다.
+Entries stay in one tier, and on hit move to an upper tier when budget allows. GPU and RAM budgets sum tensor payload plus 8 bytes per token. Disk counts file size. An entry larger than a tier's full budget moves to a lower tier; entries that fit no tier are not kept. On CUDA OOM during GPU cache copy, pass that entry to RAM or disk.
 
-`--cache-gpu-mib`, `--cache-ram-mib`, `--cache-disk-mib`는 각 계층의 예산이며 0이면 비활성화합니다. `--cache-min-prefix`는 저장 및 복원할 최소 토큰 수입니다. 기본값은 [EngineSettings](../../src/transformer/hybrid/engine.py)를 참고하고, 전체 CLI 옵션은 `python -m transformer.hybrid.server --help`로 확인합니다.
+`--cache-gpu-mib`, `--cache-ram-mib`, and `--cache-disk-mib` are per-tier budgets; 0 disables. `--cache-min-prefix` is the minimum token count stored and restored. See [EngineSettings](../../src/transformer/hybrid/engine.py) for defaults, and `python -m transformer.hybrid.server --help` for all CLI options.
 
-활성 배치 버퍼, 모델 가중치, prefill 결과 복사본, 역직렬화 버퍼 및 Python 객체는 캐시 예산에 포함되지 않습니다. 활성 추론 중 OOM에 대한 자동 재시도는 하지 않습니다. prefix 캐시의 복사본은 활성 버퍼와 분리되어 있어 배치 갱신과 eviction이 저장된 상태를 변경하지 않습니다.
+Active batch buffers, model weights, prefill result copies, deserialization buffers, and Python objects are not included in cache budgets. There is no automatic retry on OOM during active inference. Prefix cache copies are separate from active buffers, so batch updates and eviction do not change stored state.
 
-모델 파일 해시, 라이브러리 버전, dtype, 장치와 커널 경로로 namespace를 분리합니다. 디스크는 단일 writer를 허용하고 정상 종료 시 상위 계층을 저장합니다. checksum이나 텐서 구조가 잘못된 항목은 삭제하고 다시 계산합니다. 이전 namespace는 자동 삭제하지 않습니다.
+Namespaces are separated by model file hash, library version, dtype, device, and kernel path. Disk allows a single writer and saves upper tiers on clean shutdown. Entries with bad checksums or tensor layout are deleted and recomputed. Old namespaces are not auto-deleted.
 
-이 구현은 [SGLang HiCache의 GPU, host, storage 계층 구조](https://docs.sglang.ai/advanced_features/hicache_design.html)를 참고한 프로젝트 내부 구현입니다. 저장소는 로컬 파일이며, I/O는 동기식입니다. SGLang 런타임, radix page 공유, 비동기 prefetch 및 분산 storage backend는 포함하지 않습니다.
+This implementation follows the GPU, host, and storage tier structure of [SGLang HiCache design](https://docs.sglang.ai/advanced_features/hicache_design.html) as a project-internal implementation. Storage is local files, and I/O is synchronous. It does not include the SGLang runtime, radix page sharing, async prefetch, or distributed storage backends.
 
-## 검증
+## Validation
 
 ```sh
 PYTHONPATH=src:tests python -m unittest \
@@ -86,13 +88,13 @@ PYTHONPATH=src:tests python -m unittest \
   test_transformers_batch test_enhanced_cache_llamacpp -v
 ```
 
-테스트는 작은 무작위 Jamba 모델을 생성해 캐시 없는 기준 출력과 cold 및 warm cache, 배치 출력의 일치를 확인합니다. prefix 경계, 버퍼 재사용, 행 제거, 취소, SSE, 계층 승격과 퇴출, 재시작 및 손상 복구를 검사합니다. CUDA PyTorch 환경에서는 float16과 float32 GPU 검증도 실행합니다. 이 검증은 실제 Jamba 체크포인트의 품질이나 처리량 벤치마크를 대체하지 않습니다.
+Tests build a small random Jamba model and check that cold and warm cache plus batch outputs match the no-cache baseline. They cover prefix boundaries, buffer reuse, row removal, cancellation, SSE, tier promotion and eviction, restart, and corruption recovery. On a CUDA PyTorch environment they also run float16 and float32 GPU checks. This validation does not replace quality or throughput benchmarks on a real Jamba checkpoint.
 
-## Base와 성능 비교
+## Base and performance comparison
 
-[직렬 base](../../src/transformer/hybrid/base.py)는 같은 Jamba 모델을 Transformers `generate()`로 실행합니다. 요청 내부의 dynamic KV와 Mamba 상태는 사용하며 요청 간 prefix 캐시와 배치는 사용하지 않습니다. HTTP로 실행하려면 모듈을 `transformer.hybrid.base_server`로 지정합니다.
+The [serial base](../../src/transformer/hybrid/base.py) runs the same Jamba model with Transformers `generate()`. It uses dynamic KV and Mamba state inside a request, without cross-request prefix cache or batching. To run over HTTP, set the module to `transformer.hybrid.base_server`.
 
-벤치마크에는 AI21의 학습된 개발용 [Jamba-tiny-dev](https://huggingface.co/ai21labs/Jamba-tiny-dev)를 사용합니다. 모델 revision과 파일 체크섬은 [모델 설정](../../config/models/jamba-tiny-dev-transformers.env)에 고정되어 있습니다.
+Benchmarks use AI21's trained development model [Jamba-tiny-dev](https://huggingface.co/ai21labs/Jamba-tiny-dev). Model revision and file checksums are pinned in [model settings](../../config/models/jamba-tiny-dev-transformers.env).
 
 ```sh
 ./scripts/download-transformers-model.sh jamba-tiny-dev
@@ -103,10 +105,10 @@ python scripts/benchmark-hybrid.py \
   --report-dir docs/reports/gpu/hybrid/benchmark-suite-local
 ```
 
-결과 디렉터리는 비어 있어야 합니다. 조건은 base, 배치만 적용, cold cache, GPU hit, RAM hit, disk hit입니다. warm 조건은 요청 묶음마다 해당 계층에 checkpoint를 배치하며, 복원된 토큰 수와 실제 hit 계층을 검사합니다. 모든 측정 출력은 같은 모델의 base 출력 토큰 ID와 대조하며 불일치가 있으면 실패합니다.
+The result directory must be empty. Conditions are base, batch-only, cold cache, GPU hit, RAM hit, and disk hit. Warm conditions place a checkpoint for the tier in each request bundle, and check restored token counts and the actual hit tier. All measured outputs are compared against the same model's base output token IDs; mismatches fail.
 
-HTTP와 입력 토큰화는 제외한 엔진 벤치마크입니다. 요청 대기열과 배치 대기 시간은 포함하며 TTFT는 첫 생성 토큰 기준입니다. 모델 로딩과 워밍업, warm cache 준비는 제외합니다. 실행 순서는 반복마다 순환하고, 디스크 조건은 OS page cache를 비우지 않습니다. AIPerf 보고서와 측정 범위가 다릅니다.
+This is an engine benchmark that excludes HTTP and input tokenization. It includes request queuing and batch wait time; TTFT is based on the first generated token. Model loading, warmup, and warm cache preparation are excluded. Execution order rotates each repetition; disk conditions do not drop OS page cache. Scope differs from AIPerf reports.
 
-`run.json`에는 모델과 소스 SHA-256, 입력 및 기준 출력, 실행 설정과 검증 개수가 기록됩니다. `summary.md`, `summary.csv`, `summary.jsonl`은 base 대비 처리량과 지연을, `runs.csv`와 로컬 `requests.jsonl`은 개별 측정 결과를 제공합니다.
+`run.json` records model and source SHA-256, inputs and baseline outputs, run settings, and validation counts. `summary.md`, `summary.csv`, and `summary.jsonl` give throughput and latency versus base; `runs.csv` and local `requests.jsonl` give individual measurements.
 
-RTX 2060 SUPER에서 실행한 [base 및 hybrid 비교 결과](../reports/gpu/hybrid/README.md)에서 전체 조건과 검증 결과를 확인할 수 있습니다.
+Full conditions and validation results on RTX 2060 SUPER are in the [base and hybrid comparison](../reports/gpu/hybrid/README.md).

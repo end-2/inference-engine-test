@@ -1,6 +1,8 @@
-# 추론 구현별 3회 반복 benchmark
+> Korean version: [한국어](summary-KR.md)
 
-네 조건을 각각 3회씩 측정한 12개 sweep이 모두 완료됐습니다. 본 측정 4,800회와 warmup 96회가 성공했으며 출력 길이 부족이나 초과는 없습니다.
+# 3-repetition benchmark by inference implementation
+
+All 12 sweeps measuring 4 conditions 3 times each are complete. All 4,800 measured and 96 warmup requests succeeded with no short or over-length outputs.
 
 - Status: complete
 - Repetitions per condition: 3
@@ -31,9 +33,9 @@
 | enhanced-cache-preserve | 4 | 3 | 129.34 ± 1.89 | 969.95 ± 15.06 | 1300.33 ± 41.07 | 7.57 ± 0.07 |
 | enhanced-cache-preserve | 8 | 3 | 130.01 ± 3.53 | 2190.50 ± 56.90 | 2602.04 ± 66.29 | 7.58 ± 0.17 |
 
-## 비교 그래프
+## Comparison graphs
 
-![3회 반복 처리량 및 TTFT 비교](figures/benchmark-comparison.png)
+![3-repetition throughput and TTFT comparison](figures/benchmark-comparison.png)
 
 ## Sweep reports
 
@@ -55,20 +57,20 @@
 `runs.csv` and `summary.jsonl` contain the individual sweep metrics; `summary.csv` includes mean, standard deviation, minimum, and maximum for every metric.
 Image IDs, commands, and execution order are recorded in `run.json`. Per-request exports and resource time series are saved locally under each sweep report and are excluded from Git.
 
-## 결과 해석
+## Interpretation
 
-- Concurrency 2, 4, 8에서 cache 보존의 평균 처리량은 초기화보다 30.1~33.2% 높았습니다. Concurrency 8에서는 97.64 → 130.01 tok/s이며 TTFT 평균은 27.8% 낮았습니다.
-- Concurrency 8에서 enhanced-batch의 처리량은 base보다 16.3% 높았습니다. TTFT 평균은 7009.25 → 2525.54 ms로 낮아졌지만, ITL 평균은 8.05 → 94.60 ms로 높아졌습니다.
-- 데이터셋 16개를 같은 seed 42로 반복하는 부하의 결과입니다. 두 cache 조건 모두 sweep 시작은 빈 cache이며, 차이는 concurrency 단계 사이의 보존 여부입니다. Warmup과 본 측정 안에서는 cache가 다시 채워져 재사용됩니다.
+- At concurrency 2, 4, 8, cache preservation averaged 30.1–33.2% higher throughput than clearing. At concurrency 8, throughput is 97.64 → 130.01 tok/s and mean TTFT is 27.8% lower.
+- At concurrency 8, enhanced-batch throughput is 16.3% higher than base. Mean TTFT fell from 7009.25 to 2525.54 ms, while mean ITL rose from 8.05 to 94.60 ms.
+- These results use a load that repeats 16 datasets with the same seed 42. Both cache conditions start the sweep from an empty cache; the difference is whether the cache is preserved between concurrency steps. Warmup and measurement refill and reuse the cache within each step.
 
-## 검증과 환경
+## Validation and environment
 
-- [최종 검증 기록](verification.json): 48개 단계, 서로 다른 추론 Pod UID 48개, 본 측정 4,800회, warmup 96회, 출력 길이 부족이나 초과 0회.
-- 48개 단계의 입력 데이터 파일 SHA-256이 동일합니다. 결과 경로, concurrency 값 외의 AIPerf 컨테이너 설정도 동일합니다. Cache 초기화 15회 모두 삭제 후 잔여 항목 0을 확인했습니다.
-- 추론은 12 CPU, 16 GiB, AIPerf는 1 CPU, 1 GiB이며 requests와 limits가 같습니다. 저장된 추론, AIPerf Pod는 모두 지정 노드와 Guaranteed QoS를 검증했습니다.
-- [환경 기록](environment.json): Docker VM의 15 CPU, 약 24 GiB를 kind 4개 노드가 공유합니다. 측정 전후 기존 background Deployment의 이미지, replica 수와 Docker 자원 설정은 같았습니다. 실행 중 모든 변형의 이미지 ID와 배치 노드를 고정했습니다.
-- 측정 기간(UTC): 2026-09-20 09:16:20~10:29:33. 종료 시 `llama-base` Deployment는 enhanced-batch 이미지로 1/1 Ready였습니다.
+- [Final validation record](verification.json): 48 steps, 48 distinct inference Pod UIDs, 4,800 measured and 96 warmup requests, 0 short or over-length outputs.
+- Input data file SHA-256 is identical across all 48 steps. AIPerf container settings other than result path and concurrency are identical. All 15 cache clears were verified with 0 remaining entries after deletion.
+- Inference uses 12 CPU and 16 GiB, AIPerf uses 1 CPU and 1 GiB, with requests equal to limits. Saved inference and AIPerf Pods were all verified on their assigned nodes with Guaranteed QoS.
+- [Environment record](environment.json): the Docker VM's 15 CPUs and about 24 GiB are shared by 4 kind nodes. Background Deployment images, replica counts, and Docker resource settings were the same before and after measurement. Image IDs and placement nodes were fixed for every variant during the run.
+- Measurement period (UTC): 2026-09-20 09:16:20–10:29:33. At exit the `llama-base` Deployment was 1/1 Ready on the enhanced-batch image.
 
-## 재실행
+## Re-run
 
-[벤치마크 가이드](../../../guides/benchmark.md#전체-구현-반복-측정)에 따라 클러스터, 이미지를 준비하고 실제 노드를 선택합니다. 이 보고서의 이미지 ID와 실행 순서는 [run.json](run.json)에 있습니다. 다른 환경에서 얻은 결과는 위 실험 조건과 구분해 해석합니다.
+Follow the [benchmark guide](../../../guides/benchmark.md#repeated-measurement-of-all-implementations) to prepare the cluster and images and select the actual nodes. This report's image IDs and execution order are in [run.json](run.json). Results from a different environment should be interpreted separately from the conditions above.

@@ -1,14 +1,16 @@
-# 간단한 응답 품질 확인
+> Korean version: [한국어](quality-check-KR.md)
 
-대표 질문 7개로 추론 서버의 응답 품질을 확인합니다. [품질 확인 스크립트](../../scripts/check-quality.py)는 질문을 순차 전송하고 응답, 검사 기준과 판정을 JSON으로 저장합니다.
+# Quick Response Quality Check
 
-SmolLM2는 영어 질문을, Qwen은 한국어 질문을 사용합니다. 영어 결과와 한국어 결과의 통과 수를 같은 품질 점수로 비교하지 않습니다.
+Checks inference server response quality with 7 representative questions. The [quality check script](../../scripts/check-quality.py) sends questions sequentially and saves responses, check criteria, and verdicts as JSON.
 
-## 실행
+SmolLM2 uses English questions, and Qwen uses Korean questions. Do not compare English and Korean pass counts as the same quality score.
 
-검사 대상은 `/v1/chat/completions`를 제공하는 실행 중인 서버입니다. 스크립트는 Python 3 표준 라이브러리만 사용하며 base, enhanced-batch와 enhanced-cache의 공통 API에서 실행할 수 있습니다.
+## Running
 
-Docker와 kind를 사용하는 아래 예제는 SmolLM2 base 서버를 준비하고 로컬 8000번 포트로 연결합니다. 저장소 루트에서 실행합니다.
+The target is a running server that serves `/v1/chat/completions`. The script uses only the Python 3 standard library and runs against the shared API of base, enhanced-batch, and enhanced-cache.
+
+The Docker and kind example below prepares a SmolLM2 base server and connects it to local port 8000. Run from the repository root.
 
 ```sh
 ./scripts/local-k8s.sh install
@@ -23,45 +25,45 @@ make build-image load-image VARIANT=transformers-base
 ./scripts/local-k8s.sh kubectl port-forward service/transformers-base 8000:8000
 ```
 
-다른 터미널에서 저장소 루트를 기준으로 실행합니다.
+From another terminal, run relative to the repository root.
 
 ```sh
 python3 scripts/check-quality.py --output reports/transformers/quality-base.json
 ```
 
-`--url`과 `--model`로 서버와 모델을 지정합니다. 기본 서버는 `http://127.0.0.1:8000`, 모델은 SmolLM2이며 `API_SERVER_URL`, `SERVED_MODEL_NAME`으로 변경할 수 있습니다. 언어를 고정하려면 `--language en` 또는 `--language ko`를 사용합니다.
+Use `--url` and `--model` to select the server and model. Defaults are `http://127.0.0.1:8000` and SmolLM2, and `API_SERVER_URL` and `SERVED_MODEL_NAME` also change them. To pin the language, use `--language en` or `--language ko`.
 
-llama.cpp 서버는 해당 서비스에 포트를 연결한 뒤 `python3 scripts/check-quality.py --backend llamacpp`로 검사합니다. 기본 모델은 Qwen2.5입니다.
+For a llama.cpp server, connect a port to that service, then run `python3 scripts/check-quality.py --backend llamacpp`. The default model is Qwen2.5.
 
-기본 출력 상한은 128토큰, 요청별 timeout은 60초입니다. `--max-tokens`와 `--timeout`으로 변경하며, 출력 상한은 서버에서 허용하는 값 이하여야 합니다.
+The default output cap is 128 tokens, and the per-request timeout is 60 seconds. Change them with `--max-tokens` and `--timeout`, keeping the output cap within the server limit.
 
-`--output`을 생략하면 `reports/<backend>/quality-<UTC 시각>.json`에 저장합니다. 같은 경로를 지정하면 기존 파일을 덮어씁니다.
+Without `--output`, it saves to `reports/<backend>/quality-<UTC timestamp>.json`. Specifying an existing path overwrites it.
 
-## 검사 항목과 판정
+## Check items and verdicts
 
-| 항목 | 확인 방식 |
+| Item | Verification |
 | --- | --- |
-| 지시 수행 | `PASS`라는 답을 제시하는지 자동 확인 |
-| 간단한 계산 | `17 + 25`의 계산 결과가 `42`인지 자동 확인 |
-| 정보 추출 | 제시한 주문번호를 정확하게 답하는지 자동 확인 |
-| JSON 내용 | `name`이 `Mina`이고 `count`가 3인지 자동 확인 |
-| 대화 맥락 | 앞서 알려준 고양이 이름을 답하는지 자동 확인 |
-| 요약 | 선택한 언어로 핵심 사실 보존 여부를 사람이 확인 |
-| 영어 문장 바꾸기 또는 한국어 번역 | 영어 검사는 쉬운 영어로 바꾸기, 한국어 검사는 번역의 의미 보존을 사람이 확인 |
+| Instruction following | Automatically checks whether the answer contains `PASS` |
+| Simple calculation | Automatically checks whether `17 + 25` is answered as `42` |
+| Information extraction | Automatically checks whether the given order number is answered exactly |
+| JSON content | Automatically checks whether `name` is `Mina` and `count` is 3 |
+| Conversation context | Automatically checks whether it answers the earlier cat name |
+| Summary | Human checks whether key facts are preserved in the selected language |
+| English rephrasing or Korean translation | English checks plain-English rephrasing, and Korean checks meaning preservation in translation, by human review |
 
-질문 세트와 판정 기준은 결과의 `language`, `criterion`, `answer`에 기록합니다. 자동 검사는 정답 내용을 확인하며 요약, 번역과 판단이 모호한 응답은 `REVIEW`로 남깁니다. `REVIEW`는 사람이 응답과 기준을 대조해 판정합니다.
+The question set and decision criteria are recorded in the result's `language`, `criterion`, and `answer`. Automatic checks verify answer content, and ambiguous summary, translation, and judgment responses remain `REVIEW`. For `REVIEW`, a human compares the response against the criterion.
 
-출력에는 `PASS`, `FAIL`, `REVIEW`, `ERROR`를 구분합니다. 자동 검사 실패는 `FAIL`, HTTP 오류, 잘못된 API 응답, 빈 응답이나 출력 상한 도달은 `ERROR`입니다.
+Output distinguishes `PASS`, `FAIL`, `REVIEW`, and `ERROR`. Failed automatic checks are `FAIL`, while HTTP errors, malformed API responses, empty responses, and output-cap truncation are `ERROR`.
 
-한 항목이 실패해도 나머지 질문을 실행하고 결과를 저장합니다. `FAIL` 또는 `ERROR`가 있으면 종료 코드 1, 나머지는 0입니다. 종료 코드가 0이어도 `REVIEW` 항목은 수동으로 검토해야 합니다.
+It still runs the remaining questions after one item fails, then saves results. The exit code is 1 with any `FAIL` or `ERROR`, and 0 otherwise. Even with exit code 0, manually review `REVIEW` items.
 
-요청은 `temperature=0`, `top_p=1`, `ignore_eos=false`를 사용합니다. 정상 종료를 허용하므로 고정 출력 길이 성능 측정과 조건이 다릅니다.
+Requests use `temperature=0`, `top_p=1`, and `ignore_eos=false`. Since normal termination is allowed, conditions differ from fixed-output-length performance measurement.
 
-이 검사는 기본 응답을 확인하는 용도이며 종합 품질 점수나 구현 간 품질 동등성을 보장하지 않습니다.
+This check confirms basic responses and does not guarantee an overall quality score or quality equivalence across implementations.
 
-## 스크립트 검증
+## Script verification
 
-모델 없이 로컬 테스트 서버로 정상 응답, 오답, API 오류와 출력 잘림 처리를 확인합니다.
+Without a model, a local test server checks handling of normal responses, wrong answers, API errors, and output truncation.
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_quality_check.py'

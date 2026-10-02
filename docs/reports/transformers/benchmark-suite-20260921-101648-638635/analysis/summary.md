@@ -1,14 +1,16 @@
-# SmolLM2 CPU 성능 비교: 기본 단일 노드 kind
+> Korean version: [한국어](summary-KR.md)
 
-2026-09-21에 SmolLM2-135M-Instruct FP32를 CPU requests/limits 8개, 메모리 16Gi, PyTorch 연산 스레드 4개로 측정했습니다. base, enhanced-batch, enhanced-cache 각각 동시성 1, 2, 4, 8의 sweep을 3회 반복했습니다.
+# SmolLM2 CPU performance comparison: default single-node kind
 
-본 요청 3,600건과 워밍업 72건이 모두 성공했습니다. 출력 길이 부족과 초과는 없었고, 저장된 Pod 상태의 컨테이너 재시작 횟수는 모두 0이었습니다. 전체 suite 소요 시간은 **64분 18초**, 본 요청 실행 시간의 합은 **49분 07초**입니다.
+On 2026-09-21, measured SmolLM2-135M-Instruct FP32 with 8 CPU requests/limits, 16Gi memory, and 4 PyTorch compute threads. Each of base, enhanced-batch, and enhanced-cache ran a concurrency 1, 2, 4, 8 sweep with 3 repetitions.
 
-## 처리량과 지연
+All 3,600 measured and 72 warmup requests succeeded. There were no short or over-length outputs, and all stored Pod states show 0 container restarts. Total suite time was **64 min 18s**, and the sum of measured-request run time was **49 min 07s**.
 
-평균 ± 표본 표준편차입니다. 지연의 p95는 각 실행에서 얻은 p95의 평균이며 요청 전체를 합친 p95가 아닙니다.
+## Throughput and latency
 
-| 구현 | 동시성 | 출력 tok/s | TTFT 평균 (ms) | TTFT p95 (ms) | ITL 평균 (ms) | 응답 평균 (s) | 본 측정 (s) |
+Mean ± sample standard deviation. Latency p95 is the mean of per-run p95 values, not a pooled-across-requests p95.
+
+| Implementation | Concurrency | Output tok/s | TTFT mean (ms) | TTFT p95 (ms) | ITL mean (ms) | Mean response (s) | Measured run (s) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | base | 1 | 44.79 ± 0.17 | 138.88 ± 0.62 | 233.32 ± 3.71 | 19.33 ± 0.08 | 0.93 ± 0.00 | 93.59 ± 0.36 |
 | base | 2 | 44.96 ± 0.11 | 1063.57 ± 2.73 | 1589.18 ± 9.06 | 19.27 ± 0.05 | 1.86 ± 0.00 | 93.24 ± 0.23 |
@@ -23,21 +25,21 @@
 | enhanced-cache | 4 | 49.06 ± 0.09 | 2587.39 ± 4.52 | 3367.36 ± 3.36 | 19.19 ± 0.04 | 3.38 ± 0.01 | 85.45 ± 0.15 |
 | enhanced-cache | 8 | 48.97 ± 0.20 | 5837.01 ± 23.49 | 6648.95 ± 29.70 | 19.22 ± 0.07 | 6.63 ± 0.03 | 85.60 ± 0.35 |
 
-## Sweep 소요 시간
+## Sweep durations
 
-전체 소요 시간에는 이미지와 클러스터 확인, Pod 준비, 캐시 초기화, 워밍업과 결과 수집이 포함됩니다. 본 측정 시간은 AIPerf의 `benchmark_duration`입니다.
+Total duration includes image and cluster checks, Pod readiness, cache initialization, warmup, and result collection. Measured time is AIPerf's `benchmark_duration`.
 
-| 구현 | 1회차 | 2회차 | 3회차 | 전체 평균 | 본 측정 평균 |
+| Implementation | Run 1 | Run 2 | Run 3 | Total mean | Measured mean |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| base | 7분 56초 | 7분 53초 | 7분 55초 | 7분 55초 | 6분 12초 |
-| enhanced-batch | 6분 05초 | 6분 04초 | 6분 05초 | 6분 05초 | 4분 26초 |
-| enhanced-cache | 7분 26초 | 7분 25초 | 7분 27초 | 7분 26초 | 5분 44초 |
+| base | 7 min 56s | 7 min 53s | 7 min 55s | 7 min 55s | 6 min 12s |
+| enhanced-batch | 6 min 05s | 6 min 04s | 6 min 05s | 6 min 05s | 4 min 26s |
+| enhanced-cache | 7 min 26s | 7 min 25s | 7 min 27s | 7 min 26s | 5 min 44s |
 
-## 이전 멀티 노드 측정과 비교
+## Comparison with previous multi-node measurement
 
-이전과 같은 모델, 이미지 ID, 데이터 seed 및 입력 파일, CPU 8개, PyTorch 4스레드를 사용했습니다. 비교에는 노드 수 감소와 기존 모니터링 및 다른 테스트 Pod 제거 효과가 함께 반영됩니다.
+Used the same model, image IDs, data seed and input files, 8 CPUs, and 4 PyTorch threads as before. The comparison also reflects fewer nodes and removal of existing monitoring and other test Pods.
 
-| 구현 | 동시성 | 이전 출력 tok/s | 단일 노드 출력 tok/s | 변화 |
+| Implementation | Concurrency | Previous output tok/s | Single-node output tok/s | Change |
 | --- | ---: | ---: | ---: | ---: |
 | base | 1 | 44.54 | 44.79 | +0.57% |
 | base | 2 | 44.70 | 44.96 | +0.57% |
@@ -52,26 +54,26 @@
 | enhanced-cache | 4 | 48.45 | 49.06 | +1.26% |
 | enhanced-cache | 8 | 48.54 | 48.97 | +0.88% |
 
-이전 멀티 노드 측정과의 비교 수치는 위 표와 [비교 CSV](summary.csv)에 정리되어 있습니다.
+Comparison figures against the previous multi-node measurement are summarized in the table above and [comparison CSV](summary.csv).
 
-## 측정 조건과 해석
+## Measurement conditions and interpretation
 
-- Apple M5 Pro, Docker Linux aarch64, Docker VM CPU 15개와 메모리 약 24GiB. kind 기본 설정의 control-plane 노드 1개를 사용합니다.
-- 새 클러스터에서 추론과 AIPerf는 모두 local-k8s-control-plane에 고정했습니다. 기본 시스템 Pod와 이번 실험 워크로드가 실행됐습니다. 추론과 AIPerf Pod는 Guaranteed QoS이며 AIPerf는 CPU 1개와 메모리 1Gi를 사용합니다.
-- 각 동시성에서 새 추론 Pod를 사용했고, 회차별 구현 실행 순서를 순환했습니다. enhanced-batch의 최대 배치 크기는 4, 대기 시간은 5ms입니다.
-- enhanced-cache는 sweep 시작 전에만 PVC를 비우고 동시성 사이에는 보존했습니다. 워밍업과 본 측정 중에는 캐시를 채우고 재사용합니다.
-- 입력 16개, seed 42, sequential 반복, streaming, ignore_eos. 입력/출력 목표 분포는 64/32와 256/64 각각 50%입니다. 실제 100건은 32토큰 출력 69건과 64토큰 출력 31건이며 입력은 채팅 템플릿을 포함해 94 또는 286토큰입니다. 36개 조건의 입력 데이터 해시가 동일합니다.
-- 캐시 성능은 같은 입력을 반복하는 이 부하의 결과입니다. 고유 입력 위주의 서비스 부하에서는 별도 측정이 필요합니다.
+- Apple M5 Pro, Docker Linux aarch64, Docker VM with 15 CPUs and about 24GiB memory. Uses 1 control-plane node with default kind settings.
+- On the fresh cluster, both inference and AIPerf were pinned to local-k8s-control-plane. Default system Pods and this experiment's workloads ran. Inference and AIPerf Pods use Guaranteed QoS; AIPerf uses 1 CPU and 1Gi memory.
+- Each concurrency used a fresh inference Pod, and the per-round implementation execution order was rotated. enhanced-batch maximum batch size is 4 with 5ms wait.
+- enhanced-cache cleared the PVC only before the sweep and preserved it between concurrency steps. Warmup and measurement fill and reuse the cache.
+- 16 inputs, seed 42, sequential repetition, streaming, ignore_eos. Target input/output distributions are 50% each for 64/32 and 256/64. The actual 100 requests are 69 with 32-token outputs and 31 with 64-token outputs; inputs are 94 or 286 tokens including the chat template. Input data hashes are identical across all 36 conditions.
+- Cache performance reflects this load repeating the same inputs. Service loads dominated by unique inputs need separate measurement.
 
-[실행별 지표와 개별 보고서](../summary.md), [평균과 표준편차 CSV](../summary.csv), [검증 결과](run.json), [실행 환경과 이미지 해시](../environment/run.json).
+[Per-run metrics and individual reports](../summary.md), [mean and standard deviation CSV](../summary.csv), [validation results](run.json), [run environment and image hashes](../environment/run.json).
 
-`runs.csv`는 본 요청 시간대의 추론 Pod CPU 표본 평균과 최대 memory working set을 담습니다. 같은 kubelet CPU 시각은 한 번만 포함하며 시간 가중 평균은 아닙니다.
+`runs.csv` holds the inference Pod CPU sample mean and maximum memory working set over the measured-request window. Identical kubelet CPU timestamps are included once; this is not a time-weighted mean.
 
-## 재배포와 재실행
+## Redeployment and re-run
 
-`local-k8s`를 기본 `config/cluster/kind.yaml`로 재생성했습니다. [실행 환경](../environment/run.json)에 클러스터 설정을 기록했습니다.
+Recreated `local-k8s` with the default `config/cluster/kind.yaml`. Cluster settings are recorded in the [run environment](../environment/run.json).
 
-새 노드에 이전과 동일한 이미지 ID를 로드하고 DNS smoke test를 통과한 뒤 실행했습니다. 클러스터 재생성과 이미지 로드 시간은 위 suite 소요 시간에 포함되지 않습니다.
+Loaded the same image IDs as before onto the new node, passed the DNS smoke test, then ran. Cluster recreation and image loading time are not included in the suite durations above.
 
 ```sh
 python3 scripts/run-benchmark-suite.py --backend transformers --repetitions 3 \
@@ -79,4 +81,4 @@ python3 scripts/run-benchmark-suite.py --backend transformers --repetitions 3 \
   --benchmark-node local-k8s-control-plane
 ```
 
-측정 후 단일 노드 클러스터를 유지하고 base, CPU requests/limits 8개, PyTorch 연산 스레드 4개로 복원했습니다. `/readyz` 200을 확인했으며, [복원된 Pod](after-pod.json)를 보관합니다.
+After measurement, kept the single-node cluster and restored base with 8 CPU requests/limits and 4 PyTorch compute threads. Verified `/readyz` 200 and archived the [restored Pod](after-pod.json).

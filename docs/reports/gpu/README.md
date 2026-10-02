@@ -1,20 +1,21 @@
-# GPU 추론 벤치마크 결과
+> Korean version: [한국어](README-KR.md)
+# GPU inference benchmark results
 
-> **주의:** 기존 CPU 벤치마크와 이번 GPU 벤치마크는 호스트 환경과 클러스터 배치가 달라 성능 수치를 직접 비교하면 안 됩니다.
+> **Note:** The earlier CPU benchmarks and these GPU benchmarks use different host environments and cluster layouts, so do not compare performance figures directly.
 
-아래 Transformers와 llama.cpp의 AIPerf 결과는 각 구현을 1회 실행했습니다. 동시성은 `1,2,4,8`이며 조건마다 warmup 요청 2개와 측정 요청 100개를 사용했습니다. 추론 Pod는 RTX 2060 SUPER가 할당된 worker에서, AIPerf는 control-plane에서 실행했습니다.
+AIPerf results below for Transformers and llama.cpp are single runs of each implementation. Concurrency is `1,2,4,8` with 2 warmup requests and 100 measured requests per condition. Inference Pods ran on a worker with an RTX 2060 SUPER, and AIPerf ran on the control-plane.
 
-| 엔진 | 모델 | GPU 설정 | 측정 조건 | 결과 |
+| Engine | Model | GPU setting | Measured conditions | Result |
 | --- | --- | --- | --- | --- |
-| Transformers | `HuggingFaceTB/SmolLM2-135M-Instruct` | `dtype=float16` | base, batch, cache | [1회차 요약](transformers/benchmark-suite-20260928-141725-165948/summary.md) |
-| llama.cpp | `Qwen/Qwen2.5-0.5B-Instruct` | `n_gpu_layers=-1` | base, batch, cache 초기화, cache 보존 | [1회차 요약](llamacpp/benchmark-suite-20260928-144903-213311/summary.md) |
+| Transformers | `HuggingFaceTB/SmolLM2-135M-Instruct` | `dtype=float16` | base, batch, cache | [First run summary](transformers/benchmark-suite-20260928-141725-165948/summary.md) |
+| llama.cpp | `Qwen/Qwen2.5-0.5B-Instruct` | `n_gpu_layers=-1` | base, batch, cache clear, cache preserve | [First run summary](llamacpp/benchmark-suite-20260928-144903-213311/summary.md) |
 
-각 요약에는 동시성별 처리량, 지연, GPU 사용률과 사용 메모리의 평균 및 최대값이 있습니다. `run.json`에는 실행 설정과 이미지 ID가 있으며, `gpu.csv` 시계열은 로컬 결과 디렉터리에 보관합니다.
+Each summary has per-concurrency throughput, latency, and mean and maximum GPU utilization and used memory. `run.json` has execution settings and image IDs, and `gpu.csv` time series are kept in the local result directory.
 
-Transformers batch의 `max-parallel` 설정 실험은 [설정 실험 보고서](transformers/batch-config-tuning-20260928.md)에, GPU 전용 배치 구현의 결과는 [최적화 보고서](transformers/batch-gpu-optimization-20260928.md)에 있습니다.
+For Transformers batch `max-parallel` setting experiments see the [setting experiment report](transformers/batch-config-tuning-20260928.md), and for GPU-only batch implementation results see the [optimization report](transformers/batch-gpu-optimization-20260928.md).
 
-GPU batch의 높은 동시성에서 실제 모델 출력을 대조한 결과는 [출력 검증 보고서](transformers/batch-gpu-output-validation-20260929.md)에 있습니다.
+For comparison of actual model outputs at high GPU batch concurrency see the [output validation report](transformers/batch-gpu-output-validation-20260929.md).
 
-Mamba-130M의 prefix 상태 캐시 구현, 정확성 검사와 동시성 1의 AIPerf 비교는 [Mamba GPU 테스트 결과](mamba/README.md)를 참고하세요.
+For Mamba-130M prefix state cache implementation, correctness checks, and concurrency-1 AIPerf comparison see [Mamba GPU test results](mamba/README.md).
 
-같은 Jamba-tiny-dev 가중치의 base, 배치와 GPU/RAM/디스크 HiCache 비교는 [Jamba hybrid GPU 결과](hybrid/README.md)를 참고하세요. 이 결과는 HTTP를 제외한 엔진 측정입니다.
+For base, batch, and GPU/RAM/disk HiCache comparison on the same Jamba-tiny-dev weights see [Jamba hybrid GPU results](hybrid/README.md). These results are engine measurements excluding HTTP.

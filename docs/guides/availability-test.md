@@ -1,32 +1,34 @@
-# 멀티 노드 서비스 가용성 테스트
+> Korean version: [한국어](availability-test-KR.md)
 
-SmolLM2의 Transformers CPU base 서버 두 개에 AIPerf 부하를 보내면서 engine worker 하나를 pause 또는 SIGKILL합니다. 노드 상태, 대체 Pod와 Service endpoint 복구, 실제 요청 결과를 수집합니다.
+# Multi-node service availability test
 
-기본 절차는 Transformers CPU를 사용합니다. llama.cpp를 사용할 때는 [엔진별 변경 사항](#llamacpp)을 적용하며 관찰과 판정 기준은 동일합니다.
+Send AIPerf load to two Transformers CPU base servers for SmolLM2 while pausing or SIGKILLing one engine worker. Collect node status, replacement Pod and Service endpoint recovery, and actual request results.
 
-추론 구현과 API는 [추론 엔진 가이드](inference-engine.md), 매니페스트 적용과 ConfigMap 변경 방법은 [매니페스트 관리](manifests.md)를 참고합니다.
+The default procedure uses Transformers CPU. For llama.cpp, apply the [per-engine changes](#llamacpp); observation and pass criteria are the same.
 
-## 구성
+For inference implementation and API, see the [inference engine guide](inference-engine.md); for manifest and ConfigMap handling, see [manifest management](manifests.md).
 
-| 항목 | 설정 |
+## Configuration
+
+| Item | Setting |
 | --- | --- |
-| kind | control-plane 1개, monitor worker 1개, engine worker 2개 |
-| 모델 | 고정된 SmolLM2-135M-Instruct FP32 snapshot, 서버와 AIPerf가 같은 tokenizer 사용 |
-| 서버 | `transformers-base-metric`, 자원과 스레드 설정은 배포 매니페스트에서 관리 |
-| 배치 | engine worker에 분산, 장애 후 살아 있는 worker에 대체 Pod 허용 |
-| AIPerf | monitor worker, concurrency 4, worker 1, timeout 30초, 매 요청 새 연결 |
-| 입력과 출력 | `64,32:50;256,64:50`, 입력 16개, seed 42, sequential, `ignore_eos:true` |
-| 관측 | Prometheus 5초 scrape, kube-state-metrics, Grafana, `/metrics`의 `transformers_*` 지표 |
+| kind | 1 control-plane, 1 monitor worker, 2 engine workers |
+| Model | Fixed SmolLM2-135M-Instruct FP32 snapshot; server and AIPerf use the same tokenizer |
+| Server | `transformers-base-metric`; resources and thread settings are managed in the deployment manifest |
+| Placement | Spread across engine workers; allow replacement Pods on the surviving worker after failure |
+| AIPerf | Monitor worker, concurrency 4, 1 worker, 30s timeout, new connection per request |
+| Inputs and outputs | `64,32:50;256,64:50`, 16 inputs, seed 42, sequential, `ignore_eos:true` |
+| Observation | Prometheus 5s scrape, kube-state-metrics, Grafana, `transformers_*` metrics from `/metrics` |
 
-모든 측정 컨테이너는 CPU와 메모리 `requests=limits`를 사용합니다. 자원 요청량은 배포 매니페스트에서 확인하며, 장애 후 남은 engine worker에 대체 Pod를 배치할 여유가 필요합니다. monitor와 Kubernetes 시스템 자원도 추가로 확보합니다.
+All measurement containers use CPU and memory `requests=limits`. Check resource requests in the deployment manifests; the surviving engine worker needs spare capacity for a replacement Pod after failure. Reserve additional resources for the monitor and Kubernetes system.
 
-kind 노드는 같은 Docker 호스트 자원을 공유하므로 측정 중에는 다른 부하 실험을 중지합니다.
+kind nodes share the same Docker host resources, so stop other load experiments during measurement.
 
-설정 원본은 [availability 매니페스트](../../k8s/availability-test-transformers/), [멀티 노드 토폴로지](../../config/cluster/kind-multi-node.yaml), [모델 snapshot](../../config/models/smollm2-135m-transformers.env)입니다.
+Configuration sources are the [availability manifests](../../k8s/availability-test-transformers/), [multi-node topology](../../config/cluster/kind-multi-node.yaml), and [model snapshot](../../config/models/smollm2-135m-transformers.env).
 
-## 준비
+## Preparation
 
-Docker, POSIX 셸, Python 3.10 이상이 필요합니다. 저장소 루트에서 실행합니다.
+Docker, a POSIX shell, and Python 3.10 or later are required. Run from the repository root.
 
 ```sh
 export CLUSTER_NAME=transformers-tests
@@ -40,13 +42,13 @@ KIND_CONFIG=config/cluster/kind-multi-node.yaml ./scripts/local-k8s.sh up
 ./scripts/load-benchmark-images.sh
 ```
 
-기본 `local-k8s` 단일 노드 클러스터와 별도로 만듭니다. `up`은 기존 클러스터의 토폴로지를 바꾸지 않으므로 같은 이름의 단일 노드 클러스터가 있으면 새 이름을 지정합니다.
+Create this separately from the default `local-k8s` single-node cluster. `up` does not change the topology of an existing cluster, so pick a new name if a single-node cluster with the same name exists.
 
-가용성 테스트 실행 스크립트는 engine worker 2개, monitor worker 1개를 확인하며, 격리 kubeconfig를 사용합니다.
+The availability test runner checks for 2 engine workers and 1 monitor worker, and uses an isolated kubeconfig.
 
-## 배포와 실행
+## Deploy and run
 
-같은 클러스터에서 HPA 테스트를 실행했다면 먼저 결과를 내보내고 `./scripts/local-k8s.sh kubectl delete -f k8s/hpa-test-transformers`로 정리합니다. 이 명령은 해당 테스트 PVC도 삭제합니다.
+If you ran the HPA test on the same cluster, export its results first and clean up with `./scripts/local-k8s.sh kubectl delete -f k8s/hpa-test-transformers`. This command also deletes that test's PVC.
 
 ```sh
 ./scripts/local-k8s.sh kubectl apply -f k8s/availability-test-transformers/namespace.yaml
@@ -61,78 +63,78 @@ python3 scripts/run-availability-test-transformers.py --scenario pause-60s
 python3 scripts/run-availability-test-transformers.py --scenario sigkill-60s
 ```
 
-`--scenario`는 `pause-60s`, `sigkill-60s`, `pause-300s`, `sigkill-300s`를 지원합니다. 숫자는 장애 지속 시간이 아닌 Pod의 `not-ready`와 `unreachable` NoExecute toleration입니다. 네 조건을 비교하려면 위 명령의 scenario를 바꾸어 순차 실행합니다.
+`--scenario` supports `pause-60s`, `sigkill-60s`, `pause-300s`, and `sigkill-300s`. The number is the Pod `not-ready` and `unreachable` NoExecute toleration, not the failure duration. To compare all four conditions, run them sequentially with different scenarios.
 
-각 실행은 Pod를 새로 분산 배치하고 90초 워밍업, 150초 정상 구간, 노드 장애, 대체 Pod Ready 후 90초, 노드 복구 후 90초를 관찰합니다. 소요 시간은 실행 환경과 복구 상태에 따라 달라지며 실제 시각은 `run.json`에 기록합니다.
+Each run redistributes Pods, then observes a 90s warmup, a 150s healthy interval, node failure, 90s after the replacement Pod is Ready, and 90s after node recovery. Elapsed time varies with the environment and recovery state; actual timestamps are recorded in `run.json`.
 
-`--cluster` 기본값은 `CLUSTER_NAME` 또는 `transformers-tests`입니다. `--victim-node`를 생략하면 첫 engine worker를 선택합니다.
+The `--cluster` default is `CLUSTER_NAME` or `transformers-tests`. Without `--victim-node`, the first engine worker is selected.
 
-실행 스크립트는 Docker kind 클러스터와 worker 소속을 검증하고 control-plane에 장애를 주지 않습니다. SIGKILL 동안 Docker 자동 재시작을 끄고 원래 정책을 복원합니다. 실패와 Ctrl+C에도 노드 복구와 AIPerf 중지를 시도합니다.
+The runner validates the Docker kind cluster and worker membership and never faults the control-plane. It disables Docker auto-restart during SIGKILL and restores the original policy. It attempts node recovery and AIPerf shutdown on failure and Ctrl+C.
 
-가용성 테스트와 HPA 테스트의 실행 스크립트는 같은 클러스터 잠금을 사용하므로 동시에 실행되지 않습니다.
+The availability and HPA test runners share the same cluster lock, so they do not run at the same time.
 
-추론 Pod는 hostname 기준 preferred pod anti-affinity로 분산하며 장애 후 남은 worker에 함께 배치될 수 있습니다. 노드 복귀만으로 자동 재분산되지는 않으므로 실행 스크립트가 종료 시 Pod를 다시 생성합니다.
+Inference Pods spread with hostname-based preferred pod anti-affinity and can be co-located on the surviving worker after failure. Return of the node alone does not redistribute them, so the runner recreates Pods on exit.
 
-프로세스 SIGKILL이나 호스트 종료로 복구가 실행되지 않으면 `run.json`의 대상 노드와 원래 Docker 정책을 확인해 수동 복구합니다.
+If recovery did not run because of process SIGKILL or host shutdown, check the target node and original Docker policy in `run.json` and recover manually.
 
-## 결과와 관찰
+## Results and observation
 
-원본은 `reports/transformers/availability-<scenario>-<UTC>/`에 저장합니다. `run.json`, `actions.jsonl`, Kubernetes와 Docker 관측, 서버 로그, `aiperf/` 요청별 JSONL과 집계, Prometheus 시계열을 포함합니다. 요약 보고서는 [Transformers 결과 목록](../reports/transformers/README.md)에 있습니다.
+Store originals in `reports/transformers/availability-<scenario>-<UTC>/`. This includes `run.json`, `actions.jsonl`, Kubernetes and Docker observations, server logs, `aiperf/` per-request JSONL and aggregates, and Prometheus series. The summary report is in the [Transformers result list](../reports/transformers/README.md).
 
-Prometheus, Grafana와 AIPerf 결과는 monitor 노드의 PVC에 저장합니다. 기본 StorageClass와 모니터링 이미지 다운로드가 필요하며, 클러스터 삭제 시 PVC 데이터도 사라집니다. 보고서와 그래프는 실행 스크립트가 자동 생성하지 않습니다.
+Prometheus, Grafana, and AIPerf results are stored on the monitor node PVC. The default StorageClass and monitoring image downloads are required; PVC data is lost when the cluster is deleted. The runner does not generate reports or graphs automatically.
 
-실패율, timeout, TTFT와 ITL은 AIPerf 요청별 결과로 판단합니다. 서버에 도착하지 않은 요청은 서버 지표에 포함되지 않습니다.
+Judge failure rate, timeouts, TTFT, and ITL from per-request AIPerf results. Requests that never reached the server are not included in server metrics.
 
-`status=complete`는 장애 주입, 대체 Pod, 노드 복구와 수집 절차의 완료를 뜻합니다. 장애 중 timeout 등 요청 오류가 발생할 수 있으므로 AIPerf 성공률은 별도로 확인합니다.
+`status=complete` means the fault injection, replacement Pod, node recovery, and collection steps finished. Request errors such as timeouts during the failure can still occur, so check the AIPerf success rate separately.
 
-서버 HTTP 200 중 SSE 오류는 `transformers_requests_total{outcome="error"}`로 기록합니다. `/healthz`, `/readyz`, `/metrics`는 요청 지표에서 제외합니다.
+Server HTTP 200 responses with SSE errors are recorded as `transformers_requests_total{outcome="error"}`. `/healthz`, `/readyz`, and `/metrics` are excluded from request metrics.
 
 ```sh
 ./scripts/local-k8s.sh kubectl -n availability-test-transformers get pods -o wide
 ./scripts/local-k8s.sh kubectl -n availability-test-transformers port-forward service/grafana 3000:3000
 ```
 
-Grafana의 `availability-test-transformers` 대시보드를 사용합니다. renderer는 기본 replicas 0이며 측정이 끝난 뒤에만 실행합니다. 종료 후 부하 Pod는 0개이고, 추론 Pod 2개는 두 worker로 다시 분산됩니다.
+Use the Grafana `availability-test-transformers` dashboard. The renderer has 0 replicas by default and runs only after measurement ends. After shutdown the load Pod count is 0, and the 2 inference Pods spread across the two workers again.
 
-| 파일과 디렉터리 | 수집 데이터 |
+| File and directory | Collected data |
 | --- | --- |
-| `run.json`, `actions.jsonl` | 실험 설정, 장애, 복구 시각, 실행 상태 |
-| `aiperf/` | 요청별 JSONL과 AIPerf 자체 집계 결과 |
-| `prometheus/`, `metric-range.json` | 요청, 지연, TTFT, 노드, Pod, EndpointSlice 시계열과 조회 범위 |
-| `kubernetes-snapshots.jsonl.gz`, `state-changes.jsonl` | Kubernetes 객체 표본과 상태 변화 |
-| `resources.jsonl.gz` | kubelet CPU와 메모리 표본 |
-| `docker-events.jsonl`, `docker-states.jsonl` | 대상 노드 컨테이너 이벤트와 상태 |
-| `*.log`, 단계별 `*.txt`, `*-docker.json` | 클라이언트, 서버, controller 로그와 단계별 상태 |
+| `run.json`, `actions.jsonl` | Experiment settings, fault and recovery times, run status |
+| `aiperf/` | Per-request JSONL and AIPerf aggregates |
+| `prometheus/`, `metric-range.json` | Request, latency, TTFT, node, Pod, and EndpointSlice series and query range |
+| `kubernetes-snapshots.jsonl.gz`, `state-changes.jsonl` | Kubernetes object samples and state changes |
+| `resources.jsonl.gz` | kubelet CPU and memory samples |
+| `docker-events.jsonl`, `docker-states.jsonl` | Target node container events and states |
+| `*.log`, per-step `*.txt`, `*-docker.json` | Client, server, and controller logs and per-step states |
 
-## 검증과 정리
+## Validation and cleanup
 
 ```sh
 PYTHONPATH=src python3 -m unittest discover -s tests -p 'test_transformers_metric.py'
 python3 -m unittest discover -s tests -p 'test_availability_runner_transformers.py'
 sh tests/test-hpa-manifests-transformers.sh
-# 원본 결과를 수집한 뒤 테스트 namespace와 PVC 정리
+# After collecting original results, clean up the test namespace and PVC
 ./scripts/local-k8s.sh kubectl delete -f k8s/availability-test-transformers
 ```
 
-metric 단위 테스트에는 Transformers 런타임과 `src/transformer/base_metric/requirements.txt`의 의존성이 필요합니다. 클러스터를 삭제하려면 같은 `CLUSTER_NAME`으로 `./scripts/local-k8s.sh down`을 실행합니다. 호스트에 수집된 결과와 모델은 유지됩니다.
+The metric unit tests need the Transformers runtime and dependencies in `src/transformer/base_metric/requirements.txt`. To delete the cluster, run `./scripts/local-k8s.sh down` with the same `CLUSTER_NAME`. Host-collected results and models are kept.
 
 ## llama.cpp
 
-위 절차에서 다음 값을 바꿉니다. 모든 터미널에서 선택한 `CLUSTER_NAME`을 동일하게 사용합니다.
+Change the following values in the procedure above. Use the selected `CLUSTER_NAME` in every terminal.
 
-| 항목 | Transformers 기본값 | llama.cpp |
+| Item | Transformers default | llama.cpp |
 | --- | --- | --- |
-| 클러스터 예시 | `transformers-tests` | `availability-test-llamacpp` |
-| 모델 준비 | `./scripts/download-transformers-model.sh` | `./scripts/download-model-llamacpp.sh`와 `./scripts/download-tokenizer-llamacpp.sh` |
-| 추론 이미지와 Deployment | `transformers-base-metric` | `base-metric-llamacpp` |
-| 매니페스트 | `k8s/availability-test-transformers` | `k8s/availability-test-llamacpp` |
-| namespace와 대시보드 | `availability-test-transformers` | `availability-test-llamacpp` |
-| 실행 스크립트 | `scripts/run-availability-test-transformers.py` | `scripts/run-availability-test-llamacpp.py` |
-| 결과 루트 | `reports/transformers/` | `reports/llamacpp/` |
+| Cluster example | `transformers-tests` | `availability-test-llamacpp` |
+| Model preparation | `./scripts/download-transformers-model.sh` | `./scripts/download-model-llamacpp.sh` and `./scripts/download-tokenizer-llamacpp.sh` |
+| Inference image and Deployment | `transformers-base-metric` | `base-metric-llamacpp` |
+| Manifests | `k8s/availability-test-transformers` | `k8s/availability-test-llamacpp` |
+| Namespace and dashboard | `availability-test-transformers` | `availability-test-llamacpp` |
+| Runner script | `scripts/run-availability-test-transformers.py` | `scripts/run-availability-test-llamacpp.py` |
+| Result root | `reports/transformers/` | `reports/llamacpp/` |
 
-모델은 [Qwen GGUF 설정](../../config/models/qwen2.5-0.5b-gguf-llamacpp.env)을 사용하며 서버와 AIPerf의 모델 및 토크나이저를 맞춥니다. 자원과 부하 설정은 [llama.cpp 매니페스트](../../k8s/availability-test-llamacpp/)를 기준으로 합니다. 같은 클러스터의 다른 테스트를 정리할 때도 해당 엔진의 namespace와 매니페스트를 선택합니다.
+The model uses the [Qwen GGUF settings](../../config/models/qwen2.5-0.5b-gguf-llamacpp.env); match the server and AIPerf model and tokenizer. Use the [llama.cpp manifests](../../k8s/availability-test-llamacpp/) for resources and load settings. When cleaning up another test on the same cluster, select that engine's namespace and manifests.
 
-최초 배포 후와 재실행 전에 아래 명령으로 AIPerf와 renderer를 중지합니다. llama.cpp 매니페스트의 AIPerf는 기본 replicas가 1이므로 첫 실행에도 이 단계가 필요합니다. 각 시나리오는 독립 실행하며 순서에 의존하지 않습니다.
+After initial deployment and before reruns, stop AIPerf and the renderer with the commands below. The llama.cpp AIPerf manifest defaults to 1 replica, so this step is needed even for the first run. Each scenario runs independently and does not depend on order.
 
 ```sh
 export CLUSTER_NAME=availability-test-llamacpp
@@ -143,7 +145,7 @@ python3 scripts/run-availability-test-llamacpp.py --scenario pause-60s --dry-run
 python3 scripts/run-availability-test-llamacpp.py --scenario pause-60s
 ```
 
-llama.cpp metric 검증은 다음 명령을 사용합니다.
+Use the following commands for llama.cpp metric validation.
 
 ```sh
 python -m pip install -r src/llamacpp/base_metric/requirements.txt fastapi httpx

@@ -1,18 +1,20 @@
-# CPU HPA 테스트
+> Korean version: [한국어](hpa-test-KR.md)
 
-SmolLM2 Transformers CPU base 서버에 AIPerf 부하를 보내 CPU HPA의 1→4 확장과 4→1 축소를 검증합니다. 실제 Ready Pod, Service endpoint와 성공 요청을 함께 확인합니다.
+# CPU HPA test
 
-기본 절차는 Transformers CPU를 사용합니다. llama.cpp를 사용할 때는 [엔진별 변경 사항](#llamacpp)을 적용하며 관찰과 판정 기준은 동일합니다.
+Send AIPerf load to a SmolLM2 Transformers CPU base server and verify CPU HPA scale-out from 1 to 4 and scale-in from 4 to 1. Check actual Ready Pods, Service endpoints, and successful requests together.
 
-추론 구현과 API는 [추론 엔진 가이드](inference-engine.md), 매니페스트 적용과 ConfigMap 변경 방법은 [매니페스트 관리](manifests.md)를 참고합니다.
+The default procedure uses Transformers CPU. For llama.cpp, apply the [per-engine changes](#llamacpp); observation and pass criteria are the same.
 
-## 준비와 배포
+For inference implementation and API, see the [inference engine guide](inference-engine.md); for manifest and ConfigMap handling, see [manifest management](manifests.md).
 
-control-plane 1개, monitor worker 1개, engine worker 2개와 `transformers-base-metric` 이미지를 사용합니다. 자원과 스레드는 [배포 매니페스트](../../k8s/hpa-test-transformers/)에서 설정하며 `requests=limits`를 유지합니다.
+## Preparation and deployment
 
-Pod별 자원 요청량과 최대 replica 수를 기준으로 추론 용량을 확보하고, monitor와 Kubernetes 시스템 자원도 추가로 확보합니다.
+Use 1 control-plane, 1 monitor worker, 2 engine workers, and the `transformers-base-metric` image. Resources and threads are set in the [deployment manifests](../../k8s/hpa-test-transformers/) with `requests=limits` kept.
 
-Docker, POSIX 셸, Python 3.10 이상이 필요합니다. 저장소 루트에서 모델, 클러스터와 이미지를 준비합니다.
+Reserve inference capacity based on per-Pod resource requests and max replica count, plus extra resources for the monitor and Kubernetes system.
+
+Docker, a POSIX shell, and Python 3.10 or later are required. Prepare the model, cluster, and images from the repository root.
 
 ```sh
 export CLUSTER_NAME=transformers-tests
@@ -26,9 +28,9 @@ KIND_CONFIG=config/cluster/kind-multi-node.yaml ./scripts/local-k8s.sh up
 ./scripts/load-benchmark-images.sh
 ```
 
-`up`은 기존 클러스터의 토폴로지를 변경하지 않습니다. 같은 이름의 단일 노드 클러스터가 있으면 새 이름을 지정합니다. 모든 명령은 같은 `CLUSTER_NAME`으로 실행합니다.
+`up` does not change an existing cluster topology. If a single-node cluster with the same name exists, pick a new name. Run all commands with the same `CLUSTER_NAME`.
 
-availability 테스트가 배포되어 있으면 결과를 내보낸 뒤 `./scripts/local-k8s.sh kubectl delete -f k8s/availability-test-transformers`로 정리합니다. 이 명령은 해당 테스트 PVC도 삭제합니다. 다른 부하 실험과 동시에 실행하지 않습니다.
+If the availability test is deployed, export its results then clean up with `./scripts/local-k8s.sh kubectl delete -f k8s/availability-test-transformers`. This command also deletes that test's PVC. Do not run it together with other load experiments.
 
 ```sh
 export CLUSTER_NAME=transformers-tests
@@ -47,51 +49,51 @@ done
 ./scripts/local-k8s.sh kubectl -n hpa-test-transformers top pods
 ```
 
-새 Pod는 Ready가 된 뒤에도 첫 메트릭 수집까지 시간이 필요합니다. HPA의 CPU 측정값을 기다린 뒤 `top`을 실행합니다.
+New Pods need time until first metric collection even after becoming Ready. Wait for the HPA CPU reading, then run `top`.
 
-기존 Metrics Server가 있으면 해당 Metrics API를 사용합니다. 저장소 설정의 `--kubelet-insecure-tls`는 kind 실험용입니다. Metrics Server는 HPA 제어에 사용하고 Prometheus는 관측에 사용합니다.
+If a Metrics Server already exists, use that Metrics API. The repository `--kubelet-insecure-tls` setting is for kind experiments. Metrics Server is for HPA control; Prometheus is for observation.
 
-| 항목 | 기본값 |
+| Item | Default |
 | --- | --- |
-| HPA | `autoscaling/v2`, min 1, max 4, CPU request 대비 평균 50% |
-| 확장 정책 | 안정화 0초, 30초당 Pod 1개 |
-| 축소 정책 | 안정화 120초, 30초당 Pod 1개 |
-| 고부하 | AIPerf concurrency 8, worker 1, timeout 30초 |
-| 저부하 | concurrency 1, constant 0.02 req/s |
-| 판정 | 단계별 제한 600초, 확장과 축소 도달 후 각각 60초 유지 |
+| HPA | `autoscaling/v2`, min 1, max 4, 50% average of CPU request |
+| Scale-out policy | 0s stabilization, 1 Pod per 30s |
+| Scale-in policy | 120s stabilization, 1 Pod per 30s |
+| High load | AIPerf concurrency 8, 1 worker, 30s timeout |
+| Low load | Concurrency 1, constant 0.02 req/s |
+| Decision | 600s limit per phase, hold 60s after reaching scale-out and scale-in targets |
 
-CPU 목표는 Pod의 CPU request 대비 사용률입니다. 추론 Deployment의 replicas는 HPA가 관리하고 AIPerf와 renderer는 0개로 시작합니다.
+The CPU target is utilization relative to Pod CPU request. The inference Deployment replicas are managed by HPA; AIPerf and the renderer start at 0.
 
-모델은 고정된 SmolLM2-135M-Instruct FP32 snapshot이며 서버와 AIPerf가 해당 snapshot의 토크나이저를 사용합니다. 입력과 출력 길이 분포는 `64,32:50;256,64:50`, 입력 16개, seed 42, sequential, `ignore_eos:true`입니다.
+The model is a fixed SmolLM2-135M-Instruct FP32 snapshot; server and AIPerf use that snapshot's tokenizer. Input and output length distribution is `64,32:50;256,64:50`, 16 inputs, seed 42, sequential, `ignore_eos:true`.
 
-[HPA 매니페스트](../../k8s/hpa-test-transformers/)는 namespace, RBAC, 대시보드와 부하를 독립적으로 정의합니다.
+The [HPA manifests](../../k8s/hpa-test-transformers/) define namespace, RBAC, dashboard, and load independently.
 
-## 실행
+## Run
 
 ```sh
 python3 scripts/run-hpa-test-transformers.py --scenario scale-out-in --dry-run
 python3 scripts/run-hpa-test-transformers.py --scenario scale-out-in
-# 확장만 검증하려면 별도로 실행
+# To verify scale-out only, run separately
 python3 scripts/run-hpa-test-transformers.py --scenario scale-out
 ```
 
-`run-hpa-test-transformers.py`의 기본 시나리오는 `scale-out-in`입니다. `--cluster`는 `CLUSTER_NAME` 또는 `transformers-tests`가 기본값입니다.
+The default scenario of `run-hpa-test-transformers.py` is `scale-out-in`. `--cluster` defaults to `CLUSTER_NAME` or `transformers-tests`.
 
-실행 스크립트는 engine worker 2개와 monitor worker 1개를 확인하며, 가용성 테스트와 공통 잠금으로 중복 실행을 막습니다.
+The runner checks for 2 engine workers and 1 monitor worker, and blocks duplicate runs with a lock shared with the availability test.
 
-실행 스크립트는 무부하 최소 replica 상태를 30초 확인한 뒤 고부하를 시작합니다. HPA current/desired, Deployment replicas/available, Ready Pod와 일치하는 ready endpoint가 모두 목표 수에 도달하고 새 Pod가 편입되어야 확장을 인정합니다. Pending Pod나 desired 증가만으로 통과하지 않습니다.
+The runner verifies the no-load minimum-replica state for 30s, then starts high load. Scale-out is accepted only when HPA current/desired, Deployment replicas/available, Ready Pods, and ready endpoints matching them all reach the target count and new Pods have joined. Pending Pods or desired-count increase alone do not pass.
 
-scale-out-in은 고부하를 중지한 뒤 AIPerf Pod를 저부하 조건으로 다시 시작합니다. CPU가 목표 아래이며 실제 Pod와 endpoint가 모두 1개, 종료 중 Pod가 0개가 되어야 축소를 인정합니다. 이후 60초 유지 구간 안에서 시작하고 완료된 성공 요청이 하나 이상 있어야 통과합니다. 두 부하 단계 사이의 클라이언트 종료와 초기화 시간도 기록합니다.
+After scale-out-in stops high load, it restarts the AIPerf Pod under low-load conditions. Scale-in is accepted only when CPU is below target, actual Pods and endpoints are both 1, terminating Pods are 0. It passes only with at least one successful request started and finished inside the following 60s hold window. Client shutdown and initialization time between the two load phases is also recorded.
 
-`--target-replicas`는 확장 판정 목표를 조정하며 HPA 최대값은 변경하지 않습니다. `--timeout`은 단계 제한, `--hold-seconds`는 유지 시간을 조정합니다.
+`--target-replicas` adjusts the scale-out decision target without changing the HPA maximum. `--timeout` adjusts the phase limit; `--hold-seconds` adjusts the hold time.
 
-scale-out-in의 `--low-request-rate`는 저부하 도착률을 조정합니다. 동시성 1만으로는 CPU가 충분히 낮아지지 않을 수 있습니다.
+The scale-out-in `--low-request-rate` adjusts the low-load arrival rate. Concurrency 1 alone may not lower CPU enough.
 
-실패와 Ctrl+C에도 부하 중지, 원래 클라이언트 인자 복원과 자료 수집을 시도합니다.
+On failure and Ctrl+C, it still attempts load shutdown, original client argument restore, and data collection.
 
-AIPerf와 renderer가 중지된 상태에서 시작하고 측정 중 추론 replica를 수동 변경하지 않습니다. 시간 초과나 수집 실패는 `status=failed`로 기록합니다.
+Start with AIPerf and the renderer stopped, and do not manually change inference replicas during measurement. Timeouts and collection failures are recorded as `status=failed`.
 
-## 관찰과 결과
+## Observation and results
 
 ```sh
 ./scripts/local-k8s.sh kubectl -n hpa-test-transformers get hpa,pods -o wide
@@ -99,48 +101,48 @@ AIPerf와 renderer가 중지된 상태에서 시작하고 측정 중 추론 repl
 ./scripts/local-k8s.sh kubectl -n hpa-test-transformers port-forward service/grafana 3000:3000
 ```
 
-Grafana `hpa-test-transformers` 대시보드에서 CPU, HPA replica, endpoint, `transformers_*` 요청 지표를 확인합니다. CPU가 `<unknown>`이면 Metrics API와 CPU request를 확인하고, Pod가 Pending이면 engine worker의 예약 자원과 이미지, 모델 마운트를 확인합니다.
+Check CPU, HPA replicas, endpoints, and `transformers_*` request metrics on the Grafana `hpa-test-transformers` dashboard. If CPU shows `<unknown>`, check the Metrics API and CPU request; if Pods are Pending, check engine worker reserved resources, image, and model mount.
 
-원본은 `reports/transformers/hpa-<UTC>/`에 저장합니다. `run.json`의 scenario, 단계 시각과 요청 수, `observations.csv`의 5초 표본, Kubernetes 원본, `aiperf/high/`, `aiperf/low/`, Prometheus 시계열을 포함합니다.
+Originals are stored in `reports/transformers/hpa-<UTC>/`. This includes the `run.json` scenario, phase times and request counts, 5s samples in `observations.csv`, Kubernetes originals, `aiperf/high/`, `aiperf/low/`, and Prometheus series.
 
-고부하와 저부하 구간의 요청 성공 여부로 절차를 판정하며, 오류율과 지연은 별도로 해석합니다. 요약은 [Transformers 결과 목록](../reports/transformers/README.md)에서 확인할 수 있습니다.
+Pass or fail is judged by request success in the high- and low-load intervals; error rate and latency are interpreted separately. The summary is in the [Transformers result list](../reports/transformers/README.md).
 
-## 검증과 정리
+## Validation and cleanup
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_hpa_runner_transformers.py'
 sh tests/test-hpa-manifests-transformers.sh
-# 결과 수집 후 워크로드와 PVC 삭제
+# After collecting results, delete workloads and PVC
 ./scripts/local-k8s.sh kubectl delete -f k8s/hpa-test-transformers
-# 이 실험만 사용하는 Metrics Server일 때
+# When this Metrics Server is only used for this experiment
 ./scripts/local-k8s.sh kubectl delete -f k8s/metrics-server
 ```
 
 ## llama.cpp
 
-위 절차에서 다음 값을 바꿉니다. 모든 터미널에서 선택한 `CLUSTER_NAME`을 동일하게 사용합니다.
+Change the following values in the procedure above. Use the selected `CLUSTER_NAME` in every terminal.
 
-| 항목 | Transformers 기본값 | llama.cpp |
+| Item | Transformers default | llama.cpp |
 | --- | --- | --- |
-| 클러스터 예시 | `transformers-tests` | `hpa-test-llamacpp` |
-| 모델 준비 | `./scripts/download-transformers-model.sh` | `./scripts/download-model-llamacpp.sh`와 `./scripts/download-tokenizer-llamacpp.sh` |
-| 추론 이미지와 Deployment | `transformers-base-metric` | `base-metric-llamacpp` |
-| 매니페스트 | `k8s/hpa-test-transformers` | `k8s/hpa-test-llamacpp` |
-| namespace와 대시보드 | `hpa-test-transformers` | `hpa-test-llamacpp` |
-| 실행 스크립트 | `scripts/run-hpa-test-transformers.py` | `scripts/run-hpa-test-llamacpp.py` |
-| 결과 루트 | `reports/transformers/` | `reports/llamacpp/` |
+| Cluster example | `transformers-tests` | `hpa-test-llamacpp` |
+| Model preparation | `./scripts/download-transformers-model.sh` | `./scripts/download-model-llamacpp.sh` and `./scripts/download-tokenizer-llamacpp.sh` |
+| Inference image and Deployment | `transformers-base-metric` | `base-metric-llamacpp` |
+| Manifests | `k8s/hpa-test-transformers` | `k8s/hpa-test-llamacpp` |
+| Namespace and dashboard | `hpa-test-transformers` | `hpa-test-llamacpp` |
+| Runner script | `scripts/run-hpa-test-transformers.py` | `scripts/run-hpa-test-llamacpp.py` |
+| Result root | `reports/transformers/` | `reports/llamacpp/` |
 
-모델은 [Qwen GGUF 설정](../../config/models/qwen2.5-0.5b-gguf-llamacpp.env)을 사용하며 서버와 AIPerf의 모델 및 토크나이저를 맞춥니다. 자원과 부하 설정은 [llama.cpp 매니페스트](../../k8s/hpa-test-llamacpp/)를 기준으로 합니다. 같은 클러스터의 다른 테스트를 정리할 때도 해당 엔진의 namespace와 매니페스트를 선택합니다.
+The model uses the [Qwen GGUF settings](../../config/models/qwen2.5-0.5b-gguf-llamacpp.env); match the server and AIPerf model and tokenizer. Use the [llama.cpp manifests](../../k8s/hpa-test-llamacpp/) for resources and load settings. When cleaning up another test on the same cluster, select that engine's namespace and manifests.
 
 ```sh
 export CLUSTER_NAME=hpa-test-llamacpp
 python3 scripts/run-hpa-test-llamacpp.py --scenario scale-out-in --dry-run
 python3 scripts/run-hpa-test-llamacpp.py --scenario scale-out-in
-# 확장만 검증할 때
+# When verifying scale-out only
 python3 scripts/run-hpa-test-llamacpp.py --scenario scale-out
 ```
 
-강제 종료로 정리가 실행되지 않았다면 부하를 중지하고 결과를 복사한 뒤 기본 설정을 복원합니다. Transformers도 해당 namespace와 결과 루트로 바꾸어 복구합니다.
+If forced termination skipped cleanup, stop the load, copy results, then restore defaults. For Transformers, replace with that namespace and result root for recovery.
 
 ```sh
 ./scripts/local-k8s.sh kubectl -n hpa-test-llamacpp scale deployment/aiperf --replicas=0
@@ -151,11 +153,11 @@ mkdir -p reports/llamacpp/hpa-manual
 ./scripts/local-k8s.sh kubectl apply -f k8s/hpa-test-llamacpp
 ```
 
-llama.cpp 실행 스크립트와 매니페스트 검증은 다음 명령을 사용합니다.
+Use the following commands for llama.cpp runner and manifest validation.
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_hpa_runner_llamacpp.py'
 sh tests/test-hpa-manifests-llamacpp.sh
 ```
 
-보고서와 Grafana PNG는 자동 생성하지 않습니다. 축소가 지연되면 저부하 요청률, 축소 안정화 시간과 종료 중인 Pod를 확인합니다.
+Reports and Grafana PNGs are not generated automatically. If scale-in is delayed, check the low-load request rate, scale-in stabilization time, and terminating Pods.

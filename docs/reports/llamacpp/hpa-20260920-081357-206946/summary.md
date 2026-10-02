@@ -1,91 +1,93 @@
-# CPU HPA 고부하→저부하 증가와 축소 실험
+> Korean version: [한국어](summary-KR.md)
 
-고부하에서 추론 replica와 Service ready endpoint가 **1→4개**로 증가했고, 요청량을 줄인 뒤 **4→1개**로 축소됐습니다. 최소 replica 상태를 65.1초 유지하는 동안 새로 시작하고 완료된 저부하 요청 1건이 성공해 자동 검증을 통과했습니다.
+# CPU HPA high-to-low scale-up and scale-down experiment
 
-## 실행 조건
+Under high load, inference replicas and Service ready endpoints grew from **1→4**, then shrank from **4→1** after the request rate was lowered. While holding the minimum-replica state for 65.1s, 1 newly started and completed low-load request succeeded, passing automatic validation.
 
-- 실행: 2026-09-20 08:13:57.207~08:24:23.891 UTC, kind `local-k8s`의 `hpa-test` 네임스페이스.
-- 환경: Kubernetes v1.36.4, control-plane 1개, engine worker 2개, monitor worker 1개. Docker 호스트 CPU 15개와 메모리 약 23.9 GiB를 공유합니다.
-- 추론: `local/llama-base-metric:0.1.0`, Qwen2.5-0.5B-Instruct Q4_K_M. Pod당 CPU 2 / 메모리 2 GiB, thread 2이며 CPU와 메모리는 `requests=limits`입니다.
-- HPA: CPU request 대비 목표 50%, replica 1~4. 증가는 30초당 최대 1개, 축소는 120초 안정화 후 30초당 최대 1개입니다.
-- 고부하: AIPerf 동시성 8, 요청률 제한 없이 지속 요청. replica 4개 도달 후 60초 유지했습니다.
-- 저부하: AIPerf 동시성 1, 일정 간격 0.02 req/s(50초마다 1건). 최소 replica로 돌아온 뒤 60초 이상 요청을 계속 보냈습니다.
-- 두 단계 모두 스트리밍, 매 요청 새 연결, timeout 30초이며 입력/출력 목표 토큰 `64/32`, `256/64`의 분포와 seed를 유지했습니다.
-- 기존 availability-test의 추론 Pod 2개와 관측 구성이 같은 호스트에 있었으며 해당 AIPerf와 renderer는 정지 상태였습니다.
+## Run conditions
 
-## 단계 전환과 관찰
+- Run: 2026-09-20 08:13:57.207–08:24:23.891 UTC, `hpa-test` namespace on kind `local-k8s`.
+- Environment: Kubernetes v1.36.4, 1 control-plane, 2 engine workers, 1 monitor worker. Shares 15 Docker host CPUs and about 23.9 GiB memory.
+- Inference: `local/llama-base-metric:0.1.0`, Qwen2.5-0.5B-Instruct Q4_K_M. 2 CPU / 2 GiB memory and 2 threads per Pod, with CPU and memory `requests=limits`.
+- HPA: 50% of CPU request, 1–4 replicas. At most 1 Pod per 30s for scale-up; after 120s stabilization, at most 1 Pod per 30s for scale-down.
+- High load: AIPerf concurrency 8, sustained requests with no rate limit. Held 4 replicas for 60s after reaching them.
+- Low load: AIPerf concurrency 1, fixed interval 0.02 req/s (1 request every 50s). Kept sending requests for 60s or more after returning to minimum replicas.
+- Both phases use streaming, a new connection per request, and a 30s timeout, keeping the target input/output token `64/32` and `256/64` distribution and seed.
+- The existing availability-test inference Pods (2) and observation setup were on the same host; their AIPerf and renderer were stopped.
 
-| 단계 | UTC 시각 |
+## Phase transitions and observations
+
+| Phase | UTC time |
 | --- | --- |
-| 고부하 시작 요청 | 08:14:28.794 |
-| HPA current, 가용 Pod, endpoint 4개 확인 | 08:16:43.281 |
-| 저부하 전환 요청 | 08:17:45.645 |
-| 고부하 클라이언트 종료 | 08:17:47.227 |
-| 저부하 클라이언트 Pod 준비 | 08:17:47.816 |
-| HPA current, Pod, endpoint 1개 및 종료 Pod 없음 확인 | 08:23:14.538 |
-| 최소 replica 유지 구간 시작 | 08:23:14.619 |
-| 측정 완료 | 08:24:19.705 |
-| 저부하 클라이언트 종료 | 08:24:20.702 |
+| High-load start requested | 08:14:28.794 |
+| HPA current, available Pods, 4 endpoints confirmed | 08:16:43.281 |
+| Low-load transition requested | 08:17:45.645 |
+| High-load client terminated | 08:17:47.227 |
+| Low-load client Pod ready | 08:17:47.816 |
+| HPA current, Pods, 1 endpoint and no terminating Pods confirmed | 08:23:14.538 |
+| Minimum-replica hold window start | 08:23:14.619 |
+| Measurement complete | 08:24:19.705 |
+| Low-load client terminated | 08:24:20.702 |
 
-전환 때 AIPerf Pod를 재생성해 이전 단계 결과를 저장했습니다. 두 클라이언트 사이에는 종료, 초기화 공백이 있으며, 저부하 요청은 50초 간격으로 이어집니다. 추론 Deployment replica와 HPA 정책은 실행 중 수동 변경하지 않았습니다.
+The AIPerf Pod was recreated at the transition to save the previous phase's results. There is a termination/setup gap between the two clients, and low-load requests continue every 50s. The inference Deployment replicas and HPA policy were not manually changed during the run.
 
-아래는 약 5초 간격 표본에서 각 ready endpoint 수를 처음 확인한 시점입니다. 증가 경과 시간은 고부하 시작 요청, 축소 경과 시간은 저부하 전환 요청 기준입니다.
+Below are the first-observed times for each ready-endpoint count in ~5s samples. Growth elapsed times use the high-load start request; shrink elapsed times use the low-load transition request.
 
-| 구간 | ready endpoint | UTC 시각 | 기준 시각 후 | HPA CPU |
+| Phase | Ready endpoints | UTC time | After reference | HPA CPU |
 | --- | ---: | --- | ---: | ---: |
-| 증가 | 2 | 08:15:20.799 | +52.0초 | 91% |
-| 증가 | 3 | 08:16:06.947 | +98.2초 | 99% |
-| 증가 | 4 | 08:16:32.852 | +124.1초 | 99% |
-| 축소 | 3 | 08:20:15.236 | +149.6초 | 0% |
-| 축소 | 2 | 08:20:46.876 | +181.2초 | 0% |
-| 축소 | 1 | 08:22:58.714 | +313.1초 | 0% |
+| Grow | 2 | 08:15:20.799 | +52.0s | 91% |
+| Grow | 3 | 08:16:06.947 | +98.2s | 99% |
+| Grow | 4 | 08:16:32.852 | +124.1s | 99% |
+| Shrink | 3 | 08:20:15.236 | +149.6s | 0% |
+| Shrink | 2 | 08:20:46.876 | +181.2s | 0% |
+| Shrink | 1 | 08:22:58.714 | +313.1s | 0% |
 
-전체 상태가 일치한 스케일 아웃 판정은 고부하 시작 후 **134.5초**, 스케일 인 판정은 저부하 전환 요청 후 **328.9초**였습니다. CPU 하락과 replica 감소 사이에는 지표 갱신, 권고 replica의 정수 반올림, 축소 안정화, 축소 속도 제한, Pod 종료 시간이 반영됩니다.
+The scale-out decision with all states matching came **134.5s** after high-load start; the scale-in decision came **328.9s** after the low-load transition request. The gap between CPU drop and replica decrease reflects metric refresh, integer rounding of recommended replicas, scale-down stabilization, scale-down rate limits, and Pod termination time.
 
-## 요청 결과
+## Request results
 
-| 구간 | 성공 / 오류 | 오류율 | 성공 요청 지연 p95 | 성공 요청 TTFT p95 |
+| Window | Success / Error | Error rate | Successful request latency p95 | Successful request TTFT p95 |
 | --- | ---: | ---: | ---: | ---: |
-| 고부하 | 88 / 7 | 7.37% | 28.40초 | 27.15초 |
-| 저부하 | 7 / 0 | 0.00% | 10.51초 | 8.86초 |
+| High load | 88 / 7 | 7.37% | 28.40s | 27.15s |
+| Low load | 7 / 0 | 0.00% | 10.51s | 8.86s |
 
-최종 최소 replica 유지 구간 안에서 시작하고 완료한 저부하 성공 요청은 **1건**입니다. Pod 삭제에 따라 서버 counter 합계가 줄어들 수 있어 요청 성공 여부는 단계별 AIPerf 요청 원본으로 판정했습니다. 두 단계의 요청량이 다르므로 지연 차이를 같은 부하에서의 성능 개선으로 해석하지 않습니다.
+**1** low-load successful request started and completed inside the final minimum-replica hold window. Server counter totals can fall as Pods are deleted, so request success was judged from each phase's original AIPerf request records. The two phases use different request volumes, so the latency difference should not be read as a same-load performance improvement.
 
-## Grafana 패널
+## Grafana panels
 
-실제 Grafana 패널의 데이터 범위를 **2026-09-20 08:13:57.207~08:24:23.891 UTC**로 고정했습니다. 저부하 전환 요청은 **08:17:45.645 UTC**입니다. 추출은 부하 종료 후 08:25:12.606 UTC에 시작했으며 렌더러는 추출 후 정지했습니다.
+Fixed the actual Grafana panel data range to **2026-09-20 08:13:57.207–08:24:23.891 UTC**. The low-load transition request was at **08:17:45.645 UTC**. Export started at 08:25:12.606 UTC after load ended, and the renderer was stopped after export.
 
-### CPU와 replica
+### CPU and replicas
 
-CPU `observed`는 HPA가 평가한 request 대비 평균 사용률이며 `target`은 50%입니다. replica 패널은 desired/current와 Deployment available의 증가와 축소를 비교합니다.
+CPU `observed` is the request-relative mean utilization evaluated by the HPA, and `target` is 50%. The replica panel compares desired/current with Deployment available during growth and shrinkage.
 
-![Grafana: 고부하, 저부하의 CPU 사용률과 목표](figures/grafana-cpu.png)
+![Grafana: CPU utilization and target under high and low load](figures/grafana-cpu.png)
 
-![Grafana: HPA replica와 가용 Pod의 증가와 축소](figures/grafana-replicas.png)
+![Grafana: HPA replicas and available Pods growing and shrinking](figures/grafana-replicas.png)
 
-### Service 편입과 제외와 요청 분산
+### Service inclusion/removal and request distribution
 
-ready endpoint 수의 변화와 Pod별 처리 중 요청을 같은 시간축에서 확인합니다. 축소된 Pod의 시계열은 마지막 scrape 이후 사라집니다.
+Checks ready-endpoint changes and per-Pod in-flight requests on the same time axis. Time series for scaled-down Pods disappear after their last scrape.
 
-![Grafana: Service ready endpoint 증가와 축소](figures/grafana-endpoints.png)
+![Grafana: Service ready endpoint growth and shrinkage](figures/grafana-endpoints.png)
 
-![Grafana: Pod별 처리 중 요청](figures/grafana-in-flight.png)
+![Grafana: per-Pod in-flight requests](figures/grafana-in-flight.png)
 
-### 서버 처리량과 TTFT
+### Server throughput and TTFT
 
-완료 요청 처리량은 서버 outcome별 값이며 클라이언트 timeout과 일대일 대응하지 않습니다. TTFT는 서버 histogram의 최근 1분 p95로, 위 AIPerf 구간별 성공 요청 p95와 집계 범위, 측정 위치가 다릅니다. 저부하에서는 요청이 드물어 histogram 표본이 적거나 없는 구간이 있습니다.
+Completed-request throughput is the per-outcome server value and does not map one-to-one to client timeouts. TTFT is the server histogram's trailing-1-minute p95, which differs from the AIPerf per-window successful-request p95 above in aggregation range and measurement location. Under low load, requests are sparse, so some histogram windows have few or no samples.
 
-![Grafana: 서버 outcome별 완료 요청 처리량](figures/grafana-requests.png)
+![Grafana: per-outcome completed request throughput from the server](figures/grafana-requests.png)
 
-![Grafana: 서버 TTFT p95](figures/grafana-ttft.png)
+![Grafana: server TTFT p95](figures/grafana-ttft.png)
 
-## 재현과 근거
+## Reproduction and evidence
 
-[HPA 실행 가이드](../../../guides/hpa-test.md#llamacpp)를 따라 배포한 뒤 같은 `CLUSTER_NAME`을 유지하고 저장소 루트에서 [스케일 아웃→인 스크립트](../../../../scripts/run-hpa-test-llamacpp.py)를 실행합니다. 목표 replica 유지 후 요청량을 줄여 최소 replica 복귀와 응답 성공을 확인합니다.
+Follow the [HPA run guide](../../../guides/hpa-test.md#llamacpp), deploy, keep the same `CLUSTER_NAME`, and run the [scale-out→in script](../../../../scripts/run-hpa-test-llamacpp.py) from the repository root. After holding the target replicas, lower the request rate and verify return to minimum replicas and a successful response.
 
 ```sh
 python3 scripts/run-hpa-test-llamacpp.py --scenario scale-out-in \
   --target-replicas 4 --hold-seconds 60 --low-request-rate 0.02
 ```
 
-관측 결과는 위 표와 `figures/`의 Grafana PNG에 정리되어 있습니다.
+Observations are summarized in the tables above and the Grafana PNGs under `figures/`.

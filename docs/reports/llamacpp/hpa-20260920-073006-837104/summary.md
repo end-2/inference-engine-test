@@ -1,66 +1,68 @@
-# CPU HPA 스케일 아웃 실험
+> Korean version: [한국어](summary-KR.md)
 
-CPU 목표 50%의 HPA가 AIPerf 부하에 따라 추론 replica를 **1 → 2 → 3 → 4개**로 늘렸습니다. 새 Pod의 Ready 상태와 Service endpoint 편입을 확인했고, 목표 상태를 60초 이상 유지해 자동 검증이 완료되었습니다.
+# CPU HPA scale-out experiment
 
-## 실행 조건
+An HPA with a 50% CPU target grew inference replicas from **1 → 2 → 3 → 4** under AIPerf load. New Pod Ready state and Service endpoint inclusion were verified, and the target state was held for over 60s to complete automatic validation.
 
-- 실행: 2026-09-20 07:30:06~07:34:02 UTC, `local-k8s` 클러스터의 `hpa-test` 네임스페이스.
-- 환경: Kubernetes v1.36.4, kind control-plane 1개, engine worker 2개, monitor worker 1개. Docker 호스트 CPU 15개, 메모리 약 23.9 GiB를 공유합니다.
-- 추론: `local/llama-base-metric:0.1.0`, Qwen2.5-0.5B-Instruct Q4_K_M, Pod당 2 threads와 CPU 2 / 메모리 2 GiB (`requests=limits`).
-- HPA: CPU request 대비 평균 사용률 50%, replica 1~4, 증가 정책 30초당 최대 1개. Metrics Server v0.8.1을 사용했습니다.
-- 부하: AIPerf 0.12.0, 동시성 8, 스트리밍, 매 요청 새 연결, timeout 30초. 입력/출력 목표 토큰 `64/32`, `256/64`를 각 50%로 사용했습니다.
-- 기존 availability-test의 추론 Pod 2개와 관측 구성도 같은 호스트에 존재했으며, 해당 AIPerf와 renderer는 정지 상태였습니다.
+## Run conditions
 
-## 관찰 결과
+- Run: 2026-09-20 07:30:06–07:34:02 UTC, `hpa-test` namespace on the `local-k8s` cluster.
+- Environment: Kubernetes v1.36.4, 1 kind control-plane, 2 engine workers, 1 monitor worker. Shares 15 Docker host CPUs and about 23.9 GiB memory.
+- Inference: `local/llama-base-metric:0.1.0`, Qwen2.5-0.5B-Instruct Q4_K_M, 2 threads and 2 CPU / 2 GiB memory per Pod (`requests=limits`).
+- HPA: 50% average utilization of CPU request, 1–4 replicas, at most 1 Pod added per 30s. Used Metrics Server v0.8.1.
+- Load: AIPerf 0.12.0, concurrency 8, streaming, new connection per request, 30s timeout. Used target input/output tokens `64/32` and `256/64` at 50% each.
+- The existing availability-test inference Pods (2) and observation setup were on the same host; their AIPerf and renderer were stopped.
 
-경과 시간은 AIPerf Deployment의 scale 요청인 **07:30:38.420 UTC** 기준입니다. 5초 간격 표본에서 처음 관찰한 시각이므로 controller 이벤트 시각과 차이가 있습니다.
+## Observations
 
-| 목표 replica | desired 증가 관찰 | 당시 HPA CPU | Ready endpoint 도달 |
+Elapsed times use the AIPerf Deployment scale request at **07:30:38.420 UTC** as zero. They are first-observed times in 5s samples, so they differ from controller event times.
+
+| Target replicas | Desired increase observed | HPA CPU at the time | Ready endpoint reached |
 | ---: | ---: | ---: | ---: |
-| 2 | +52.2초 | 99% | +57.3초 |
-| 3 | +98.3초 | 61% | +103.4초 |
-| 4 | +123.9초 | 96% | +129.1초 |
+| 2 | +52.2s | 99% | +57.3s |
+| 3 | +98.3s | 61% | +103.4s |
+| 4 | +123.9s | 96% | +129.1s |
 
-HPA current까지 4개로 일치한 시점은 **+139.4초**였습니다. 이후 약 62초 동안 desired/current, Deployment replica/available, Ready Pod, endpoint 4개가 유지되었습니다. HPA 이벤트에서도 CPU 목표 초과를 이유로 replica 2, 3, 4로 각각 `SuccessfulRescale`이 기록되었습니다.
+HPA current reached 4 at **+139.4s**. Desired/current, Deployment replicas/available, Ready Pods, and 4 endpoints were then held for about 62s. HPA events recorded `SuccessfulRescale` to replicas 2, 3, and 4 respectively for exceeding the CPU target.
 
-완료 판정 당시 Prometheus의 성공 요청 카운터는 기준 0에서 83으로 증가했습니다. 부하 중지 시 저장된 AIPerf 최종 결과는 완료 요청 101건 중 성공 84건, timeout 17건(16.83%)입니다. 성공 요청의 TTFT p95는 26.51초, 요청 지연 p95는 27.53초였습니다. 두 집계의 종료 시점이 달라 성공 요청 수가 1건 차이 납니다.
+At completion, the Prometheus successful-request counter had risen from a baseline of 0 to 83. The stored final AIPerf result at load stop is 84 successes out of 101 completed requests with 17 timeouts (16.83%). Successful requests had TTFT p95 26.51s and request latency p95 27.53s. The success counts differ by 1 because the two aggregations end at different times.
 
-이 결과는 **CPU 기반 replica 증가와 서비스 편입**을 확인합니다. 초기 Pod 1개에 동시성 8을 가하는 과정에서 timeout이 발생했으므로 무오류 처리나 지연 목표 달성을 의미하지 않습니다. 공유 호스트에서 한 번 실행한 결과이며 스케일 아웃 소요 시간과 처리 성능은 자원 경쟁에 따라 달라질 수 있습니다.
+This result verifies **CPU-based replica growth and service inclusion**. Applying concurrency 8 to a single initial Pod produced timeouts, so it does not mean error-free serving or latency-target achievement. This is a single run on a shared host; scale-out time and serving performance can vary with resource contention.
 
-## Grafana 패널
+## Grafana panels
 
-아래 이미지는 `hpa-test` Grafana 대시보드의 실제 패널을 PNG로 추출한 것입니다. 모든 패널의 데이터 범위는 **2026-09-20 07:30:06.837~07:34:02.952 UTC**로 고정했습니다. 부하 시작은 07:30:38.420, replica 4개 검증은 07:32:57.861, 부하 중지는 07:34:01.609 UTC입니다. 추출은 같은 날 07:48:32 UTC에 시작했으며, 렌더러는 부하 측정 종료 후에만 실행했습니다.
+The images below are PNG exports of actual panels from the `hpa-test` Grafana dashboard. All panels use a fixed data range of **2026-09-20 07:30:06.837–07:34:02.952 UTC**. Load started at 07:30:38.420, 4-replica validation at 07:32:57.861, and load stop at 07:34:01.609 UTC. Export started at 07:48:32 UTC the same day; the renderer ran only after load measurement ended.
 
-### CPU와 replica
+### CPU and replicas
 
-CPU 패널의 `observed`는 HPA가 마지막으로 평가한 request 대비 평균 사용률이며, `target`은 설정값 50%입니다. replica 패널은 desired/current와 Deployment available의 변화를 함께 보여 줍니다.
+In the CPU panel, `observed` is the request-relative mean utilization last evaluated by the HPA, and `target` is the configured 50%. The replica panel shows desired/current together with Deployment available.
 
-![Grafana: CPU request 대비 평균 사용률과 목표 50%](figures/grafana-cpu.png)
+![Grafana: mean utilization versus CPU request with 50% target](figures/grafana-cpu.png)
 
-![Grafana: HPA desired/current와 가용 Pod의 1→4 증가](figures/grafana-replicas.png)
+![Grafana: HPA desired/current and available Pods growing 1→4](figures/grafana-replicas.png)
 
-### Service 편입과 요청 분산
+### Service inclusion and request distribution
 
-ready endpoint가 1→4개로 늘어나는 흐름을 Pod별 처리 중 요청과 비교합니다. endpoint 증가 시각과 HPA current 갱신 시각에는 수집, 제어 주기에 따른 차이가 있습니다.
+Compares the ready-endpoint 1→4 growth with per-Pod in-flight requests. Endpoint-growth and HPA current update times differ by collection and control intervals.
 
-![Grafana: 추론 Service의 ready endpoint 수](figures/grafana-endpoints.png)
+![Grafana: inference Service ready endpoint count](figures/grafana-endpoints.png)
 
-![Grafana: Pod별 처리 중 요청 수](figures/grafana-in-flight.png)
+![Grafana: per-Pod in-flight requests](figures/grafana-in-flight.png)
 
-### 서버 처리량과 TTFT
+### Server throughput and TTFT
 
-완료 요청 처리량은 서버가 기록한 outcome별 값으로, 클라이언트의 timeout 집계와 일대일로 대응하지 않습니다. TTFT는 서버 histogram의 최근 1분 p95이며, 앞서 제시한 AIPerf 성공 요청 전체 구간의 TTFT p95와 측정 위치, 집계 범위가 다릅니다.
+Completed-request throughput is the server-recorded per-outcome value and does not map one-to-one to client timeout counts. TTFT is the server histogram's trailing-1-minute p95, which differs in location and aggregation range from the AIPerf full-window successful-request TTFT p95 above.
 
-![Grafana: 서버 outcome별 완료 요청 처리량](figures/grafana-requests.png)
+![Grafana: per-outcome completed request throughput from the server](figures/grafana-requests.png)
 
-![Grafana: 서버 TTFT p95](figures/grafana-ttft.png)
+![Grafana: server TTFT p95](figures/grafana-ttft.png)
 
-## 재현과 근거
+## Reproduction and evidence
 
-[준비, 실행 가이드](../../../guides/hpa-test.md#llamacpp)를 따라 배포한 뒤 같은 `CLUSTER_NAME`을 유지하고 저장소 루트에서 [HPA 스크립트](../../../../scripts/run-hpa-test-llamacpp.py)를 실행합니다. 목표 replica 유지 확인 후 부하를 중지합니다.
+Follow [preparation and the run guide](../../../guides/hpa-test.md#llamacpp) to deploy, keep the same `CLUSTER_NAME`, and run the [HPA script](../../../../scripts/run-hpa-test-llamacpp.py) from the repository root. Stop the load after the target replicas are confirmed held.
 
 ```sh
 python3 scripts/run-hpa-test-llamacpp.py --scenario scale-out --target-replicas 4 --hold-seconds 60
 ```
 
-관측 결과는 위 표와 `figures/`의 Grafana PNG에 정리되어 있습니다.
+Observations are summarized in the tables above and the Grafana PNGs under `figures/`.

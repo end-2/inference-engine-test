@@ -1,88 +1,90 @@
-# Engine 노드 동결(pause), NoExecute toleration 300초
+> Korean version: [한국어](summary-KR.md)
 
-## 1. 실험 요약
+# Engine node freeze (pause), NoExecute toleration 300s
 
-engine 노드 하나에 동결(pause) 장애를 주입했다. 장애 후 **45.1초**에 Service ready endpoint 감소를 확인했고, **349.8초**에 생존 노드의 대체 Pod가 Ready가 됐다. 대체 Pod 생성부터 Ready까지는 **5초**였다.
+## 1. Experiment summary
 
-고정 관찰 구간의 AIPerf 결과는 **성공 196건, 오류 7건(3.45%)**이다. 노드 복구 전 대체 replica가 확보됐으며, 노드 복귀 후 관찰 기간에는 자동 재분산이 나타나지 않았다.
+Injected a freeze (pause) fault into one engine node. The Service ready endpoint decrease was observed **45.1s** after the fault, and a replacement Pod on a surviving node became Ready at **349.8s**. Replacement Pod creation to Ready took **5s**.
 
-## 2. 실험 환경
+The AIPerf result over the fixed observation window is **196 successes, 7 errors (3.45%)**. A replacement replica was secured before node recovery, and no automatic redistribution appeared during the post-recovery observation period.
 
-| 항목 | 실행 조건 |
+## 2. Experiment environment
+
+| Item | Condition |
 | --- | --- |
-| 관찰 구간 | 2026-09-20 04:59:29.798–05:11:10.660 UTC (KST=UTC+9) |
-| 클러스터 | kind `local-k8s`, Kubernetes v1.36.4, control-plane 1개 + worker 3개 |
-| 배치 | monitor worker 1개에 AIPerf, Prometheus, Grafana, kube-state-metrics, engine worker 2개에 추론 Pod 각 1개 |
-| 추론 | `local/llama-base-metric:0.1.0`, 모델 `Qwen/Qwen2.5-0.5B-Instruct`, replica 2, Pod별 CPU 2 / 2Gi, thread 2 |
-| 부하 | `local/aiperf:0.12.0`, concurrency 4, streaming, 요청별 새 연결, timeout 30초, 입력/출력 분포 `64,32:50;256,64:50` |
-| toleration | Pod의 `not-ready`, `unreachable` 모두 `NoExecute`, `tolerationSeconds: 300` |
-| 스케줄링과 종료 | hostname preferred pod anti-affinity, `terminationGracePeriodSeconds: 60` |
-| 장애 대상 | `local-k8s-worker2` |
-| 수집 주기 | Kubernetes 객체, Docker 상태 약 2초, Prometheus 5초, kubelet 자원 약 10초; Docker 이벤트, 타임스탬프 로그 |
+| Observation window | 2026-09-20 04:59:29.798–05:11:10.660 UTC (KST=UTC+9) |
+| Cluster | kind `local-k8s`, Kubernetes v1.36.4, 1 control-plane + 3 workers |
+| Placement | 1 monitor worker with AIPerf, Prometheus, Grafana, kube-state-metrics; 2 engine workers with 1 inference Pod each |
+| Inference | `local/llama-base-metric:0.1.0`, model `Qwen/Qwen2.5-0.5B-Instruct`, 2 replicas, 2 CPU / 2Gi per Pod, 2 threads |
+| Load | `local/aiperf:0.12.0`, concurrency 4, streaming, new connection per request, 30s timeout, input/output distribution `64,32:50;256,64:50` |
+| Toleration | Pod `not-ready` and `unreachable`, both `NoExecute`, `tolerationSeconds: 300` |
+| Scheduling and termination | hostname preferred pod anti-affinity, `terminationGracePeriodSeconds: 60` |
+| Fault target | `local-k8s-worker2` |
+| Collection interval | Kubernetes objects and Docker state ~2s, Prometheus 5s, kubelet resources ~10s; Docker events, timestamped logs |
 
-CPU와 메모리 requests와 limits는 동일했다. 추론 이미지와 모델은 engine 노드에 준비돼 있었다.
+CPU and memory requests and limits were equal. The inference image and model were prepared on the engine nodes.
 
-`docker pause`로 장애를 주입했으며, 장애 중 Docker 상태는 `Running=true, Paused=true`였다.
+The fault was injected with `docker pause`, and during the fault the Docker state was `Running=true, Paused=true`.
 
-## 3. 관찰 결과
+## 3. Observations
 
-### 재스케줄링 시간표
+### Rescheduling timeline
 
-상대 시간은 `docker pause` 완료 기준이다. 조건, 객체 시각은 초 단위이며, “확인” 시각에는 객체 수집 주기에 따른 지연이 포함된다.
+Relative times are measured from `docker pause` completion. Condition and object timestamps are in seconds, and "observed" timestamps include delays from the object collection interval.
 
-| UTC 시각 | 장애 후 | 관찰 |
+| UTC time | After fault | Observation |
 | --- | ---: | --- |
-| 05:02:06.213 | 0.0초 | Docker pause 완료: 노드 프로세스 동결 |
-| 05:02:23.724 | 17.5초 | 첫 클라이언트 timeout |
-| 05:02:50.000 | 43.8초 | Node Ready=Unknown (kubectl: NotReady) |
-| 05:02:51.000 | 44.8초 | unreachable:NoExecute taint 기록 |
-| 05:02:51.316 | 45.1초 | 장애 endpoint ready=false, Service ready 2→1 확인 |
-| 05:03:18.731 | 72.5초 | 마지막 클라이언트 timeout |
-| 05:07:51.000 | 344.8초 | 생존 engine 노드에 대체 Pod 생성 |
-| 05:07:56.000 | 349.8초 | 대체 Pod Ready=True |
-| 05:07:57.857 | 351.6초 | Service ready endpoint 1→2 확인 |
-| 05:09:28.153 | 441.9초 | docker unpause 완료 |
-| 05:09:31.893 | 445.7초 | 기존 장애 Pod API 객체 삭제 확인 |
-| 05:09:39.999 | 453.8초 | 장애 노드 Ready 회복 확인 |
-| 05:11:10.660 | 544.4초 | 관찰 종료 |
+| 05:02:06.213 | 0.0s | Docker pause complete: node process frozen |
+| 05:02:23.724 | 17.5s | First client timeout |
+| 05:02:50.000 | 43.8s | Node Ready=Unknown (kubectl: NotReady) |
+| 05:02:51.000 | 44.8s | unreachable:NoExecute taint recorded |
+| 05:02:51.316 | 45.1s | Faulted endpoint ready=false, Service ready 2→1 observed |
+| 05:03:18.731 | 72.5s | Last client timeout |
+| 05:07:51.000 | 344.8s | Replacement Pod created on surviving engine node |
+| 05:07:56.000 | 349.8s | Replacement Pod Ready=True |
+| 05:07:57.857 | 351.6s | Service ready endpoint 1→2 observed |
+| 05:09:28.153 | 441.9s | docker unpause complete |
+| 05:09:31.893 | 445.7s | Existing faulted Pod API object deletion observed |
+| 05:09:39.999 | 453.8s | Faulted node Ready recovery observed |
+| 05:11:10.660 | 544.4s | Observation end |
 
-NoExecute taint 기록부터 controller 삭제 요청까지 약 300.0초였다. 기존 장애 Pod가 Terminating 상태로 남은 동안에도 새 Pod가 생성됐고, 노드 복구 후 기존 객체가 정리됐다.
+The interval from NoExecute taint record to controller delete request was about 300.0s. A new Pod was created while the existing faulted Pod remained Terminating, and the existing object was cleaned up after node recovery.
 
-### Pod 변화와 Kubernetes 상태
+### Pod changes and Kubernetes state
 
-| 구분 | Pod 이름 | 정상 | 장애 중 | 노드 복귀 후 |
+| Category | Pod name | Normal | During fault | After node return |
 | --- | --- | --- | --- | --- |
-| A: 장애 | `llama-base-metric-779584f79b-c5n9v` | local-k8s-worker2, Ready | Ready=False → Terminating | 삭제 |
-| B: 생존 | `llama-base-metric-779584f79b-cjdbd` | local-k8s-worker3, Ready | 계속 처리 | 같은 노드 유지 |
-| C: 대체 | `llama-base-metric-779584f79b-smlkg` | 없음 | local-k8s-worker3에 새로 생성 후 Ready | 같은 노드 유지 |
+| A: faulted | `llama-base-metric-779584f79b-c5n9v` | local-k8s-worker2, Ready | Ready=False → Terminating | Deleted |
+| B: surviving | `llama-base-metric-779584f79b-cjdbd` | local-k8s-worker3, Ready | Kept serving | Stayed on same node |
+| C: replacement | `llama-base-metric-779584f79b-smlkg` | None | Newly created on local-k8s-worker3, then Ready | Stayed on same node |
 
-대체 Pod C의 UID는 `a60de0a2-9ba0-47bd-9fa9-23e9e3f61d95`다. Pod C는 생존 노드에 새로 생성됐다.
+Replacement Pod C has UID `a60de0a2-9ba0-47bd-9fa9-23e9e3f61d95`. Pod C was newly created on the surviving node.
 
-### 클라이언트 영향
+### Client impact
 
-성공은 AIPerf 요청 완료 시각, 오류는 ERROR 로그 시각으로 구간을 나눴다. 지연과 TTFT는 성공 요청만의 분포이며 실패율 분모는 구간 내 성공 완료와 오류의 합이다.
+Successes are grouped by AIPerf request completion time and errors by ERROR log time. Latency and TTFT are distributions over successful requests only, and the failure-rate denominator is the sum of successful completions and errors within each window.
 
-| 구간 | 길이 | 성공 / 오류 | 실패율 | 성공 req/s | 지연 p50 / p95 | TTFT p50 |
+| Window | Length | Success / Error | Failure rate | Success req/s | Latency p50 / p95 | TTFT p50 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 정상 | 156.4초 | 52 / 0 | 0.00% | 0.332 | 13.95 / 21.94초 | 12.42초 |
-| 장애→Node NotReady | 43.8초 | 4 / 4 | 50.00% | 0.091 | 9.44 / 15.11초 | 8.28초 |
-| NotReady→대체 Pod Ready | 306.0초 | 67 / 3 | 4.29% | 0.219 | 16.94 / 21.97초 | 16.13초 |
-| 대체 Pod Ready→노드 복구 명령 | 92.2초 | 33 / 0 | 0.00% | 0.358 | 12.06 / 21.93초 | 11.25초 |
-| 노드 복구 명령→관찰 종료 | 102.5초 | 40 / 0 | 0.00% | 0.390 | 8.62 / 17.27초 | 7.78초 |
+| Normal | 156.4s | 52 / 0 | 0.00% | 0.332 | 13.95 / 21.94s | 12.42s |
+| Fault→Node NotReady | 43.8s | 4 / 4 | 50.00% | 0.091 | 9.44 / 15.11s | 8.28s |
+| NotReady→replacement Pod Ready | 306.0s | 67 / 3 | 4.29% | 0.219 | 16.94 / 21.97s | 16.13s |
+| Replacement Pod Ready→node recovery command | 92.2s | 33 / 0 | 0.00% | 0.358 | 12.06 / 21.93s | 11.25s |
+| Node recovery command→observation end | 102.5s | 40 / 0 | 0.00% | 0.390 | 8.62 / 17.27s | 7.78s |
 
-| 오류 유형 (AIPerf 전체 실행) | 건수 |
+| Error type (full AIPerf run) | Count |
 | --- | ---: |
 | `TimeoutError` | 7 |
 
-전체 AIPerf 실행은 성공 245건, 오류 7건으로, 예열과 종료 처리까지 포함해 고정 관찰 구간과 범위가 다르다. 성공 응답 완료 사이 최대 간격은 **27.03초**였다.
+The full AIPerf run had 245 successes and 7 errors, covering warmup and shutdown handling, so its scope differs from the fixed observation window. The maximum gap between successful response completions was **27.03s**.
 
-아래 그래프는 이 실험의 AIPerf 요청별 결과, 오류 로그, Prometheus EndpointSlice, kubelet CPU를 같은 시간축에 정렬한 것이다. 파란 점은 성공 요청 지연, 주황 점은 성공 요청 TTFT이며 x축은 장애 주입 기준 초다. 빨간 ×는 실제 오류 로그 시각이고, **표시 높이 32는 지연값이 아니다**. CPU는 중복 캐시 표본을 제거했다.
+The graph below aligns this experiment's per-request AIPerf results, error logs, Prometheus EndpointSlice, and kubelet CPU on the same time axis. Blue dots are successful request latency, orange dots are successful request TTFT, and the x-axis is seconds from fault injection. Red × marks actual error log times, and **the marker height of 32 is not a latency value**. CPU has duplicate cached samples removed.
 
-![AIPerf 요청 지연, TTFT, 오류 시점과 EndpointSlice, CPU](figures/observed-timeline.png)
+![AIPerf request latency, TTFT, error times with EndpointSlice and CPU](figures/observed-timeline.png)
 
-### 대표 로그
+### Representative logs
 
-반복 probe, scrape 로그를 제외하고 오류, eviction, 대체 서버 시작을 발췌했다. 긴 오류 메시지는 줄였다.
+Excerpted errors, eviction, and replacement server startup, excluding repeated probe and scrape logs. Long error messages are shortened.
 
 ```text
 05:02:23.724  AIPerf      TimeoutError()
@@ -92,12 +94,12 @@ NoExecute taint 기록부터 controller 삭제 요청까지 약 300.0초였다. 
 05:07:59.428  Server C    "POST /v1/chat/completions HTTP/1.1" 200 OK
 ```
 
-## 4. 해석
+## 4. Interpretation
 
-**대체 Pod가 Ready가 되기까지 349.8초가 걸렸다.** 장애 후 43.8초에 Node Ready가 Unknown으로 바뀌었고, NoExecute taint 기록 후 controller 삭제 요청까지 약 300.0초가 걸렸다. 대체 Pod 생성부터 Ready까지는 5초였다.
+**The replacement Pod took 349.8s to become Ready.** Node Ready turned Unknown 43.8s after the fault, and the controller delete request took about 300.0s after the NoExecute taint record. Replacement Pod creation to Ready took 5s.
 
-**ready endpoint가 1개 남아 있는 동안에도 요청 오류가 발생했다.** 고정 관찰 구간에서 오류 7건을 기록했으며, 대체 Pod Ready 이후부터 관찰 종료까지의 오류는 0건이었다.
+**Request errors occurred even while 1 ready endpoint remained.** 7 errors were recorded in the fixed observation window, and there were 0 errors from replacement Pod Ready until the end of observation.
 
-정상 대비 NotReady→대체 Pod Ready 구간의 성공 처리량은 0.332→0.219 req/s로 34.1% 감소했다. TTFT 중앙값은 12.42→16.13초였다.
+Successful throughput in the NotReady→replacement Pod Ready window fell 34.1% versus normal, from 0.332 to 0.219 req/s. Median TTFT went from 12.42 to 16.13s.
 
-**노드 복구 전에 생존 노드에서 replica 2개가 확보됐다.** 대체 Pod는 `local-k8s-worker3`에 배치됐고, 장애 노드가 돌아온 뒤에도 생존 Pod와 대체 Pod는 같은 노드에 남았다. 복귀 후 관찰 기간에는 자동 재분산이 나타나지 않았다.
+**Two replicas were secured on the surviving node before node recovery.** The replacement Pod was placed on `local-k8s-worker3`, and the surviving Pod and replacement Pod stayed on the same node after the faulted node returned. No automatic redistribution appeared during the post-return observation period.

@@ -1,13 +1,15 @@
-# Mamba prefix 상태 캐시 GPU 검증
+> Korean version: [한국어](summary-KR.md)
 
-- 모델: `state-spaces/mamba-130m-hf`, revision `1e76775f628fbf1350fbe4dbb3d971ba64af25a1`
-- 환경: RTX 2060 SUPER 8GB, PyTorch 2.10.0+cu128, Transformers 4.57.6, FP16
-- 커널: 일반 PyTorch CUDA 경로. Mamba 전용 커널은 사용하지 않았습니다.
-- 조건: 동시성 1, 입력 64/256토큰, 출력 16토큰, greedy decoding. 기본, cold, warm은 각각 3회, disk 복원은 1회 측정했습니다.
-- 최초 모델 로딩과 워밍업은 제외했습니다. 동일 토큰 입력에 대한 응답 본문, 종료 사유와 usage가 모든 조건에서 일치했습니다.
-- 엔진 직접 호출 결과입니다. HTTP와 요청 대기열을 제외하며, 첫 텍스트 지연은 첫 비어 있지 않은 TextStreamer 콜백까지의 시간입니다.
+# Mamba Prefix State Cache GPU Verification
 
-| 입력 토큰 | 조건 | 평균 응답 시간(ms) | 평균 첫 텍스트(ms) | 평균 출력 tok/s |
+- Model: `state-spaces/mamba-130m-hf`, revision `1e76775f628fbf1350fbe4dbb3d971ba64af25a1`
+- Environment: RTX 2060 SUPER 8GB, PyTorch 2.10.0+cu128, Transformers 4.57.6, FP16
+- Kernel: generic PyTorch CUDA path. No Mamba-specific kernels were used.
+- Conditions: concurrency 1, input 64/256 tokens, 16 output tokens, greedy decoding. Measured base, cold, and warm 3 times each, and disk restore once.
+- Excluded initial model loading and warmup. Response body, finish reason, and usage for the same token input matched across all conditions.
+- Results are from direct engine calls. Excludes HTTP and request queueing; first-text latency is the time until the first non-empty TextStreamer callback.
+
+| Input Tokens | Condition | Avg Response Time (ms) | Avg First Text (ms) | Avg Output tok/s |
 | ---: | --- | ---: | ---: | ---: |
 | 64 | base | 426.52 | 133.88 | 37.52 |
 | 64 | cold | 447.84 | 155.55 | 35.73 |
@@ -18,19 +20,19 @@
 | 256 | warm | 314.69 | 42.09 | 50.84 |
 | 256 | disk-restart | 326.68 | 46.57 | 48.98 |
 
-`cold`는 prefix 계산과 상태 직렬화를 포함합니다. `warm`은 직전 동일 요청의 상태를 복원합니다. `disk-restart`는 엔진을 종료하고 새로 로드한 후 disk checkpoint를 복원합니다.
+`cold` includes prefix computation and state serialization. `warm` restores the state from the immediately preceding identical request. `disk-restart` shuts down the engine, reloads it, then restores the disk checkpoint.
 
-재사용한 prefix 길이는 입력 64토큰에서 63, 입력 256토큰에서 255입니다. 마지막 입력 토큰은 logits를 얻기 위해 다시 계산합니다. 각 상태 파일은 1,478,216바이트이며 토큰 ID와 저장소 헤더 크기는 제외합니다.
+The reused prefix length is 63 for 64-token input and 255 for 256-token input. The last input token is recomputed to obtain logits. Each state file is 1,478,216 bytes, excluding token IDs and store header size.
 
-측정 표본이 적고 기본, cold, warm을 완전히 무작위 순서로 실행하지 않았습니다. 수치는 같은 환경에서 prefix 재사용의 동작과 비용을 확인하기 위한 것이며 전용 CUDA 커널이나 다른 모델의 성능을 나타내지 않습니다.
+Measurement samples are small and base, cold, and warm were not run in fully randomized order. The numbers verify prefix-reuse behavior and cost in the same environment; they do not represent dedicated CUDA kernels or other models.
 
-[요청별 원본과 실행 조건](run.json), [재현 명령과 구현 규칙](../../../../guides/mamba-cache.md)
+[Per-request raw data and run conditions](run.json), [reproduction commands and implementation rules](../../../../guides/mamba-cache.md)
 
-## 기능 검증
+## Functional Verification
 
-- Transformers 회귀 테스트: 50개 통과. 별도 서버 또는 기존 SmolLM2 모델 경로가 필요한 6개는 해당 실행에서 제외했습니다.
-- 실제 Mamba HTTP 서버 테스트: 4개 통과. 반복 요청, SSE와 usage, 동시 요청 4개, 여러 메시지와 EOS 허용을 대조했습니다.
-- 벤치마크 실행기와 suite: 52개 통과. GPU 경로와 매니페스트: 10개 통과. 공유 캐시 저장소: 7개 통과.
-- 모델 다운로드의 체크섬, 재시도와 모델 선택 테스트, 기존 Transformers 매니페스트 검사, 새 GPU 매니페스트의 Kubernetes server dry run이 통과했습니다.
+- Transformers regression tests: 50 passed. 6 requiring a separate server or the existing SmolLM2 model path were excluded from that run.
+- Real Mamba HTTP server tests: 4 passed. Verified repeated requests, SSE and usage, 4 concurrent requests, multiple messages with EOS allowed.
+- Benchmark runner and suite: 52 passed. GPU path and manifests: 10 passed. Shared cache store: 7 passed.
+- Checksum, retry, and model-selection tests for model download, existing Transformers manifest checks, and Kubernetes server dry run of the new GPU manifest passed.
 
-GPU 이미지는 저장소 Dockerfile을 사용하고 기존 CUDA 이미지를 runtime build context로 재사용했습니다. 빌드 상태와 OCI 산출물은 작업 디스크에 두고 GPU worker에 가져왔습니다. 검증 이미지의 digest는 `run.json`에 기록되어 있습니다.
+The GPU image uses the repository Dockerfile and reuses the existing CUDA image as the runtime build context. Build status and OCI artifacts were kept on the work disk and brought to the GPU worker. The verification image digest is recorded in `run.json`.
