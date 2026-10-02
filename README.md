@@ -25,6 +25,8 @@ make benchmark-suite
 기본 실험은 세 구현마다 동시성 `1,2,4,8`을 3회 반복합니다. 결과는 `docs/reports/transformers/benchmark-suite-*/summary.md`에 저장됩니다. 측정값, 캐시 정책과 실행 시간은 [벤치마크 가이드](docs/guides/benchmark.md)을 참고하세요. `make benchmark`와 `make benchmark-suite`는 필요 시 이미지 빌드부터 kind 로드, 배포와 AIPerf 실행까지 포함해 자동 수행합니다.
 
 GPU 실행은 [GPU 벤치마크 준비와 결과](docs/guides/benchmark.md#gpu-벤치마크)를 참고합니다.
+GPU 하나를 두 Pod에서 공유하는 환경은 [MPS 클러스터 가이드](docs/guides/gpu-mps.md)를 참고합니다.
+Prefill과 Decode를 합치거나 분리하는 성능 비교는 [PD 비교 가이드](docs/guides/prefill-decode.md)를 참고합니다.
 
 단일 sweep만 측정하려면 `VARIANT`로 구현을 선택합니다.
 
