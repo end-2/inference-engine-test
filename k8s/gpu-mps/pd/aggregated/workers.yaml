@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: pd-aggregate
+spec:
+  replicas: 2
+  serviceName: pd-aggregate
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: pd-aggregate
+  template:
+    metadata:
+      labels:
+        app: pd-aggregate
+        app.kubernetes.io/part-of: pd-comparison
+        pd-role: aggregated
+    spec:
+      automountServiceAccountToken: false
+      runtimeClassName: nvidia
+      terminationGracePeriodSeconds: 150
+      nodeSelector:
+        nvidia.com/mps.capable: "true"
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: worker
+        image: local/transformers-pd-gpu:0.1.0
+        imagePullPolicy: Never
+        args:
+        - --role
+        - aggregated
+        - --model
+        - /model
+        - --served-model-name
+        - $(MODEL_ID)
+        - --device
+        - cuda
+        - --dtype
+        - float16
+        - --n-threads
+        - "2"
+        - --n-ctx
+        - $(N_CTX)
+        - --max-input-tokens
+        - $(MAX_INPUT_TOKENS)
+        - --max-output-tokens
+        - $(MAX_OUTPUT_TOKENS)
+        - --max-pending
+        - $(MAX_PENDING)
+        - --max-state-mib
+        - $(MAX_STATE_MIB)
+        envFrom:
+        - configMapRef:
+            name: pd-settings
+        ports:
+        - name: http
+          containerPort: 8000
+        startupProbe:
+          httpGet:
+            path: /readyz
+            port: http
+          failureThreshold: 90
+          periodSeconds: 2
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: http
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: "1"
+            memory: 2Gi
+            nvidia.com/gpu.shared: 1
+          limits:
+            cpu: "2"
+            memory: 2Gi
+            nvidia.com/gpu.shared: 1
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: [ALL]
+        volumeMounts:
+        - name: model
+          mountPath: /model
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: model
+        hostPath:
+          path: /models/smollm2-135m
+          type: Directory
+      - name: tmp
+        emptyDir:
+          sizeLimit: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pd-aggregate
+spec:
+  clusterIP: None
+  selector:
+    app: pd-aggregate
+  ports:
+  - name: http
+    port: 8000
+    targetPort: http

@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: pd-comparison-4
+resources:
+- ../../../gpu-mps/pd/aggregated
+replicas:
+- name: pd-aggregate
+  count: 4
+patches:
+- target:
+    kind: Deployment
+    name: pd-router
+  patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --aggregate-urls
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: http://pd-aggregate-0.pd-aggregate:8000
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: http://pd-aggregate-1.pd-aggregate:8000
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: http://pd-aggregate-2.pd-aggregate:8000
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: http://pd-aggregate-3.pd-aggregate:8000

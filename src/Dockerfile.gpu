@@ -50,6 +50,16 @@ ENTRYPOINT ["python", "-m", "transformer.base.server"]
 
 FROM gpu-runtime-transformers AS transformers-base-gpu
 
+FROM gpu-runtime-transformers AS transformers-pd-gpu
+USER 0
+COPY transformer/pd/requirements.txt /tmp/pd-requirements.txt
+RUN pip install --no-cache-dir -r /tmp/pd-requirements.txt && pip check
+COPY llamacpp/base/*.py /app/llamacpp/base/
+COPY transformer/base/*.py /app/transformer/base/
+COPY transformer/pd/*.py /app/transformer/pd/
+USER 1000:1000
+ENTRYPOINT ["python", "-m", "transformer.pd.server"]
+
 FROM gpu-runtime-transformers AS transformers-enhanced-batch-gpu
 COPY transformer/enhanced/__init__.py /app/transformer/enhanced/
 COPY transformer/enhanced/batch/*.py /app/transformer/enhanced/batch/

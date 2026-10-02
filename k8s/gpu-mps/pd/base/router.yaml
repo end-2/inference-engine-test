@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd-router
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: pd-router
+  template:
+    metadata:
+      labels:
+        app: pd-router
+        app.kubernetes.io/part-of: pd-comparison
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 150
+      nodeSelector:
+        nvidia.com/mps.capable: "true"
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+      - name: router
+        image: local/transformers-pd-gpu:0.1.0
+        imagePullPolicy: Never
+        command: [python, -m, transformer.pd.router]
+        args:
+        - --mode
+        - $(PD_MODE)
+        - --served-model-name
+        - $(MODEL_ID)
+        - --max-pending
+        - $(MAX_PENDING)
+        - --max-state-mib
+        - $(MAX_STATE_MIB)
+        - --max-state-transfers
+        - $(MAX_STATE_TRANSFERS)
+        envFrom:
+        - configMapRef:
+            name: pd-settings
+        env:
+        - name: PD_MODE
+          value: aggregated
+        ports:
+        - name: http
+          containerPort: 8000
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: http
+          timeoutSeconds: 6
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            cpu: "1"
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: [ALL]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pd-router
+spec:
+  selector:
+    app: pd-router
+  ports:
+  - name: http
+    port: 8000
+    targetPort: http

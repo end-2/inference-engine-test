@@ -1,0 +1,48 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: pd-comparison-4-scheduled
+resources:
+- ../../pd/disaggregated
+images:
+- name: local/transformers-pd-gpu
+  newTag: token-budget-v1
+configMapGenerator:
+- name: pd-settings
+  behavior: merge
+  literals:
+  - MAX_PENDING=32
+  - TOKEN_BUDGET=256
+  - MAX_NUM_SEQS=8
+  - MAX_KV_TOKENS=8192
+patches:
+- target:
+    kind: (Deployment|StatefulSet)
+    name: pd-(aggregate|prefill|decode)
+  patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --scheduler
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: token-budget
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --max-num-batched-tokens
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: $(TOKEN_BUDGET)
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --max-num-seqs
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: $(MAX_NUM_SEQS)
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --max-kv-tokens
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: $(MAX_KV_TOKENS)
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --scheduler-trace

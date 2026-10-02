@@ -133,4 +133,12 @@ COPY transformer/enhanced/batch_gpu/*.py /app/transformer/enhanced/batch_gpu/
 COPY transformer/hybrid/*.py /app/transformer/hybrid/
 ENTRYPOINT ["python", "-m", "transformer.hybrid.server"]
 
+FROM transformers-runtime AS transformers-pd
+USER 0
+COPY transformer/pd/requirements.txt /tmp/pd-requirements.txt
+RUN pip install --no-cache-dir -r /tmp/pd-requirements.txt && pip check
+COPY transformer/pd/*.py /app/transformer/pd/
+USER 1000:1000
+ENTRYPOINT ["python", "-m", "transformer.pd.server"]
+
 FROM transformers-runtime AS transformers-base
