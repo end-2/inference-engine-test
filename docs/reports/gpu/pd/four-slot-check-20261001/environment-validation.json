@@ -1,0 +1,496 @@
+{
+  "date_utc": "2026-10-01",
+  "purpose": "Four-slot configuration validation with a reduced workload",
+  "cluster": "local-k8s-gpu",
+  "namespace": "pd-comparison-4",
+  "mps": {
+    "active_thread_percentage": "25.0",
+    "memory_limit": "2G",
+    "clients": {
+      "92104": [
+        "96482",
+        "96447",
+        "96489",
+        "96386"
+      ]
+    }
+  },
+  "cuda_smoke_clients": 4,
+  "worker_requests_including_warmup": {
+    "aggregated": {
+      "pd-aggregate-1": 10,
+      "pd-aggregate-2": 10,
+      "pd-aggregate-3": 10,
+      "pd-aggregate-0": 10
+    },
+    "disaggregated": {
+      "pd-decode-1": 13,
+      "pd-decode-2": 13,
+      "pd-decode-0": 14
+    }
+  },
+  "container_statuses": {
+    "pd-decode-0": [
+      {
+        "allocatedResources": {
+          "cpu": "1",
+          "memory": "2Gi",
+          "nvidia.com/gpu.shared": "1"
+        },
+        "allocatedResourcesStatus": [
+          {
+            "name": "nvidia.com/gpu.shared",
+            "resources": [
+              {
+                "health": "Healthy",
+                "resourceID": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b::0"
+              }
+            ]
+          }
+        ],
+        "containerID": "containerd://2ab01f3626606e32b86d5fb0b4c70878c1cd568889e77111590110830a39915f",
+        "image": "docker.io/local/transformers-pd-gpu:0.1.0",
+        "imageID": "sha256:8852bede9e6ab077fcd42b5084a0217bde2a89f80819884622ed0cbc48f0792e",
+        "lastState": {},
+        "name": "worker",
+        "ready": true,
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "2Gi",
+            "nvidia.com/gpu.shared": "1"
+          },
+          "requests": {
+            "cpu": "1",
+            "memory": "2Gi",
+            "nvidia.com/gpu.shared": "1"
+          }
+        },
+        "restartCount": 0,
+        "started": true,
+        "state": {
+          "running": {
+            "startedAt": "2026-10-01T11:55:29Z"
+          }
+        },
+        "user": {
+          "linux": {
+            "gid": 1000,
+            "supplementalGroups": [
+              1000
+            ],
+            "uid": 1000
+          }
+        },
+        "volumeMounts": [
+          {
+            "mountPath": "/model",
+            "name": "model",
+            "readOnly": true,
+            "recursiveReadOnly": "Disabled"
+          },
+          {
+            "mountPath": "/tmp",
+            "name": "tmp"
+          }
+        ]
+      }
+    ],
+    "pd-decode-1": [
+      {
+        "allocatedResources": {
+          "cpu": "1",
+          "memory": "2Gi",
+          "nvidia.com/gpu.shared": "1"
+        },
+        "allocatedResourcesStatus": [
+          {
+            "name": "nvidia.com/gpu.shared",
+            "resources": [
+              {
+                "health": "Healthy",
+                "resourceID": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b::1"
+              }
+            ]
+          }
+        ],
+        "containerID": "containerd://c28ec3c6ea3f4104dc683f6433bd54734f174598f1be16081ac39d7dab963cf4",
+        "image": "docker.io/local/transformers-pd-gpu:0.1.0",
+        "imageID": "sha256:8852bede9e6ab077fcd42b5084a0217bde2a89f80819884622ed0cbc48f0792e",
+        "lastState": {},
+        "name": "worker",
+        "ready": true,
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "2Gi",
+            "nvidia.com/gpu.shared": "1"
+          },
+          "requests": {
+            "cpu": "1",
+            "memory": "2Gi",
+            "nvidia.com/gpu.shared": "1"
+          }
+        },
+        "restartCount": 0,
+        "started": true,
+        "state": {
+          "running": {
+            "startedAt": "2026-10-01T11:55:29Z"
+          }
+        },
+        "user": {
+          "linux": {
+            "gid": 1000,
+            "supplementalGroups": [
+              1000
+            ],
+            "uid": 1000
+          }
+        },
+        "volumeMounts": [
+          {
+            "mountPath": "/model",
+            "name": "model",
+            "readOnly": true,
+            "recursiveReadOnly": "Disabled"
+          },
+          {
+            "mountPath": "/tmp",
+            "name": "tmp"
+          }
+        ]
+      }
+    ],
+    "pd-decode-2": [
+      {
+        "allocatedResources": {
+          "cpu": "1",
+          "memory": "2Gi",
+          "nvidia.com/gpu.shared": "1"
+        },
+        "allocatedResourcesStatus": [
+          {
+            "name": "nvidia.com/gpu.shared",
+            "resources": [
+              {
+                "health": "Healthy",
+                "resourceID": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b::3"
+              }
+            ]
+          }
+        ],
+        "containerID": "containerd://3cf9bd797e02f42eddb9268a89ddbc0cec2f085cfff62a9ed1108f6122f87214",
+        "image": "docker.io/local/transformers-pd-gpu:0.1.0",
+        "imageID": "sha256:8852bede9e6ab077fcd42b5084a0217bde2a89f80819884622ed0cbc48f0792e",
+        "lastState": {},
+        "name": "worker",
+        "ready": true,
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "2Gi",
+            "nvidia.com/gpu.shared": "1"
+          },
+          "requests": {
+            "cpu": "1",
+            "memory": "2Gi",
+            "nvidia.com/gpu.shared": "1"
+          }
+        },
+        "restartCount": 0,
+        "started": true,
+        "state": {
+          "running": {
+            "startedAt": "2026-10-01T11:55:29Z"
+          }
+        },
+        "user": {
+          "linux": {
+            "gid": 1000,
+            "supplementalGroups": [
+              1000
+            ],
+            "uid": 1000
+          }
+        },
+        "volumeMounts": [
+          {
+            "mountPath": "/model",
+            "name": "model",
+            "readOnly": true,
+            "recursiveReadOnly": "Disabled"
+          },
+          {
+            "mountPath": "/tmp",
+            "name": "tmp"
+          }
+        ]
+      }
+    ],
+    "pd-prefill-55f548b76b-47vbw": [
+      {
+        "allocatedResources": {
+          "cpu": "1",
+          "memory": "2Gi",
+          "nvidia.com/gpu.shared": "1"
+        },
+        "allocatedResourcesStatus": [
+          {
+            "name": "nvidia.com/gpu.shared",
+            "resources": [
+              {
+                "health": "Healthy",
+                "resourceID": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b::2"
+              }
+            ]
+          }
+        ],
+        "containerID": "containerd://f04d20633f4005246e0cfe470a2b51805db518384a18511f4ee4717878ba3e73",
+        "image": "docker.io/local/transformers-pd-gpu:0.1.0",
+        "imageID": "sha256:8852bede9e6ab077fcd42b5084a0217bde2a89f80819884622ed0cbc48f0792e",
+        "lastState": {},
+        "name": "worker",
+        "ready": true,
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "2Gi",
+            "nvidia.com/gpu.shared": "1"
+          },
+          "requests": {
+            "cpu": "1",
+            "memory": "2Gi",
+            "nvidia.com/gpu.shared": "1"
+          }
+        },
+        "restartCount": 0,
+        "started": true,
+        "state": {
+          "running": {
+            "startedAt": "2026-10-01T11:55:29Z"
+          }
+        },
+        "user": {
+          "linux": {
+            "gid": 1000,
+            "supplementalGroups": [
+              1000
+            ],
+            "uid": 1000
+          }
+        },
+        "volumeMounts": [
+          {
+            "mountPath": "/model",
+            "name": "model",
+            "readOnly": true,
+            "recursiveReadOnly": "Disabled"
+          },
+          {
+            "mountPath": "/tmp",
+            "name": "tmp"
+          }
+        ]
+      }
+    ],
+    "pd-router-b66956984-7vvjg": [
+      {
+        "allocatedResources": {
+          "cpu": "100m",
+          "memory": "512Mi"
+        },
+        "containerID": "containerd://3dfc3b7089a20060c5e651852f53f3aeeea26853e0a037bef99e2e9e63bc4720",
+        "image": "docker.io/local/transformers-pd-gpu:0.1.0",
+        "imageID": "sha256:8852bede9e6ab077fcd42b5084a0217bde2a89f80819884622ed0cbc48f0792e",
+        "lastState": {},
+        "name": "router",
+        "ready": true,
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "512Mi"
+          }
+        },
+        "restartCount": 0,
+        "started": true,
+        "state": {
+          "running": {
+            "startedAt": "2026-10-01T11:55:28Z"
+          }
+        },
+        "user": {
+          "linux": {
+            "gid": 1000,
+            "supplementalGroups": [
+              1000
+            ],
+            "uid": 1000
+          }
+        }
+      }
+    ],
+    "pd4-20261001-115340-results": [
+      {
+        "allocatedResources": {
+          "cpu": "10m",
+          "memory": "16Mi"
+        },
+        "containerID": "containerd://d7d96bf2a3e5a061cd78f4552ce5076b10a030e6535defbb90aedcbc037116de",
+        "image": "docker.io/local/aiperf:0.12.0",
+        "imageID": "sha256:23fadfb5b457a3ab6e75d9421e4789ea96eacb646501bc3db7f38c2d6841e181",
+        "lastState": {},
+        "name": "results",
+        "ready": true,
+        "resources": {
+          "limits": {
+            "cpu": "100m",
+            "memory": "64Mi"
+          },
+          "requests": {
+            "cpu": "10m",
+            "memory": "16Mi"
+          }
+        },
+        "restartCount": 0,
+        "started": true,
+        "state": {
+          "running": {
+            "startedAt": "2026-10-01T11:53:46Z"
+          }
+        },
+        "user": {
+          "linux": {
+            "gid": 1000,
+            "supplementalGroups": [
+              1000
+            ],
+            "uid": 1000
+          }
+        },
+        "volumeMounts": [
+          {
+            "mountPath": "/results",
+            "name": "results",
+            "readOnly": true,
+            "recursiveReadOnly": "Disabled"
+          }
+        ]
+      }
+    ]
+  },
+  "router_memory_peak_bytes": 81686528,
+  "router_memory_events": {
+    "low": "0",
+    "high": "0",
+    "max": "0",
+    "oom": "0",
+    "oom_kill": "0",
+    "oom_group_kill": "0"
+  },
+  "preserved_source_sha256": {
+    "config/cluster/mps.yaml": "258bdd7bf1e2329427238cd70657d26a7c32d499ede421af4442b4945fab1b0e",
+    "config/cluster/mps-smoke.yaml": "9ee55668accf3253d0da12f46176804988a83f702fc577941ec1df62cd3cff30",
+    "k8s/gpu-mps/transformers-base.yaml": "dc078be1a9adf3a1b5bd2df141d268e565a7d01a57d939dfb7c111cd8bf196f6",
+    "k8s/gpu-mps/pd/benchmark.yaml": "b67490be5b67ff493401e082ff0f4080e33fcab151712ce2f682fbcdbf04becf",
+    "k8s/gpu-mps/pd/results.yaml": "a48ed93bb281ddb98c9ddc7fbee4e8d1891a86ae5f7755ff74976c0306e6e10a",
+    "k8s/gpu-mps/pd/namespace.yaml": "20d7092f4349d92bc9a290800329df178921b1635014d1ddd8071923088e202a",
+    "k8s/gpu-mps/pd/disaggregated/workers.yaml": "1cc8f6c4f900df3e1bdd2f922b1522ebdeb91859dd946a10f33845bfb0dd0e73",
+    "k8s/gpu-mps/pd/disaggregated/kustomization.yaml": "50f274455967d7115bfd3b1a415a96ea0e72c164c1e442cde07a90fd6a7473e9",
+    "k8s/gpu-mps/pd/aggregated/workers.yaml": "efd1b8e45deba77f7cc3fd75a75e6e560a38baba776adf6cc664e5892a6a9b45",
+    "k8s/gpu-mps/pd/aggregated/kustomization.yaml": "485c81c874a49734b6685a815a0e9a14ea74eafd8ab9c36e03e786bebb782c34",
+    "k8s/gpu-mps/pd/base/router.yaml": "25257cccad2d3871d734480b3d9d3d7073378159ae854238d63dbe98192631cb",
+    "k8s/gpu-mps/pd/base/kustomization.yaml": "18667e4592e4cb167083d1cea8d9d57ef0776351cb9eb833f3f2a8a220e0aa45"
+  },
+  "original_mps_manifests_unchanged": true,
+  "image_build": {
+    "buildx.build.provenance": {
+      "builder": {
+        "id": ""
+      },
+      "buildType": "https://mobyproject.org/buildkit@v1",
+      "materials": [
+        {
+          "uri": "pkg:oci/gpu-runtime-transformers?digest=sha256:45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0&platform=linux%2Famd64",
+          "digest": {
+            "sha256": "45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0"
+          }
+        },
+        {
+          "uri": "pkg:oci/gpu-runtime-transformers?digest=sha256:45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0",
+          "digest": {
+            "sha256": "45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0"
+          }
+        }
+      ],
+      "invocation": {
+        "configSource": {
+          "entryPoint": "Dockerfile.gpu"
+        },
+        "parameters": {
+          "frontend": "dockerfile.v0",
+          "args": {
+            "context:gpu-runtime-transformers": "oci-layout://qxxdo70xvabds22borvz2f705:0.1.0@sha256:45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0",
+            "frontend.caps": "moby.buildkit.frontend.contexts+forward",
+            "target": "transformers-pd-gpu"
+          },
+          "locals": [
+            {
+              "name": "context"
+            },
+            {
+              "name": "dockerfile"
+            }
+          ]
+        },
+        "environment": {
+          "dockerfileVersion": "1.26.0",
+          "platform": "linux/amd64"
+        }
+      }
+    },
+    "buildx.build.ref": "pd-four-build/pd-four-build0/39ra59tdpn6o12zre5qflgd2w",
+    "containerimage.config.digest": "sha256:8852bede9e6ab077fcd42b5084a0217bde2a89f80819884622ed0cbc48f0792e",
+    "containerimage.descriptor": {
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:30b912a5ee7418b5612dd72cab00a643e458a7f07f54a75137e3151687c00145",
+      "size": 4272,
+      "annotations": {
+        "org.opencontainers.image.created": "2026-10-01T11:49:17Z"
+      },
+      "platform": {
+        "architecture": "amd64",
+        "os": "linux"
+      }
+    },
+    "containerimage.digest": "sha256:30b912a5ee7418b5612dd72cab00a643e458a7f07f54a75137e3151687c00145",
+    "image.name": "docker.io/local/transformers-pd-gpu:0.1.0"
+  },
+  "image_loaded_nodes": [
+    "local-k8s-gpu-worker"
+  ],
+  "restoration": {
+    "restored": true,
+    "deployments_match": true,
+    "helm_values_match": true,
+    "compute_mode": "Default"
+  },
+  "profile_labels_restored": true,
+  "unit_tests_passed": {
+    "pd": 30,
+    "gpu_cluster": 13,
+    "gpu_benchmark_settings": 11
+  },
+  "server_dry_run": [
+    "aggregated",
+    "disaggregated"
+  ],
+  "shellcheck": "passed",
+  "gpu_output_text_equivalence_checked": false,
+  "benchmark_payload_and_lengths_matched": true,
+  "default_four_slot_cluster_created": false
+}

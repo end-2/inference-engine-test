@@ -1,0 +1,88 @@
+{
+  "gpu_output_equivalence": true,
+  "equivalence_workloads": [
+    [
+      64,
+      256
+    ],
+    [
+      704,
+      16
+    ]
+  ],
+  "mps": {
+    "thread_percentage": "50.0",
+    "memory_limit": "4G",
+    "clients": {
+      "44219": [
+        "44019",
+        "44027"
+      ]
+    }
+  },
+  "restoration": {
+    "restored": true,
+    "deployments_match": true,
+    "helm_values_match": true,
+    "compute_mode": "Default"
+  },
+  "image_build": {
+    "buildx.build.provenance": {
+      "builder": {
+        "id": ""
+      },
+      "buildType": "https://mobyproject.org/buildkit@v1",
+      "materials": [
+        {
+          "uri": "pkg:oci/gpu-runtime-transformers?digest=sha256:45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0&platform=linux%2Famd64",
+          "digest": {
+            "sha256": "45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0"
+          }
+        }
+      ],
+      "invocation": {
+        "configSource": {
+          "entryPoint": "Dockerfile.gpu"
+        },
+        "parameters": {
+          "frontend": "dockerfile.v0",
+          "args": {
+            "context:gpu-runtime-transformers": "oci-layout://aiwm9kylhyzfgcfmv4jjxx3xr:0.1.0@sha256:45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0",
+            "frontend.caps": "moby.buildkit.frontend.contexts+forward",
+            "target": "transformers-pd-gpu"
+          },
+          "locals": [
+            {
+              "name": "context"
+            },
+            {
+              "name": "dockerfile"
+            }
+          ]
+        },
+        "environment": {
+          "dockerfileVersion": "1.26.0",
+          "platform": "linux/amd64"
+        }
+      }
+    },
+    "buildx.build.ref": "pd-benchmark-build/pd-benchmark-build0/2nuidtx4julq2akckthheft3d",
+    "containerimage.config.digest": "sha256:39357227fb5c91d87ad6d181b74d359cb587a8f1575c7276da95f42dd925ab77",
+    "containerimage.descriptor": {
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:10b70a8335d92b66c26adea119f08e9bfc298633904ba2b97b3ed72f88ebe1a9",
+      "size": 4272,
+      "annotations": {
+        "org.opencontainers.image.created": "2026-09-30T15:00:36Z"
+      },
+      "platform": {
+        "architecture": "amd64",
+        "os": "linux"
+      }
+    },
+    "containerimage.digest": "sha256:10b70a8335d92b66c26adea119f08e9bfc298633904ba2b97b3ed72f88ebe1a9",
+    "image.name": "docker.io/local/transformers-pd-gpu:0.1.0"
+  },
+  "cpu": "Intel Core i5-9400F, 6 cores",
+  "host_memory_gib": 15
+}

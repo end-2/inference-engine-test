@@ -1,0 +1,6 @@
+{
+  "restored": true,
+  "deployments_match": true,
+  "helm_values_match": true,
+  "compute_mode": "Default"
+}

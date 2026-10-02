@@ -1,0 +1,15 @@
+{
+  "pd_tests": 54,
+  "cluster_tests": 13,
+  "measured_requests": 1920,
+  "errors": 0,
+  "restarts": 0,
+  "router_oom_events": 0,
+  "router_peak_bytes": 92753920,
+  "pod_status_checks": 80,
+  "same_workload_config_across_budgets": true,
+  "same_runtime_source_across_budgets": true,
+  "existing_manifests_and_reports_preserved": true,
+  "environment_restored": true,
+  "image_digest": "sha256:327069697f6341c32470eab1085af07fcf616157b853c8f7433d62df11bfb7a3"
+}

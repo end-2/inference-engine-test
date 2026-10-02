@@ -1,0 +1,50 @@
+[
+  {
+    "input_tokens": 80,
+    "output_tokens": 16,
+    "requests_including_warmup": 4,
+    "prefill_ms": 85.77075249922927,
+    "decode_ms": 549.9313120017177,
+    "export_ms": 4.724137994344346,
+    "import_ms": 11.449460507719778,
+    "prefill_rpc_ms": 100.26415300671943,
+    "state_receive_ms": 3.196720987034496,
+    "state_bytes": 2045868.5
+  },
+  {
+    "input_tokens": 94,
+    "output_tokens": 16,
+    "requests_including_warmup": 16,
+    "prefill_ms": 37.700132310419576,
+    "decode_ms": 465.66465375326516,
+    "export_ms": 3.5349439986021025,
+    "import_ms": 5.803489688332775,
+    "prefill_rpc_ms": 67.9016277554183,
+    "state_receive_ms": 5.781432499134098,
+    "state_bytes": 2368495.5625
+  },
+  {
+    "input_tokens": 720,
+    "output_tokens": 16,
+    "requests_including_warmup": 4,
+    "prefill_ms": 174.39958374598064,
+    "decode_ms": 431.3014919971465,
+    "export_ms": 30.360050244780723,
+    "import_ms": 19.220027745177504,
+    "prefill_rpc_ms": 245.33556350070285,
+    "state_receive_ms": 25.225452751328703,
+    "state_bytes": 16797752.25
+  },
+  {
+    "input_tokens": 734,
+    "output_tokens": 16,
+    "requests_including_warmup": 16,
+    "prefill_ms": 134.66154156230914,
+    "decode_ms": 464.25727288078633,
+    "export_ms": 31.999165496017667,
+    "import_ms": 11.559714001123211,
+    "prefill_rpc_ms": 288.0519277478015,
+    "state_receive_ms": 34.343067245572456,
+    "state_bytes": 17120574.3125
+  }
+]

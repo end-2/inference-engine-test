@@ -1,0 +1,289 @@
+{
+  "tested_at_utc": "2026-10-01T06:40:33Z",
+  "method": "Real HTTP Prefill and Decode mocks in kind, router source mounted over the cached runtime image; no GPU inference",
+  "source_sha256": {
+    "src/transformer/pd/router.py": "5d6efe45590f46257a5e300817b7e1906115769bb27d538a2a2c7ae49ea8ff0b",
+    "src/transformer/pd/server.py": "ba5790f2ccae2558582702a18c7dfc5f49a1b9d25dc5e280f6eb066fe00473f7"
+  },
+  "max_pending": 8,
+  "max_state_mib": 64,
+  "max_state_transfers": 2,
+  "memory_request_bytes": 536870912,
+  "memory_limit_bytes": 1073741824,
+  "memory_peak_bytes": 271007744,
+  "memory_peak_mib": 258.453125,
+  "memory_events": {
+    "low": 0,
+    "high": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0
+  },
+  "router_container_status": [
+    {
+      "allocatedResources": {
+        "cpu": "100m",
+        "memory": "512Mi"
+      },
+      "containerID": "containerd://41ea8b8e7a29ed15187ca955bedc71ae339a3d568c72c0cfa5947a004be84167",
+      "image": "docker.io/local/transformers-pd-gpu:0.1.0",
+      "imageID": "sha256:767b1ed9b2132c8a589d631ce2bae743bcc852ad871f93fa373b831ca735dab3",
+      "lastState": {},
+      "name": "router",
+      "ready": true,
+      "resources": {
+        "limits": {
+          "cpu": "1",
+          "memory": "1Gi"
+        },
+        "requests": {
+          "cpu": "100m",
+          "memory": "512Mi"
+        }
+      },
+      "restartCount": 0,
+      "started": true,
+      "state": {
+        "running": {
+          "startedAt": "2026-10-01T06:37:18Z"
+        }
+      },
+      "user": {
+        "linux": {
+          "gid": 1000,
+          "supplementalGroups": [
+            1000
+          ],
+          "uid": 1000
+        }
+      },
+      "volumeMounts": [
+        {
+          "mountPath": "/app/transformer/pd/router.py",
+          "name": "source",
+          "readOnly": true,
+          "recursiveReadOnly": "Disabled"
+        }
+      ]
+    }
+  ],
+  "loads": [
+    {
+      "state_bytes": 17120000,
+      "requests": 512,
+      "concurrency": 8,
+      "errors": 0,
+      "elapsed_seconds": 44.75329232600052
+    },
+    {
+      "state_bytes": 67108864,
+      "requests": 256,
+      "concurrency": 8,
+      "errors": 0,
+      "elapsed_seconds": 79.82412867399398
+    }
+  ],
+  "regression_tests": {
+    "command": ".local-k8s/pd-venv/bin/python -m unittest discover -s tests -p test_pd*.py -v",
+    "passed": 26,
+    "failed": 0
+  },
+  "gpu_inference_rerun": false,
+  "image_smoke": {
+    "status_code": 200,
+    "received_bytes": 67108864,
+    "router_sha256": "5d6efe45590f46257a5e300817b7e1906115769bb27d538a2a2c7ae49ea8ff0b",
+    "server_sha256": "ba5790f2ccae2558582702a18c7dfc5f49a1b9d25dc5e280f6eb066fe00473f7"
+  },
+  "build": {
+    "buildx.build.provenance": {
+      "builder": {
+        "id": ""
+      },
+      "buildType": "https://mobyproject.org/buildkit@v1",
+      "materials": [
+        {
+          "uri": "pkg:oci/gpu-runtime-transformers?digest=sha256:45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0&platform=linux%2Famd64",
+          "digest": {
+            "sha256": "45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0"
+          }
+        },
+        {
+          "uri": "pkg:oci/gpu-runtime-transformers?digest=sha256:45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0",
+          "digest": {
+            "sha256": "45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0"
+          }
+        }
+      ],
+      "invocation": {
+        "configSource": {
+          "entryPoint": "Dockerfile.gpu"
+        },
+        "parameters": {
+          "frontend": "dockerfile.v0",
+          "args": {
+            "context:gpu-runtime-transformers": "oci-layout://uieolxi1cnpy1hq4iggwke0w7:0.1.0@sha256:45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0",
+            "frontend.caps": "moby.buildkit.frontend.contexts+forward",
+            "target": "transformers-pd-gpu"
+          },
+          "locals": [
+            {
+              "name": "context"
+            },
+            {
+              "name": "dockerfile"
+            }
+          ]
+        },
+        "environment": {
+          "dockerfileVersion": "1.26.0",
+          "platform": "linux/amd64"
+        }
+      }
+    },
+    "buildx.build.ref": "pd-router-check-build/pd-router-check-build0/d1xynu7r8dkynylz14l0l35y2",
+    "containerimage.config.digest": "sha256:56ebb0ccca2eea0947fc6e149e13de03320cf8d92f693ef2ad464c2fefd69e9e",
+    "containerimage.descriptor": {
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:147f2bd6136e0709842079347e27311009d5c60d1802cdd2344ef8afbb2fb4b4",
+      "size": 4272,
+      "annotations": {
+        "org.opencontainers.image.created": "2026-10-01T06:40:07Z"
+      },
+      "platform": {
+        "architecture": "amd64",
+        "os": "linux"
+      }
+    },
+    "containerimage.digest": "sha256:147f2bd6136e0709842079347e27311009d5c60d1802cdd2344ef8afbb2fb4b4",
+    "image.name": "docker.io/local/transformers-pd-gpu:0.1.0"
+  },
+  "image_pod_status": {
+    "allocatedResources": {
+      "cpu": "100m",
+      "memory": "512Mi"
+    },
+    "conditions": [
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2026-10-01T06:41:27Z",
+        "observedGeneration": 1,
+        "status": "True",
+        "type": "PodReadyToStartContainers"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2026-10-01T06:41:27Z",
+        "observedGeneration": 1,
+        "status": "True",
+        "type": "Initialized"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2026-10-01T06:41:38Z",
+        "observedGeneration": 1,
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2026-10-01T06:41:38Z",
+        "observedGeneration": 1,
+        "status": "True",
+        "type": "ContainersReady"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2026-10-01T06:41:27Z",
+        "observedGeneration": 1,
+        "status": "True",
+        "type": "PodScheduled"
+      }
+    ],
+    "containerStatuses": [
+      {
+        "allocatedResources": {
+          "cpu": "100m",
+          "memory": "512Mi"
+        },
+        "containerID": "containerd://bd42904b2d71b6cad233d77ffa6e1211108258f6b7d0e8fd3a2fc698d265b0de",
+        "image": "docker.io/local/transformers-pd-gpu:0.1.0",
+        "imageID": "sha256:56ebb0ccca2eea0947fc6e149e13de03320cf8d92f693ef2ad464c2fefd69e9e",
+        "lastState": {},
+        "name": "router",
+        "ready": true,
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "512Mi"
+          }
+        },
+        "restartCount": 0,
+        "started": true,
+        "state": {
+          "running": {
+            "startedAt": "2026-10-01T06:41:27Z"
+          }
+        },
+        "user": {
+          "linux": {
+            "gid": 1000,
+            "supplementalGroups": [
+              1000
+            ],
+            "uid": 1000
+          }
+        }
+      }
+    ],
+    "hostIP": "172.23.0.4",
+    "hostIPs": [
+      {
+        "ip": "172.23.0.4"
+      }
+    ],
+    "observedGeneration": 1,
+    "phase": "Running",
+    "podIP": "10.244.1.97",
+    "podIPs": [
+      {
+        "ip": "10.244.1.97"
+      }
+    ],
+    "qosClass": "Burstable",
+    "resources": {
+      "limits": {
+        "cpu": "1",
+        "memory": "1Gi"
+      },
+      "requests": {
+        "cpu": "79m",
+        "memory": "512Mi"
+      }
+    },
+    "startTime": "2026-10-01T06:41:27Z"
+  },
+  "kubernetes_server_dry_run": {
+    "modes": [
+      "aggregated",
+      "disaggregated"
+    ],
+    "status": "passed",
+    "namespace_substitution": "pd-router-check-20261001"
+  },
+  "image_loaded_nodes": [
+    "local-k8s-gpu-worker"
+  ],
+  "gpu_environment_after": {
+    "base_llamacpp_ready_replicas": 1,
+    "gpu_allocatable": "1",
+    "gpu_shared_allocatable": "0",
+    "gpu": "NVIDIA GeForce RTX 2060 SUPER, Default, 780 MiB"
+  },
+  "temporary_namespace_deleted": true
+}

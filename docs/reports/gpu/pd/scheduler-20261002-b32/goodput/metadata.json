@@ -1,0 +1,49 @@
+{
+  "source_report": "docs/reports/gpu/pd/scheduler-20261002-b32",
+  "source_run_id": "pd4-20261002-063705",
+  "measured_requests": 960,
+  "source_runs": 40,
+  "workers": {
+    "aggregated": 4,
+    "prefill": 1,
+    "decode": 3
+  },
+  "ttft_slo_ms": [
+    100,
+    250,
+    500,
+    1000,
+    2000,
+    5000,
+    10000,
+    20000
+  ],
+  "tpot_slo_ms": [
+    25.0,
+    30.0,
+    35.0,
+    40.0,
+    50.0,
+    75.0
+  ],
+  "joint_slo_comparison": "TTFT <= threshold AND mean TPOT <= threshold",
+  "separate_slo_comparisons": {
+    "ttft": "TTFT <= threshold; TPOT unrestricted",
+    "tpot": "mean TPOT <= threshold; TTFT unrestricted"
+  },
+  "inactive_slo_csv_value": "Empty threshold cell means unrestricted; its pass count equals request count",
+  "separate_goodput_duration": "Same full observation window as joint goodput; no subtraction of TTFT or queue time",
+  "tpot_definition": "(request_latency_ms - ttft_ms) / (output_tokens - 1)",
+  "request_goodput_definition": "slo_compliant_requests / throughput_observation_duration_seconds",
+  "token_goodput_definition": "sum(output_tokens_of_slo_compliant_requests) / throughput_observation_duration_seconds",
+  "observation_duration_definition": "profiling_request_count / exported_request_throughput; verified against exported output token throughput",
+  "aggregation": "Arithmetic mean of per-run goodputs; sample SD; request-weighted attainment",
+  "best_feasible_rule": "Max mean request goodput among tested concurrencies with attainment >= target in EVERY repetition",
+  "attainment_target": 0.95,
+  "warmup_excluded": true,
+  "payloads_verified": true,
+  "length_counts_verified": true,
+  "baseline_throughput_verified": true,
+  "max_tpot_vs_recorded_itl_difference_ms": 1.0302869668521453e-13,
+  "max_observation_vs_benchmark_duration_difference_pct": 0.1684290879165662
+}

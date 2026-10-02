@@ -1,0 +1,359 @@
+{
+  "execution": "Existing local-k8s-gpu cluster temporarily configured with four MPS shares; original environment restored after measurement.",
+  "mps": {
+    "active_thread_percentage": "25.0",
+    "memory_limit": "2G",
+    "clients": {
+      "102219": [
+        "135522",
+        "135492",
+        "135569",
+        "135541"
+      ]
+    }
+  },
+  "image_ids": [
+    "sha256:8852bede9e6ab077fcd42b5084a0217bde2a89f80819884622ed0cbc48f0792e"
+  ],
+  "image_source_validation": {
+    "source_hashes_match": true,
+    "sha256": {
+      "transformer/pd/__init__.py": "0c2d4ce4f62289b15f7d952010bd61f878497d06fceda2f43638b95e87226e83",
+      "transformer/pd/engine.py": "64c38e4e5053d5f1bee6b7cb5c326c0560618dc48ce51c47f56d38beb5e4504c",
+      "transformer/pd/protocol.py": "cf45e4aa95cd9ee014d0a9c7d02b0424f79e8e0995025c026de99b5ad22bc012",
+      "transformer/pd/router.py": "33a0e0536787a3b985c60a1ce1416c0222f469ba8cc15b1c3bb06af0a8430d91",
+      "transformer/pd/runtime.py": "eb216e64d6c5964199b91270d12a4e6aaeb9adb149ee41ae8bc47eeb7fc524b3",
+      "transformer/pd/server.py": "ba5790f2ccae2558582702a18c7dfc5f49a1b9d25dc5e280f6eb066fe00473f7",
+      "transformer/base/engine.py": "4e56e9f3562040dc6b1b04eb71ed06fd7ce8ba92b5e858c0c38f0b0e4e790a87"
+    }
+  },
+  "measured_requests": 7680,
+  "warmup_requests": 960,
+  "errors": 0,
+  "original_mps_two_files_unchanged": true,
+  "preserved_sha256": {
+    "config/cluster/mps.yaml": "258bdd7bf1e2329427238cd70657d26a7c32d499ede421af4442b4945fab1b0e",
+    "config/cluster/mps-smoke.yaml": "9ee55668accf3253d0da12f46176804988a83f702fc577941ec1df62cd3cff30",
+    "k8s/gpu-mps/transformers-base.yaml": "dc078be1a9adf3a1b5bd2df141d268e565a7d01a57d939dfb7c111cd8bf196f6",
+    "k8s/gpu-mps/pd/benchmark.yaml": "b67490be5b67ff493401e082ff0f4080e33fcab151712ce2f682fbcdbf04becf",
+    "k8s/gpu-mps/pd/results.yaml": "a48ed93bb281ddb98c9ddc7fbee4e8d1891a86ae5f7755ff74976c0306e6e10a",
+    "k8s/gpu-mps/pd/namespace.yaml": "20d7092f4349d92bc9a290800329df178921b1635014d1ddd8071923088e202a",
+    "k8s/gpu-mps/pd/disaggregated/workers.yaml": "1cc8f6c4f900df3e1bdd2f922b1522ebdeb91859dd946a10f33845bfb0dd0e73",
+    "k8s/gpu-mps/pd/disaggregated/kustomization.yaml": "50f274455967d7115bfd3b1a415a96ea0e72c164c1e442cde07a90fd6a7473e9",
+    "k8s/gpu-mps/pd/aggregated/workers.yaml": "efd1b8e45deba77f7cc3fd75a75e6e560a38baba776adf6cc664e5892a6a9b45",
+    "k8s/gpu-mps/pd/aggregated/kustomization.yaml": "485c81c874a49734b6685a815a0e9a14ea74eafd8ab9c36e03e786bebb782c34",
+    "k8s/gpu-mps/pd/base/router.yaml": "25257cccad2d3871d734480b3d9d3d7073378159ae854238d63dbe98192631cb",
+    "k8s/gpu-mps/pd/base/kustomization.yaml": "18667e4592e4cb167083d1cea8d9d57ef0776351cb9eb833f3f2a8a220e0aa45"
+  },
+  "restoration": {
+    "restored": true,
+    "deployments_match": true,
+    "helm_values_match": true,
+    "compute_mode": "Default"
+  },
+  "runtime_snapshots": [
+    {
+      "repetition": 1,
+      "mode": "aggregated",
+      "group": "grid",
+      "roles": {
+        "pd-aggregate": 4,
+        "pd-router": 1
+      },
+      "all_ready": true,
+      "restarts": 0,
+      "router_peak_bytes": 54333440,
+      "router_peak_mib": 51.81640625,
+      "router_memory_limit_bytes": 1073741824,
+      "router_memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    {
+      "repetition": 1,
+      "mode": "aggregated",
+      "group": "mixed",
+      "roles": {
+        "pd-aggregate": 4,
+        "pd-router": 1
+      },
+      "all_ready": true,
+      "restarts": 0,
+      "router_peak_bytes": 54333440,
+      "router_peak_mib": 51.81640625,
+      "router_memory_limit_bytes": 1073741824,
+      "router_memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "worker_requests_including_warmup": {
+        "pd-aggregate-0": 360,
+        "pd-aggregate-1": 360,
+        "pd-aggregate-2": 360,
+        "pd-aggregate-3": 360
+      }
+    },
+    {
+      "repetition": 1,
+      "mode": "disaggregated",
+      "group": "grid",
+      "roles": {
+        "pd-decode": 3,
+        "pd-prefill": 1,
+        "pd-router": 1
+      },
+      "all_ready": true,
+      "restarts": 0,
+      "router_peak_bytes": 86540288,
+      "router_peak_mib": 82.53125,
+      "router_memory_limit_bytes": 1073741824,
+      "router_memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    {
+      "repetition": 1,
+      "mode": "disaggregated",
+      "group": "mixed",
+      "roles": {
+        "pd-decode": 3,
+        "pd-prefill": 1,
+        "pd-router": 1
+      },
+      "all_ready": true,
+      "restarts": 0,
+      "router_peak_bytes": 86540288,
+      "router_peak_mib": 82.53125,
+      "router_memory_limit_bytes": 1073741824,
+      "router_memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "worker_requests_including_warmup": {
+        "pd-decode-0": 480,
+        "pd-decode-1": 480,
+        "pd-decode-2": 480
+      }
+    },
+    {
+      "repetition": 2,
+      "mode": "aggregated",
+      "group": "grid",
+      "roles": {
+        "pd-aggregate": 4,
+        "pd-router": 1
+      },
+      "all_ready": true,
+      "restarts": 0,
+      "router_peak_bytes": 56844288,
+      "router_peak_mib": 54.2109375,
+      "router_memory_limit_bytes": 1073741824,
+      "router_memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    {
+      "repetition": 2,
+      "mode": "aggregated",
+      "group": "mixed",
+      "roles": {
+        "pd-aggregate": 4,
+        "pd-router": 1
+      },
+      "all_ready": true,
+      "restarts": 0,
+      "router_peak_bytes": 56844288,
+      "router_peak_mib": 54.2109375,
+      "router_memory_limit_bytes": 1073741824,
+      "router_memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "worker_requests_including_warmup": {
+        "pd-aggregate-0": 360,
+        "pd-aggregate-1": 360,
+        "pd-aggregate-2": 360,
+        "pd-aggregate-3": 360
+      }
+    },
+    {
+      "repetition": 2,
+      "mode": "disaggregated",
+      "group": "grid",
+      "roles": {
+        "pd-decode": 3,
+        "pd-prefill": 1,
+        "pd-router": 1
+      },
+      "all_ready": true,
+      "restarts": 0,
+      "router_peak_bytes": 87777280,
+      "router_peak_mib": 83.7109375,
+      "router_memory_limit_bytes": 1073741824,
+      "router_memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    {
+      "repetition": 2,
+      "mode": "disaggregated",
+      "group": "mixed",
+      "roles": {
+        "pd-decode": 3,
+        "pd-prefill": 1,
+        "pd-router": 1
+      },
+      "all_ready": true,
+      "restarts": 0,
+      "router_peak_bytes": 87777280,
+      "router_peak_mib": 83.7109375,
+      "router_memory_limit_bytes": 1073741824,
+      "router_memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "worker_requests_including_warmup": {
+        "pd-decode-0": 480,
+        "pd-decode-1": 480,
+        "pd-decode-2": 480
+      }
+    },
+    {
+      "repetition": 3,
+      "mode": "aggregated",
+      "group": "grid",
+      "roles": {
+        "pd-aggregate": 4,
+        "pd-router": 1
+      },
+      "all_ready": true,
+      "restarts": 0,
+      "router_peak_bytes": 49881088,
+      "router_peak_mib": 47.5703125,
+      "router_memory_limit_bytes": 1073741824,
+      "router_memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    {
+      "repetition": 3,
+      "mode": "aggregated",
+      "group": "mixed",
+      "roles": {
+        "pd-aggregate": 4,
+        "pd-router": 1
+      },
+      "all_ready": true,
+      "restarts": 0,
+      "router_peak_bytes": 50032640,
+      "router_peak_mib": 47.71484375,
+      "router_memory_limit_bytes": 1073741824,
+      "router_memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "worker_requests_including_warmup": {
+        "pd-aggregate-0": 360,
+        "pd-aggregate-1": 360,
+        "pd-aggregate-2": 360,
+        "pd-aggregate-3": 360
+      }
+    },
+    {
+      "repetition": 3,
+      "mode": "disaggregated",
+      "group": "grid",
+      "roles": {
+        "pd-decode": 3,
+        "pd-prefill": 1,
+        "pd-router": 1
+      },
+      "all_ready": true,
+      "restarts": 0,
+      "router_peak_bytes": 86437888,
+      "router_peak_mib": 82.43359375,
+      "router_memory_limit_bytes": 1073741824,
+      "router_memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    {
+      "repetition": 3,
+      "mode": "disaggregated",
+      "group": "mixed",
+      "roles": {
+        "pd-decode": 3,
+        "pd-prefill": 1,
+        "pd-router": 1
+      },
+      "all_ready": true,
+      "restarts": 0,
+      "router_peak_bytes": 86437888,
+      "router_peak_mib": 82.43359375,
+      "router_memory_limit_bytes": 1073741824,
+      "router_memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "worker_requests_including_warmup": {
+        "pd-decode-0": 480,
+        "pd-decode-1": 480,
+        "pd-decode-2": 480
+      }
+    }
+  ]
+}

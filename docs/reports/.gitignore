@@ -31,7 +31,7 @@
 # GPU console renderings duplicate the structured AIPerf export.
 gpu/**/artifacts/profile_export_console.txt
 
-# Availability: raw evidence and unreferenced data not in summary.md — keep local only.
+# Availability: keep raw evidence and unreferenced data local.
 **/availability-*/evidence/
 **/availability-*/summary.json
 
@@ -41,3 +41,17 @@ history.md
 
 # Model candidate reports retain their measurement script.
 !**/model-candidates-*/probe.py
+
+# MPS and PD reports retain analysis, aggregate tables, validation, and figures.
+# Per-request exports, payloads, resource samples, and logs stay in /reports/pd/.
+!gpu/mps-check-*/summary.json
+!gpu/pd/*/*.md
+!gpu/pd/*/*.json
+!gpu/pd/*/*.csv
+!gpu/pd/*/figures/*.png
+!gpu/pd/*/ttft-tpot.png
+!gpu/pd/*/ttft-tpot.pdf
+!gpu/pd/*/goodput/*.md
+!gpu/pd/*/goodput/*.json
+!gpu/pd/*/goodput/*.csv
+!gpu/pd/*/goodput/*.png

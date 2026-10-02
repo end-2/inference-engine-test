@@ -1,0 +1,109 @@
+{
+  "gpu_output_equivalence": true,
+  "equivalence_workloads": [
+    [
+      64,
+      256
+    ],
+    [
+      704,
+      16
+    ]
+  ],
+  "mps": {
+    "thread_percentage": "50.0",
+    "memory_limit": "4G",
+    "clients": {
+      "70385": [
+        "71095",
+        "71087"
+      ]
+    }
+  },
+  "restoration": {
+    "restored": true,
+    "deployments_match": true,
+    "helm_values_match": true,
+    "compute_mode": "Default"
+  },
+  "image_build": {
+    "buildx.build.provenance": {
+      "builder": {
+        "id": ""
+      },
+      "buildType": "https://mobyproject.org/buildkit@v1",
+      "materials": [
+        {
+          "uri": "pkg:oci/gpu-runtime-transformers?digest=sha256:45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0&platform=linux%2Famd64",
+          "digest": {
+            "sha256": "45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0"
+          }
+        },
+        {
+          "uri": "pkg:oci/gpu-runtime-transformers?digest=sha256:45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0",
+          "digest": {
+            "sha256": "45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0"
+          }
+        }
+      ],
+      "invocation": {
+        "configSource": {
+          "entryPoint": "Dockerfile.gpu"
+        },
+        "parameters": {
+          "frontend": "dockerfile.v0",
+          "args": {
+            "context:gpu-runtime-transformers": "oci-layout://xfh0ru785vw3objk8pyfaaorq:0.1.0@sha256:45c6a764666acdee107ce87b0565ae545fb34c17dcd1e4936977f4c90069bca0",
+            "frontend.caps": "moby.buildkit.frontend.contexts+forward",
+            "target": "transformers-pd-gpu"
+          },
+          "locals": [
+            {
+              "name": "context"
+            },
+            {
+              "name": "dockerfile"
+            }
+          ]
+        },
+        "environment": {
+          "dockerfileVersion": "1.26.0",
+          "platform": "linux/amd64"
+        }
+      }
+    },
+    "buildx.build.ref": "pd-benchmark-build/pd-benchmark-build0/r9wrnrs0jct0j5hhw6f3dxm3s",
+    "containerimage.config.digest": "sha256:767b1ed9b2132c8a589d631ce2bae743bcc852ad871f93fa373b831ca735dab3",
+    "containerimage.descriptor": {
+      "mediaType": "application/vnd.oci.image.manifest.v1+json",
+      "digest": "sha256:015205875f97c39702a1d42a542a9bce658f614c4c989b71672c4b5fc3bca6f8",
+      "size": 4272,
+      "annotations": {
+        "org.opencontainers.image.created": "2026-09-30T19:22:54Z"
+      },
+      "platform": {
+        "architecture": "amd64",
+        "os": "linux"
+      }
+    },
+    "containerimage.digest": "sha256:015205875f97c39702a1d42a542a9bce658f614c4c989b71672c4b5fc3bca6f8",
+    "image.name": "docker.io/local/transformers-pd-gpu:0.1.0"
+  },
+  "cpu": "Intel Core i5-9400F, 6 cores",
+  "host_memory_gib": 15,
+  "router_memory_peak_bytes": 92565504,
+  "runtime_versions": {
+    "python": "3.12.14 (main, Sep 19 2026, 01:05:48) [GCC 12.2.0]",
+    "torch": "2.10.0+cu128",
+    "transformers": "4.57.6",
+    "httpx": "0.28.1",
+    "safetensors": "0.7.0",
+    "fastapi": "0.141.1"
+  },
+  "pod_restarts": {
+    "pd-20260930-192623-results": 0,
+    "pd-decode-59d859989-xngr8": 0,
+    "pd-prefill-845797d4bf-b4w2z": 0,
+    "pd-router-6f8fb74cb7-554qs": 0
+  }
+}

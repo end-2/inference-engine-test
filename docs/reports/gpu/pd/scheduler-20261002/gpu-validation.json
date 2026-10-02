@@ -1,0 +1,50 @@
+{
+  "gpu": "NVIDIA GeForce RTX 2060 SUPER",
+  "torch": "2.10.0+cu128",
+  "cuda": "12.8",
+  "cases": [
+    {
+      "budget": 32,
+      "greedy_token_match": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "chunks": [
+        2,
+        4,
+        10,
+        25
+      ]
+    },
+    {
+      "budget": 256,
+      "greedy_token_match": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "chunks": [
+        1,
+        1,
+        2,
+        4
+      ]
+    }
+  ],
+  "handoff_greedy_match": true,
+  "peak_allocated_bytes": 362628096,
+  "source_sha256": {
+    "transformer/pd/__init__.py": "0c2d4ce4f62289b15f7d952010bd61f878497d06fceda2f43638b95e87226e83",
+    "transformer/pd/engine.py": "64c38e4e5053d5f1bee6b7cb5c326c0560618dc48ce51c47f56d38beb5e4504c",
+    "transformer/pd/packed.py": "c14dca2394b812ae55a371cd9567aba2afefd5c80b6ccfaa18d0b751ca447d2e",
+    "transformer/pd/protocol.py": "cf45e4aa95cd9ee014d0a9c7d02b0424f79e8e0995025c026de99b5ad22bc012",
+    "transformer/pd/router.py": "33a0e0536787a3b985c60a1ce1416c0222f469ba8cc15b1c3bb06af0a8430d91",
+    "transformer/pd/runtime.py": "eb216e64d6c5964199b91270d12a4e6aaeb9adb149ee41ae8bc47eeb7fc524b3",
+    "transformer/pd/scheduler.py": "f3d11dcea3e07a6d138f25664970c84116417ab0ee52ebc13ca54d298d5a82d8",
+    "transformer/pd/server.py": "be981cf1a1c9b0235a54935c045327c433e8306863e4101b68123939a119c397",
+    "transformer/base/engine.py": "4e56e9f3562040dc6b1b04eb71ed06fd7ce8ba92b5e858c0c38f0b0e4e790a87"
+  }
+}

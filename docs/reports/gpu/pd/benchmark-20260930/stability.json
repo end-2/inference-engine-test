@@ -1,0 +1,432 @@
+{
+  "performance_scope": {
+    "planned_repetitions": 3,
+    "included_repetitions": [
+      1
+    ],
+    "measured_requests_included": 2560,
+    "errors_included": 0
+  },
+  "interrupted_condition": {
+    "repetition": 2,
+    "mode": "disaggregated",
+    "synthetic_input_tokens": 704,
+    "actual_input_tokens": 734,
+    "output_tokens": 256,
+    "concurrency": 1,
+    "successful_requests": 1,
+    "failed_requests": 31
+  },
+  "containers_at_failure": {
+    "pd-decode-59d859989-sggws": [
+      {
+        "allocatedResources": {
+          "cpu": "1",
+          "memory": "2Gi",
+          "nvidia.com/gpu.shared": "1"
+        },
+        "allocatedResourcesStatus": [
+          {
+            "name": "nvidia.com/gpu.shared",
+            "resources": [
+              {
+                "health": "Healthy",
+                "resourceID": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b::0"
+              }
+            ]
+          }
+        ],
+        "containerID": "containerd://75e015e0fb68f80bcb6729781c5dc73c6f8587a03fb784b195d7a10907b6abe9",
+        "image": "docker.io/local/transformers-pd-gpu:0.1.0",
+        "imageID": "sha256:39357227fb5c91d87ad6d181b74d359cb587a8f1575c7276da95f42dd925ab77",
+        "lastState": {},
+        "name": "worker",
+        "ready": true,
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "2Gi",
+            "nvidia.com/gpu.shared": "1"
+          },
+          "requests": {
+            "cpu": "1",
+            "memory": "2Gi",
+            "nvidia.com/gpu.shared": "1"
+          }
+        },
+        "restartCount": 0,
+        "started": true,
+        "state": {
+          "running": {
+            "startedAt": "2026-09-30T17:53:49Z"
+          }
+        },
+        "user": {
+          "linux": {
+            "gid": 1000,
+            "supplementalGroups": [
+              1000
+            ],
+            "uid": 1000
+          }
+        },
+        "volumeMounts": [
+          {
+            "mountPath": "/model",
+            "name": "model",
+            "readOnly": true,
+            "recursiveReadOnly": "Disabled"
+          },
+          {
+            "mountPath": "/tmp",
+            "name": "tmp"
+          }
+        ]
+      }
+    ],
+    "pd-prefill-845797d4bf-jxzbs": [
+      {
+        "allocatedResources": {
+          "cpu": "1",
+          "memory": "2Gi",
+          "nvidia.com/gpu.shared": "1"
+        },
+        "allocatedResourcesStatus": [
+          {
+            "name": "nvidia.com/gpu.shared",
+            "resources": [
+              {
+                "health": "Healthy",
+                "resourceID": "GPU-7b77b97b-2222-89f1-2d5e-5c488faedd7b::1"
+              }
+            ]
+          }
+        ],
+        "containerID": "containerd://03bdeaa3fe3aa993c862ff2593c49bb1d9aad603d2ee027883ca443a62c1629c",
+        "image": "docker.io/local/transformers-pd-gpu:0.1.0",
+        "imageID": "sha256:39357227fb5c91d87ad6d181b74d359cb587a8f1575c7276da95f42dd925ab77",
+        "lastState": {},
+        "name": "worker",
+        "ready": true,
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "2Gi",
+            "nvidia.com/gpu.shared": "1"
+          },
+          "requests": {
+            "cpu": "1",
+            "memory": "2Gi",
+            "nvidia.com/gpu.shared": "1"
+          }
+        },
+        "restartCount": 0,
+        "started": true,
+        "state": {
+          "running": {
+            "startedAt": "2026-09-30T17:53:49Z"
+          }
+        },
+        "user": {
+          "linux": {
+            "gid": 1000,
+            "supplementalGroups": [
+              1000
+            ],
+            "uid": 1000
+          }
+        },
+        "volumeMounts": [
+          {
+            "mountPath": "/model",
+            "name": "model",
+            "readOnly": true,
+            "recursiveReadOnly": "Disabled"
+          },
+          {
+            "mountPath": "/tmp",
+            "name": "tmp"
+          }
+        ]
+      }
+    ],
+    "pd-router-6f8fb74cb7-68fd2": [
+      {
+        "allocatedResources": {
+          "cpu": "100m",
+          "memory": "256Mi"
+        },
+        "containerID": "containerd://13635a2c1befa9fa967fb25068cbb103918a632795e6b1aabc5ae81197e23257",
+        "image": "docker.io/local/transformers-pd-gpu:0.1.0",
+        "imageID": "sha256:39357227fb5c91d87ad6d181b74d359cb587a8f1575c7276da95f42dd925ab77",
+        "lastState": {
+          "terminated": {
+            "containerID": "containerd://2ac83944bacc0e0e315a4f78dafc87314b353a7eb91a04d80ee658665cc10715",
+            "exitCode": 137,
+            "finishedAt": "2026-09-30T18:55:46Z",
+            "reason": "OOMKilled",
+            "startedAt": "2026-09-30T17:53:49Z"
+          }
+        },
+        "name": "router",
+        "ready": true,
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "256Mi"
+          }
+        },
+        "restartCount": 1,
+        "started": true,
+        "state": {
+          "running": {
+            "startedAt": "2026-09-30T18:55:47Z"
+          }
+        },
+        "user": {
+          "linux": {
+            "gid": 1000,
+            "supplementalGroups": [
+              1000
+            ],
+            "uid": 1000
+          }
+        }
+      }
+    ]
+  },
+  "router_memory_probe": {
+    "state_bytes": 17120000,
+    "concurrencies": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "rounds": 4,
+    "sample_method": "Router /proc/PID/status VmRSS after each completed request batch",
+    "results": {
+      "original": {
+        "samples": [
+          {
+            "requests": 32,
+            "concurrency": 1,
+            "router_rss_mib": 117.7890625,
+            "peak_mib": 445.28515625
+          },
+          {
+            "requests": 64,
+            "concurrency": 2,
+            "router_rss_mib": 541.66796875,
+            "peak_mib": 541.66796875
+          },
+          {
+            "requests": 96,
+            "concurrency": 4,
+            "router_rss_mib": 441.16015625,
+            "peak_mib": 543.0078125
+          },
+          {
+            "requests": 128,
+            "concurrency": 8,
+            "router_rss_mib": 441.3203125,
+            "peak_mib": 543.0078125
+          },
+          {
+            "requests": 160,
+            "concurrency": 1,
+            "router_rss_mib": 425.234375,
+            "peak_mib": 718.98828125
+          },
+          {
+            "requests": 192,
+            "concurrency": 2,
+            "router_rss_mib": 425.234375,
+            "peak_mib": 718.98828125
+          },
+          {
+            "requests": 224,
+            "concurrency": 4,
+            "router_rss_mib": 457.765625,
+            "peak_mib": 718.98828125
+          },
+          {
+            "requests": 256,
+            "concurrency": 8,
+            "router_rss_mib": 457.77734375,
+            "peak_mib": 718.98828125
+          },
+          {
+            "requests": 288,
+            "concurrency": 1,
+            "router_rss_mib": 425.3203125,
+            "peak_mib": 785.7109375
+          },
+          {
+            "requests": 320,
+            "concurrency": 2,
+            "router_rss_mib": 425.3203125,
+            "peak_mib": 785.7109375
+          },
+          {
+            "requests": 352,
+            "concurrency": 4,
+            "router_rss_mib": 425.3203125,
+            "peak_mib": 785.7109375
+          },
+          {
+            "requests": 384,
+            "concurrency": 8,
+            "router_rss_mib": 441.53125,
+            "peak_mib": 785.7109375
+          },
+          {
+            "requests": 416,
+            "concurrency": 1,
+            "router_rss_mib": 866.05078125,
+            "peak_mib": 866.05078125
+          },
+          {
+            "requests": 448,
+            "concurrency": 2,
+            "router_rss_mib": 425.34765625,
+            "peak_mib": 866.05078125
+          },
+          {
+            "requests": 480,
+            "concurrency": 4,
+            "router_rss_mib": 425.34765625,
+            "peak_mib": 866.05078125
+          },
+          {
+            "requests": 512,
+            "concurrency": 8,
+            "router_rss_mib": 457.87890625,
+            "peak_mib": 866.05078125
+          }
+        ],
+        "requests": 512,
+        "max_observed_rss_mib": 866.05078125
+      },
+      "fixed": {
+        "samples": [
+          {
+            "requests": 32,
+            "concurrency": 1,
+            "router_rss_mib": 51.23046875,
+            "peak_mib": 85.1484375
+          },
+          {
+            "requests": 64,
+            "concurrency": 2,
+            "router_rss_mib": 85.68359375,
+            "peak_mib": 85.68359375
+          },
+          {
+            "requests": 96,
+            "concurrency": 4,
+            "router_rss_mib": 91.45703125,
+            "peak_mib": 123.99609375
+          },
+          {
+            "requests": 128,
+            "concurrency": 8,
+            "router_rss_mib": 130.58203125,
+            "peak_mib": 130.58203125
+          },
+          {
+            "requests": 160,
+            "concurrency": 1,
+            "router_rss_mib": 130.66796875,
+            "peak_mib": 130.66796875
+          },
+          {
+            "requests": 192,
+            "concurrency": 2,
+            "router_rss_mib": 130.671875,
+            "peak_mib": 130.671875
+          },
+          {
+            "requests": 224,
+            "concurrency": 4,
+            "router_rss_mib": 114.34765625,
+            "peak_mib": 148.19921875
+          },
+          {
+            "requests": 256,
+            "concurrency": 8,
+            "router_rss_mib": 114.375,
+            "peak_mib": 148.19921875
+          },
+          {
+            "requests": 288,
+            "concurrency": 1,
+            "router_rss_mib": 114.43359375,
+            "peak_mib": 148.19921875
+          },
+          {
+            "requests": 320,
+            "concurrency": 2,
+            "router_rss_mib": 130.640625,
+            "peak_mib": 148.19921875
+          },
+          {
+            "requests": 352,
+            "concurrency": 4,
+            "router_rss_mib": 114.4375,
+            "peak_mib": 148.19921875
+          },
+          {
+            "requests": 384,
+            "concurrency": 8,
+            "router_rss_mib": 130.7734375,
+            "peak_mib": 148.19921875
+          },
+          {
+            "requests": 416,
+            "concurrency": 1,
+            "router_rss_mib": 130.78515625,
+            "peak_mib": 148.19921875
+          },
+          {
+            "requests": 448,
+            "concurrency": 2,
+            "router_rss_mib": 130.7890625,
+            "peak_mib": 148.19921875
+          },
+          {
+            "requests": 480,
+            "concurrency": 4,
+            "router_rss_mib": 130.66796875,
+            "peak_mib": 148.19921875
+          },
+          {
+            "requests": 512,
+            "concurrency": 8,
+            "router_rss_mib": 130.8203125,
+            "peak_mib": 148.19921875
+          }
+        ],
+        "requests": 512,
+        "max_observed_rss_mib": 148.19921875
+      }
+    }
+  },
+  "gpu_revalidation": {
+    "measured_requests": 160,
+    "errors": 0,
+    "router_memory_peak_bytes": 92565504,
+    "pod_restarts": {
+      "pd-20260930-192623-results": 0,
+      "pd-decode-59d859989-xngr8": 0,
+      "pd-prefill-845797d4bf-b4w2z": 0,
+      "pd-router-6f8fb74cb7-554qs": 0
+    },
+    "restored": true,
+    "report": "../memory-fix-20260930/summary.md"
+  }
+}

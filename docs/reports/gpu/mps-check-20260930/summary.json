@@ -1,0 +1,357 @@
+{
+  "date_utc": "2026-09-30",
+  "gpu": "NVIDIA GeForce RTX 2060 SUPER",
+  "gpu_memory_mib": 8192,
+  "driver": "580.126.09",
+  "device_plugin": "0.20.1",
+  "cluster": "kind-local-k8s-gpu",
+  "node": "local-k8s-gpu-worker",
+  "replicas": 2,
+  "memory_limit_per_client_mib": 4096,
+  "active_thread_percentage": 50,
+  "cuda_processes_per_pod": 1,
+  "test": {
+    "prompt_tokens": [
+      128,
+      512
+    ],
+    "output_tokens": 64,
+    "repetitions_per_prompt": 2,
+    "batch_size": 1,
+    "warmup_prompt_tokens": 32,
+    "warmup_output_tokens": 8,
+    "total_requests_excluding_warmup": 48,
+    "gpu_sampling": "approximately 1 second plus polling overhead",
+    "scope": "offline model generation through Transformers and llama-cpp-python; no HTTP server, load or quality benchmark"
+  },
+  "pairs": [
+    {
+      "models": [
+        "smollm2-135m",
+        "smollm2-135m"
+      ],
+      "passed": true,
+      "requests": 8,
+      "overlap_s": 7.708658695220947,
+      "gpu_memory_used_sampled_max_mib": 836.0,
+      "mps": {
+        "servers": "28320",
+        "clients": {
+          "28320": "27976\n28043"
+        },
+        "active_thread_percentage": "50.0",
+        "memory_limit": "4G"
+      },
+      "containers": [
+        {
+          "pod": "probe-a",
+          "image": "local/transformers-mamba-base-gpu:0.1.0",
+          "image_id": "sha256:9be1e1cbd31c67029225272e4c63e28753264465f35b34cd8e05c44d56debdf1"
+        },
+        {
+          "pod": "probe-b",
+          "image": "local/transformers-mamba-base-gpu:0.1.0",
+          "image_id": "sha256:9be1e1cbd31c67029225272e4c63e28753264465f35b34cd8e05c44d56debdf1"
+        }
+      ],
+      "clients": [
+        {
+          "model": "smollm2-135m",
+          "backend": "transformers",
+          "dtype": "torch.float16",
+          "device": "cuda:0",
+          "sm_count": 16,
+          "kernel_backend": "sdpa",
+          "peak_allocated_mib": 306.1162109375,
+          "peak_reserved_mib": 326.0,
+          "torch": "2.10.0+cu128",
+          "transformers": "4.57.6"
+        },
+        {
+          "model": "smollm2-135m",
+          "backend": "transformers",
+          "dtype": "torch.float16",
+          "device": "cuda:0",
+          "sm_count": 16,
+          "kernel_backend": "sdpa",
+          "peak_allocated_mib": 306.1162109375,
+          "peak_reserved_mib": 326.0,
+          "torch": "2.10.0+cu128",
+          "transformers": "4.57.6"
+        }
+      ]
+    },
+    {
+      "models": [
+        "mamba-130m",
+        "mamba-130m"
+      ],
+      "passed": true,
+      "requests": 8,
+      "overlap_s": 7.758707761764526,
+      "gpu_memory_used_sampled_max_mib": 1512.0,
+      "mps": {
+        "servers": "28320",
+        "clients": {
+          "28320": "29593\n29523"
+        },
+        "active_thread_percentage": "50.0",
+        "memory_limit": "4G"
+      },
+      "containers": [
+        {
+          "pod": "probe-a",
+          "image": "local/transformers-mamba-base-gpu:0.1.0",
+          "image_id": "sha256:9be1e1cbd31c67029225272e4c63e28753264465f35b34cd8e05c44d56debdf1"
+        },
+        {
+          "pod": "probe-b",
+          "image": "local/transformers-mamba-base-gpu:0.1.0",
+          "image_id": "sha256:9be1e1cbd31c67029225272e4c63e28753264465f35b34cd8e05c44d56debdf1"
+        }
+      ],
+      "clients": [
+        {
+          "model": "mamba-130m",
+          "backend": "transformers",
+          "dtype": "torch.float16",
+          "device": "cuda:0",
+          "sm_count": 16,
+          "kernel_backend": "pytorch",
+          "peak_allocated_mib": 419.6015625,
+          "peak_reserved_mib": 662.0,
+          "torch": "2.10.0+cu128",
+          "transformers": "4.57.6"
+        },
+        {
+          "model": "mamba-130m",
+          "backend": "transformers",
+          "dtype": "torch.float16",
+          "device": "cuda:0",
+          "sm_count": 16,
+          "kernel_backend": "pytorch",
+          "peak_allocated_mib": 419.6015625,
+          "peak_reserved_mib": 662.0,
+          "torch": "2.10.0+cu128",
+          "transformers": "4.57.6"
+        }
+      ]
+    },
+    {
+      "models": [
+        "jamba-tiny-dev",
+        "jamba-tiny-dev"
+      ],
+      "passed": true,
+      "requests": 8,
+      "overlap_s": 8.701663970947266,
+      "gpu_memory_used_sampled_max_mib": 1700.0,
+      "mps": {
+        "servers": "28320",
+        "clients": {
+          "28320": "31224\n31293"
+        },
+        "active_thread_percentage": "50.0",
+        "memory_limit": "4G"
+      },
+      "containers": [
+        {
+          "pod": "probe-a",
+          "image": "local/transformers-mamba-base-gpu:0.1.0",
+          "image_id": "sha256:9be1e1cbd31c67029225272e4c63e28753264465f35b34cd8e05c44d56debdf1"
+        },
+        {
+          "pod": "probe-b",
+          "image": "local/transformers-mamba-base-gpu:0.1.0",
+          "image_id": "sha256:9be1e1cbd31c67029225272e4c63e28753264465f35b34cd8e05c44d56debdf1"
+        }
+      ],
+      "clients": [
+        {
+          "model": "jamba-tiny-dev",
+          "backend": "transformers",
+          "dtype": "torch.float16",
+          "device": "cuda:0",
+          "sm_count": 16,
+          "kernel_backend": "pytorch",
+          "peak_allocated_mib": 724.71484375,
+          "peak_reserved_mib": 756.0,
+          "torch": "2.10.0+cu128",
+          "transformers": "4.57.6"
+        },
+        {
+          "model": "jamba-tiny-dev",
+          "backend": "transformers",
+          "dtype": "torch.float16",
+          "device": "cuda:0",
+          "sm_count": 16,
+          "kernel_backend": "pytorch",
+          "peak_allocated_mib": 724.71484375,
+          "peak_reserved_mib": 756.0,
+          "torch": "2.10.0+cu128",
+          "transformers": "4.57.6"
+        }
+      ]
+    },
+    {
+      "models": [
+        "qwen2.5-0.5b",
+        "qwen2.5-0.5b"
+      ],
+      "passed": true,
+      "requests": 8,
+      "overlap_s": 1.4292888641357422,
+      "gpu_memory_used_sampled_max_mib": 1572.0,
+      "mps": {
+        "servers": "28320",
+        "clients": {
+          "28320": "34547\n34501"
+        },
+        "active_thread_percentage": "50.0",
+        "memory_limit": "4G"
+      },
+      "containers": [
+        {
+          "pod": "probe-a",
+          "image": "local/base-llamacpp-gpu:0.1.0",
+          "image_id": "docker.io/library/import-2026-09-28@sha256:942b11971932957c4edfefba58fe876d6f4efdb79ba043a5fc5e0563c27c6ff5"
+        },
+        {
+          "pod": "probe-b",
+          "image": "local/base-llamacpp-gpu:0.1.0",
+          "image_id": "docker.io/library/import-2026-09-28@sha256:942b11971932957c4edfefba58fe876d6f4efdb79ba043a5fc5e0563c27c6ff5"
+        }
+      ],
+      "clients": [
+        {
+          "model": "qwen2.5-0.5b",
+          "backend": "llama.cpp",
+          "dtype": "Q4_K_M",
+          "n_gpu_layers": -1
+        },
+        {
+          "model": "qwen2.5-0.5b",
+          "backend": "llama.cpp",
+          "dtype": "Q4_K_M",
+          "n_gpu_layers": -1
+        }
+      ]
+    },
+    {
+      "models": [
+        "smollm2-135m",
+        "qwen2.5-0.5b"
+      ],
+      "passed": true,
+      "requests": 8,
+      "overlap_s": 1.3340325355529785,
+      "gpu_memory_used_sampled_max_mib": 1204.0,
+      "mps": {
+        "servers": "28320",
+        "clients": {
+          "28320": "35902\n35832"
+        },
+        "active_thread_percentage": "50.0",
+        "memory_limit": "4G"
+      },
+      "containers": [
+        {
+          "pod": "probe-a",
+          "image": "local/transformers-mamba-base-gpu:0.1.0",
+          "image_id": "sha256:9be1e1cbd31c67029225272e4c63e28753264465f35b34cd8e05c44d56debdf1"
+        },
+        {
+          "pod": "probe-b",
+          "image": "local/base-llamacpp-gpu:0.1.0",
+          "image_id": "docker.io/library/import-2026-09-28@sha256:942b11971932957c4edfefba58fe876d6f4efdb79ba043a5fc5e0563c27c6ff5"
+        }
+      ],
+      "clients": [
+        {
+          "model": "smollm2-135m",
+          "backend": "transformers",
+          "dtype": "torch.float16",
+          "device": "cuda:0",
+          "sm_count": 16,
+          "kernel_backend": "sdpa",
+          "peak_allocated_mib": 306.1162109375,
+          "peak_reserved_mib": 326.0,
+          "torch": "2.10.0+cu128",
+          "transformers": "4.57.6"
+        },
+        {
+          "model": "qwen2.5-0.5b",
+          "backend": "llama.cpp",
+          "dtype": "Q4_K_M",
+          "n_gpu_layers": -1
+        }
+      ]
+    },
+    {
+      "models": [
+        "mamba-130m",
+        "jamba-tiny-dev"
+      ],
+      "passed": true,
+      "requests": 8,
+      "overlap_s": 7.751664638519287,
+      "gpu_memory_used_sampled_max_mib": 1606.0,
+      "mps": {
+        "servers": "28320",
+        "clients": {
+          "28320": "37376\n37446"
+        },
+        "active_thread_percentage": "50.0",
+        "memory_limit": "4G"
+      },
+      "containers": [
+        {
+          "pod": "probe-a",
+          "image": "local/transformers-mamba-base-gpu:0.1.0",
+          "image_id": "sha256:9be1e1cbd31c67029225272e4c63e28753264465f35b34cd8e05c44d56debdf1"
+        },
+        {
+          "pod": "probe-b",
+          "image": "local/transformers-mamba-base-gpu:0.1.0",
+          "image_id": "sha256:9be1e1cbd31c67029225272e4c63e28753264465f35b34cd8e05c44d56debdf1"
+        }
+      ],
+      "clients": [
+        {
+          "model": "mamba-130m",
+          "backend": "transformers",
+          "dtype": "torch.float16",
+          "device": "cuda:0",
+          "sm_count": 16,
+          "kernel_backend": "pytorch",
+          "peak_allocated_mib": 419.6015625,
+          "peak_reserved_mib": 662.0,
+          "torch": "2.10.0+cu128",
+          "transformers": "4.57.6"
+        },
+        {
+          "model": "jamba-tiny-dev",
+          "backend": "transformers",
+          "dtype": "torch.float16",
+          "device": "cuda:0",
+          "sm_count": 16,
+          "kernel_backend": "pytorch",
+          "peak_allocated_mib": 724.71484375,
+          "peak_reserved_mib": 756.0,
+          "torch": "2.10.0+cu128",
+          "transformers": "4.57.6"
+        }
+      ]
+    }
+  ],
+  "raw_artifacts": ".local-k8s/mps-check-20260930",
+  "restoration": {
+    "restored": true,
+    "compute_mode": "Default",
+    "gpu_allocatable": 1,
+    "helm_values_match": true,
+    "base_llamacpp_ready": true,
+    "deployment_specs_match": true,
+    "server_health": "{\"status\":\"ready\"}"
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "32": {
+    "budget_and_role_checks_passed": true,
+    "computed_token_totals_match_requests": true,
+    "roles": {
+      "aggregate": {
+        "steps_including_warmup": 35126,
+        "mixed_steps": 2506,
+        "requests_max": 6,
+        "requests_mean": 1.3911632409041736,
+        "scheduled_tokens_max": 32,
+        "prefill_tokens": 220480,
+        "decode_tokens": 41552,
+        "step_ms_mean": 33.56637905179873,
+        "mixed_step_decode_budget_fraction_mean": 0.0608664205905826
+      },
+      "decode": {
+        "steps_including_warmup": 29610,
+        "mixed_steps": 0,
+        "requests_max": 6,
+        "requests_mean": 1.4222222222222223,
+        "scheduled_tokens_max": 6,
+        "prefill_tokens": 0,
+        "decode_tokens": 42112,
+        "step_ms_mean": 32.715151156851206,
+        "mixed_step_decode_budget_fraction_mean": null
+      },
+      "prefill": {
+        "steps_including_warmup": 6950,
+        "mixed_steps": 0,
+        "requests_max": 2,
+        "requests_mean": 1.0463309352517987,
+        "scheduled_tokens_max": 32,
+        "prefill_tokens": 220480,
+        "decode_tokens": 0,
+        "step_ms_mean": 34.40261671203607,
+        "mixed_step_decode_budget_fraction_mean": null
+      }
+    }
+  },
+  "256": {
+    "budget_and_role_checks_passed": true,
+    "computed_token_totals_match_requests": true,
+    "roles": {
+      "aggregate": {
+        "steps_including_warmup": 29801,
+        "mixed_steps": 401,
+        "requests_max": 6,
+        "requests_mean": 1.4334082748901043,
+        "scheduled_tokens_max": 256,
+        "prefill_tokens": 220480,
+        "decode_tokens": 41552,
+        "step_ms_mean": 33.94228234406426,
+        "mixed_step_decode_budget_fraction_mean": 0.008426200124688279
+      },
+      "decode": {
+        "steps_including_warmup": 25131,
+        "mixed_steps": 0,
+        "requests_max": 8,
+        "requests_mean": 1.675699335482074,
+        "scheduled_tokens_max": 8,
+        "prefill_tokens": 0,
+        "decode_tokens": 42112,
+        "step_ms_mean": 34.36522145785185,
+        "mixed_step_decode_budget_fraction_mean": null
+      },
+      "prefill": {
+        "steps_including_warmup": 1087,
+        "mixed_steps": 0,
+        "requests_max": 2,
+        "requests_mean": 1.0551977920883164,
+        "scheduled_tokens_max": 256,
+        "prefill_tokens": 220480,
+        "decode_tokens": 0,
+        "step_ms_mean": 45.79643077449337,
+        "mixed_step_decode_budget_fraction_mean": null
+      }
+    }
+  }
+}
