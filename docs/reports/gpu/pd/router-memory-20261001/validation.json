@@ -85,7 +85,7 @@
     }
   ],
   "regression_tests": {
-    "command": ".local-k8s/pd-venv/bin/python -m unittest discover -s tests -p test_pd*.py -v",
+    "command": ".local-k8s/inference-distributed-venv/bin/python -m unittest discover -s tests -p test_pd*.py -v",
     "passed": 26,
     "failed": 0
   },

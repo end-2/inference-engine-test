@@ -64,7 +64,7 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("--cache-dir", container["args"])
 
     def test_pd_setting_changes_update_all_configmap_references(self):
-        profile = ROOT / "k8s/pd/profiles/mps-4-scheduled-disaggregated.yaml"
+        profile = ROOT / "k8s/inference-distributed/profiles/mps-4-scheduled-disaggregated.yaml"
         old = render(profile)
         new = render(profile, "--set-string", "settings.TOKEN_BUDGET=32")
         old_config = next(d for d in old if d["kind"] == "ConfigMap")
@@ -80,7 +80,7 @@ class ManifestTests(unittest.TestCase):
         for option in ("slots=3", "mode=unknown", "scheduler=unknown", "scheduler=token-budget,slots=2"):
             with self.subTest(option=option):
                 result = subprocess.run([str(ROOT / "scripts/render-k8s.sh"),
-                                         str(ROOT / "k8s/pd/profiles/mps-2-aggregated.yaml"), "--set", option],
+                                         str(ROOT / "k8s/inference-distributed/profiles/mps-2-aggregated.yaml"), "--set", option],
                                         capture_output=True, text=True)
                 self.assertNotEqual(result.returncode, 0)
 
@@ -110,7 +110,7 @@ class ApplyTests(unittest.TestCase):
             cluster.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$HELM_TEST_TRACE"\nexit 19\n')
             cluster.chmod(0o755)
             env = {**os.environ, "LOCAL_K8S_SCRIPT": str(cluster), "HELM_TEST_TRACE": str(trace)}
-            command = [str(ROOT / "scripts/k8s.sh"), "apply", str(ROOT / "k8s/pd/profiles/mps-2-aggregated.yaml")]
+            command = [str(ROOT / "scripts/k8s.sh"), "apply", str(ROOT / "k8s/inference-distributed/profiles/mps-2-aggregated.yaml")]
             result = subprocess.run([*command, "--set", "slots=3"], env=env, capture_output=True)
             self.assertNotEqual(result.returncode, 0)
             self.assertFalse(trace.exists())

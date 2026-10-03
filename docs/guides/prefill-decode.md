@@ -20,11 +20,11 @@ Both modes use the same single CPU router. Aggregation alternates requests acros
 
 ### Router memory limits
 
-In the common [configuration](../../k8s/pd/values.yaml), `MAX_PENDING=8` is the request count admitted until response completion, and `MAX_STATE_TRANSFERS=2` is the request count concurrently building Prefill state and transferring it to Decode. Without a free transfer slot, a request waits before building KV. If it cannot obtain a slot within the default 120 seconds, it returns HTTP 504, and client disconnect cancels the wait. A slot returns when the Decode response header is received, so a non-streaming request can hold it until generation completes.
+In the common [configuration](../../k8s/inference-distributed/values.yaml), `MAX_PENDING=8` is the request count admitted until response completion, and `MAX_STATE_TRANSFERS=2` is the request count concurrently building Prefill state and transferring it to Decode. Without a free transfer slot, a request waits before building KV. If it cannot obtain a slot within the default 120 seconds, it returns HTTP 504, and client disconnect cancels the wait. A slot returns when the Decode response header is received, so a non-streaming request can hold it until generation completes.
 
 The per-state limit is `MAX_STATE_MIB=64`. Under default settings, source states in transfer total up to 128 MiB, and copies are also needed while converting receive buffers with `bytes`. The router uploads in 64 KiB chunks and releases body references on success, failure, and cancellation. This limit is not a whole-process RSS cap.
 
-The [router Deployment](../../k8s/pd/templates/router.yaml) uses memory request 512 MiB and limit 1 GiB in both modes. After increasing state size or transfer slot count, revalidate the limit to account for transient copies, HTTP buffers, and Python memory. Rebuild and reload the inference image from changed sources, then deploy with `pd-deploy`.
+The [router Deployment](../../k8s/inference-distributed/templates/router.yaml) uses memory request 512 MiB and limit 1 GiB in both modes. After increasing state size or transfer slot count, revalidate the limit to account for transient copies, HTTP buffers, and Python memory. Rebuild and reload the inference image from changed sources, then deploy with `pd-deploy`.
 
 ## Running
 
@@ -129,8 +129,8 @@ This implementation measures HTTP KV transfer through CPU memory. Do not directl
 
 ## Configuration and verification
 
-- Common token and queue limits: [pd/values.yaml](../../k8s/pd/values.yaml)
-- GPU resources, model mounts, and roles: [workers](../../k8s/pd/templates/workers.yaml)
+- Common token and queue limits: [inference-distributed/values.yaml](../../k8s/inference-distributed/values.yaml)
+- GPU resources, model mounts, and roles: [workers](../../k8s/inference-distributed/templates/workers.yaml)
 - Engine, internal API, and router: [src/transformer/pd](../../src/transformer/pd)
 
 A small Llama model in a CPU environment can also verify state transfer and output equivalence.
@@ -139,8 +139,8 @@ A small Llama model in a CPU environment can also verify state transfer and outp
 python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
 python -m pip install -r src/transformer/requirements.txt -r src/transformer/pd/requirements.txt pyyaml
 python -m unittest discover -s tests -p 'test_pd*.py' -v
-./scripts/render-k8s.sh k8s/pd/profiles/mps-2-aggregated.yaml
-./scripts/render-k8s.sh k8s/pd/profiles/mps-2-disaggregated.yaml
+./scripts/render-k8s.sh k8s/inference-distributed/profiles/mps-2-aggregated.yaml
+./scripts/render-k8s.sh k8s/inference-distributed/profiles/mps-2-disaggregated.yaml
 ```
 
 After copying results to the host, shut down. Deleting the namespace also deletes result PVCs.

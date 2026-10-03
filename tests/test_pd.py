@@ -517,7 +517,7 @@ class RouterMemoryTests(unittest.IsolatedAsyncioTestCase):
 class ManifestTests(unittest.TestCase):
     def test_scheduled_profiles_keep_four_shares_and_enable_all_worker_schedulers(self):
         for mode in ("aggregated", "disaggregated"):
-            docs = render(ROOT / "k8s/pd/profiles" / f"mps-4-scheduled-{mode}.yaml")
+            docs = render(ROOT / "k8s/inference-distributed/profiles" / f"mps-4-scheduled-{mode}.yaml")
             self.assertTrue(all(d["metadata"]["namespace"] == "pd-comparison-4-scheduled" for d in docs if d["kind"] != "Namespace"))
             gpu = [d for d in docs if d["kind"] in {"Deployment", "StatefulSet"}
                    and d["metadata"]["name"] != "pd-router"]
@@ -533,7 +533,7 @@ class ManifestTests(unittest.TestCase):
 
     def test_four_slot_profiles_have_equal_budgets_and_direct_pod_routes(self):
         for mode in ('aggregated', 'disaggregated'):
-            docs = render(ROOT / "k8s/pd/profiles" / f"mps-4-{mode}.yaml")
+            docs = render(ROOT / "k8s/inference-distributed/profiles" / f"mps-4-{mode}.yaml")
             self.assertTrue(all(d['metadata']['namespace'] == 'pd-comparison-4' for d in docs if d["kind"] != "Namespace"))
             workloads = [d for d in docs if d['kind'] in ('Deployment', 'StatefulSet')]
             gpu = [d for d in workloads if d['metadata']['name'] != 'pd-router']
@@ -557,7 +557,7 @@ class ManifestTests(unittest.TestCase):
     def test_worker_budgets_and_roles(self):
         budgets = []
         for mode in ("aggregated", "disaggregated"):
-            docs = render(ROOT / "k8s/pd/profiles" / f"mps-2-{mode}.yaml")
+            docs = render(ROOT / "k8s/inference-distributed/profiles" / f"mps-2-{mode}.yaml")
             workloads = [d for d in docs if d["kind"] in {"Deployment", "StatefulSet"}
                          and d["metadata"]["name"] != "pd-router"]
             roles, slots, cpu, memory = [], 0, 0, 0
@@ -579,7 +579,7 @@ class ManifestTests(unittest.TestCase):
 
     def test_rendered_router_targets_both_baseline_replicas(self):
         for mode in ("aggregated", "disaggregated"):
-            docs = render(ROOT / "k8s/pd/profiles" / f"mps-2-{mode}.yaml")
+            docs = render(ROOT / "k8s/inference-distributed/profiles" / f"mps-2-{mode}.yaml")
             gateway = next(d for d in docs if d["kind"] == "Deployment" and d["metadata"]["name"] == "pd-router")
             spec = gateway["spec"]["template"]["spec"]
             container = spec["containers"][0]
@@ -656,7 +656,7 @@ elif 'jobs' in args: print(os.environ.get('PD_ACTIVE', ''))
         self.assertEqual(result.returncode, 0, result.stderr)
         calls = [json.loads(line) for line in self.trace.read_text().splitlines()]
         self.assertTrue(any('statefulset/pd-decode' in c for c in calls))
-        self.assertEqual((self.root / 'render-trace').read_text().strip(), str(self.root / 'k8s/pd/profiles/mps-4-disaggregated.yaml'))
+        self.assertEqual((self.root / 'render-trace').read_text().strip(), str(self.root / 'k8s/inference-distributed/profiles/mps-4-disaggregated.yaml'))
         for call in calls:
             if '-n' in call:
                 self.assertEqual(call[call.index('-n') + 1], 'pd-comparison-4')

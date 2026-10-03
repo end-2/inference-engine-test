@@ -89,7 +89,7 @@ At concurrency 16, kept only budgets among each mode's two budgets whose TPOT at
 
 ## Implementation and Verification
 
-Kept the default serial mode and added a [separate scheduler manifest](../../../../../k8s/pd/profiles/mps-4-scheduled-aggregated.yaml). Behavior and reproduction commands are in the [scheduler guide](../../../../guides/prefill-decode-scheduler.md).
+Kept the default serial mode and added a [separate scheduler manifest](../../../../../k8s/inference-distributed/profiles/mps-4-scheduled-aggregated.yaml). Behavior and reproduction commands are in the [scheduler guide](../../../../guides/prefill-decode-scheduler.md).
 
 54 CPU tests and 13 cluster tests passed. On a real GPU, 16-token greedy outputs for 64, 94, 286, and 734-token inputs matched the existing serial path for both budgets. Decode results after 734-token KV transfer also matched. [GPU validation](gpu-validation.json) records image source hashes and CUDA version.
 

@@ -3,12 +3,12 @@
 case $GPU_REPLICAS in
     2)
         PD_NAMESPACE=pd-comparison
-        PD_VALUES_PREFIX="$ROOT/k8s/pd/profiles/mps-2"
+        PD_VALUES_PREFIX="$ROOT/k8s/inference-distributed/profiles/mps-2"
         PD_DECODE_WORKLOAD=deployment/pd-decode
         ;;
     4)
         PD_NAMESPACE=pd-comparison-4
-        PD_VALUES_PREFIX="$ROOT/k8s/pd/profiles/mps-4"
+        PD_VALUES_PREFIX="$ROOT/k8s/inference-distributed/profiles/mps-4"
         PD_DECODE_WORKLOAD=statefulset/pd-decode
         ;;
     *) die "PD comparison requires two or four MPS slots" ;;
@@ -19,7 +19,7 @@ case $PD_SCHEDULER in
     token-budget)
         [ "$GPU_REPLICAS" = 4 ] || die "The token-budget profile requires four MPS slots"
         PD_NAMESPACE=pd-comparison-4-scheduled
-        PD_VALUES_PREFIX="$ROOT/k8s/pd/profiles/mps-4-scheduled"
+        PD_VALUES_PREFIX="$ROOT/k8s/inference-distributed/profiles/mps-4-scheduled"
         case ${PD_TOKEN_BUDGET:-256} in ''|*[!0-9]*|0) die "PD_TOKEN_BUDGET must be a positive integer" ;; esac
         [ "${PD_TOKEN_BUDGET:-256}" -gt 0 ] || die "PD_TOKEN_BUDGET must be a positive integer"
         ;;

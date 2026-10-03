@@ -40,7 +40,7 @@ python3 scripts/report-pd.py <report-directory>
 python3 scripts/report-pd-goodput.py <report-directory> --tpot-ms 25,30,35,40,50,75
 ```
 
-Manifests are in `k8s/pd/profiles/mps-4-scheduled-*.yaml`, and the namespace is `pd-comparison-4-scheduled`. To select a separate cluster, use `CLUSTER_NAME` for deployment and `--cluster` for benchmark. Benchmark switches deployments and validates identical payloads and input/output lengths. It does not automatically delete workers after tests.
+Manifests are in `k8s/inference-distributed/profiles/mps-4-scheduled-*.yaml`, and the namespace is `pd-comparison-4-scheduled`. To select a separate cluster, use `CLUSTER_NAME` for deployment and `--cluster` for benchmark. Benchmark switches deployments and validates identical payloads and input/output lengths. It does not automatically delete workers after tests.
 
 | Worker option | Default | Behavior |
 | --- | ---: | --- |

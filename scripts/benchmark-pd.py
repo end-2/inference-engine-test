@@ -80,7 +80,7 @@ def profile(replicas, scheduler="serial"):
     if scheduler == "token-budget":
         selected["namespace"] = "pd-comparison-4-scheduled"
         prefix += "-scheduled"
-    selected["values"] = {mode: ROOT / "k8s/pd/profiles" / f"{prefix}-{mode}.yaml" for mode in MODES}
+    selected["values"] = {mode: ROOT / "k8s/inference-distributed/profiles" / f"{prefix}-{mode}.yaml" for mode in MODES}
     return selected
 
 

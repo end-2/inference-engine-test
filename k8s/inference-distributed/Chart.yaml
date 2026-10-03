@@ -1,5 +1,5 @@
 apiVersion: v2
-name: pd
+name: inference-distributed
 description: Aggregated and disaggregated inference on MPS
 type: application
 version: 0.1.0

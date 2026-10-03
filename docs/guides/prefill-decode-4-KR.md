@@ -91,4 +91,4 @@ make up DEVICE=gpu GPU_SHARING=mps MPS_REPLICAS=2
 make pd-deploy MPS_REPLICAS=2 PD_MODE=aggregated
 ```
 
-4분할 manifest는 [Aggregation profile](../../k8s/pd/profiles/mps-4-aggregated.yaml), [Disaggregation profile](../../k8s/pd/profiles/mps-4-disaggregated.yaml)에 있습니다. 검증은 공통 가이드의 PD 테스트와 `tests/test_gpu_cluster.py`로 실행합니다.
+4분할 manifest는 [Aggregation profile](../../k8s/inference-distributed/profiles/mps-4-aggregated.yaml), [Disaggregation profile](../../k8s/inference-distributed/profiles/mps-4-disaggregated.yaml)에 있습니다. 검증은 공통 가이드의 PD 테스트와 `tests/test_gpu_cluster.py`로 실행합니다.

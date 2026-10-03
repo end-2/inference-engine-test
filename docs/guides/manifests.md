@@ -9,7 +9,7 @@ k8s/
   inference/
   aiperf/
   experiment/
-  pd/
+  inference-distributed/
   metrics-server/
 ```
 
@@ -20,7 +20,7 @@ Each chart includes `Chart.yaml`, `values.yaml` and `templates/`. Experiment con
 | Inference | CPU, GPU, Mamba and MPS servers | [inference/values.yaml](../../k8s/inference/values.yaml) |
 | AIPerf | Model and dataset profiles, PD benchmark | [aiperf/values.yaml](../../k8s/aiperf/values.yaml) |
 | Experiment | Availability and HPA, both engines | [experiment/values.yaml](../../k8s/experiment/values.yaml) |
-| PD | Two or four MPS slots, serial or token-budget scheduling | [pd/values.yaml](../../k8s/pd/values.yaml) |
+| inference-distributed | Two or four MPS slots, serial or token-budget scheduling | [inference-distributed/values.yaml](../../k8s/inference-distributed/values.yaml) |
 | Metrics Server | Local kind metrics | [components.yaml](../../k8s/metrics-server/templates/components.yaml) |
 
 ## Rendering and applying
@@ -36,7 +36,7 @@ Run from the repository root. Rendering works without a cluster. Scripts accept 
 LOCAL_K8S_SCRIPT=./scripts/local-k8s-gpu.sh ./scripts/k8s.sh apply k8s/inference/profiles/transformers-base-gpu.yaml
 ```
 
-The `experiment` and `pd` charts include their namespaces. `experiment/scenarios/` contains kubectl patches for experiments and is excluded from rendering. To switch PD topologies, use `make pd-deploy PD_MODE=aggregated` or `PD_MODE=disaggregated`; the script releases old GPU slots before applying the selected profile.
+The `experiment` and `inference-distributed` charts include their namespaces. `experiment/scenarios/` contains kubectl patches for experiments and is excluded from rendering. To switch PD topologies, use `make pd-deploy PD_MODE=aggregated` or `PD_MODE=disaggregated`; the script releases old GPU slots before applying the selected profile.
 
 `make render` and `make deploy` accept the same `VARIANT`, `DEVICE` and `IMAGE_TAG` as image build commands. Benchmark `--manifests` accepts a values file inside a chart or a chart directory. Custom plain manifest files and directories are also supported.
 
@@ -54,7 +54,7 @@ Change shared defaults in the chart, and workload differences in the profile. Ad
 
 ```sh
 ./scripts/render-k8s.sh k8s/inference/profiles/transformers-base-cpu.yaml --set-string container.image=local/transformers-base:test
-./scripts/render-k8s.sh k8s/pd/profiles/mps-4-disaggregated.yaml
+./scripts/render-k8s.sh k8s/inference-distributed/profiles/mps-4-disaggregated.yaml
 
 # Equivalent direct Helm rendering
 ./.bin/helm template inference-test k8s/inference -f k8s/inference/profiles/transformers-base-cpu.yaml

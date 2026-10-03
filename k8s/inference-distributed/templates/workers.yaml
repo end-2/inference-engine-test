@@ -45,7 +45,7 @@ spec:
           image: {{ $.Values.image }}
           envFrom:
             - configMapRef:
-                name: {{ include "pd.settingsName" $ }}
+                name: {{ include "inference-distributed.settingsName" $ }}
           args:
             - --role
             - {{ $role }}

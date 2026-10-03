@@ -7,7 +7,7 @@ k8s/
   inference/
   aiperf/
   experiment/
-  pd/
+  inference-distributed/
   metrics-server/
 ```
 
@@ -18,7 +18,7 @@ k8s/
 | Inference | CPU, GPU, Mamba, MPS 서버 | [inference/values.yaml](../../k8s/inference/values.yaml) |
 | AIPerf | 모델별, 데이터셋별, PD 벤치마크 | [aiperf/values.yaml](../../k8s/aiperf/values.yaml) |
 | Experiment | 두 엔진의 availability와 HPA | [experiment/values.yaml](../../k8s/experiment/values.yaml) |
-| PD | MPS 2분할과 4분할, serial과 token-budget 스케줄링 | [pd/values.yaml](../../k8s/pd/values.yaml) |
+| inference-distributed | MPS 2분할과 4분할, serial과 token-budget 스케줄링 | [inference-distributed/values.yaml](../../k8s/inference-distributed/values.yaml) |
 | Metrics Server | 로컬 kind 메트릭 | [components.yaml](../../k8s/metrics-server/templates/components.yaml) |
 
 ## 렌더링과 적용
@@ -34,7 +34,7 @@ k8s/
 LOCAL_K8S_SCRIPT=./scripts/local-k8s-gpu.sh ./scripts/k8s.sh apply k8s/inference/profiles/transformers-base-gpu.yaml
 ```
 
-`experiment`와 `pd` 차트는 namespace를 포함합니다. `experiment/scenarios/`는 실험용 kubectl 패치이며 렌더링에 포함하지 않습니다. PD 토폴로지 전환에는 `make pd-deploy PD_MODE=aggregated` 또는 `PD_MODE=disaggregated`를 사용합니다. 기존 Pod의 GPU 슬롯을 반환한 뒤 선택한 프로필을 적용합니다.
+`experiment`와 `inference-distributed` 차트는 namespace를 포함합니다. `experiment/scenarios/`는 실험용 kubectl 패치이며 렌더링에 포함하지 않습니다. PD 토폴로지 전환에는 `make pd-deploy PD_MODE=aggregated` 또는 `PD_MODE=disaggregated`를 사용합니다. 기존 Pod의 GPU 슬롯을 반환한 뒤 선택한 프로필을 적용합니다.
 
 `make render`와 `make deploy`는 이미지 빌드 명령과 같은 `VARIANT`, `DEVICE`, `IMAGE_TAG`를 사용합니다. 벤치마크의 `--manifests`에는 차트 안의 values 파일이나 차트 디렉터리를 지정합니다. 사용자 정의 일반 매니페스트 파일과 디렉터리도 지원합니다.
 
@@ -52,7 +52,7 @@ make deploy VARIANT=transformers-base IMAGE_TAG=0.1.0
 
 ```sh
 ./scripts/render-k8s.sh k8s/inference/profiles/transformers-base-cpu.yaml --set-string container.image=local/transformers-base:test
-./scripts/render-k8s.sh k8s/pd/profiles/mps-4-disaggregated.yaml
+./scripts/render-k8s.sh k8s/inference-distributed/profiles/mps-4-disaggregated.yaml
 
 # 같은 결과를 만드는 Helm 직접 실행
 ./.bin/helm template inference-test k8s/inference -f k8s/inference/profiles/transformers-base-cpu.yaml

@@ -38,7 +38,7 @@ python3 scripts/report-pd.py <report-directory>
 python3 scripts/report-pd-goodput.py <report-directory> --tpot-ms 25,30,35,40,50,75
 ```
 
-Manifest는 `k8s/pd/profiles/mps-4-scheduled-*.yaml`, namespace는 `pd-comparison-4-scheduled`입니다. 별도 클러스터를 지정하려면 배포에 `CLUSTER_NAME`, benchmark에 `--cluster`를 사용합니다. Benchmark는 배포를 전환하고 동일 payload 및 입출력 길이를 검증합니다. 테스트 종료 후 worker를 자동 삭제하지 않습니다.
+Manifest는 `k8s/inference-distributed/profiles/mps-4-scheduled-*.yaml`, namespace는 `pd-comparison-4-scheduled`입니다. 별도 클러스터를 지정하려면 배포에 `CLUSTER_NAME`, benchmark에 `--cluster`를 사용합니다. Benchmark는 배포를 전환하고 동일 payload 및 입출력 길이를 검증합니다. 테스트 종료 후 worker를 자동 삭제하지 않습니다.
 
 | Worker 옵션 | 기본값 | 동작 |
 | --- | ---: | --- |
