@@ -2,7 +2,7 @@
 set -eu
 
 ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
-BENCH="$ROOT/k8s/aiperf"
+BENCH="$ROOT/k8s/aiperf/profiles/default.yaml"
 . "$ROOT/config/models/smollm2-135m-transformers.env"
 
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
@@ -49,7 +49,8 @@ grep -Fq '/results/$(POD_NAME)' "$out" || fail 'Separate results by Pod'
 deadline=$(awk '/activeDeadlineSeconds:/ { print $2 }' "$out")
 [ "$deadline" -ge 14400 ] || fail 'Deadline must accommodate all four variations'
 
-model=$(awk '/- --served-model-name$/ { getline; print $2 }' "$ROOT/k8s/transformers-base/deployment.yaml")
+read_manifests "$ROOT/k8s/inference/profiles/transformers-base-cpu.yaml" > "$rendered/inference.yaml"
+model=$(awk '/- --served-model-name$/ { getline; print $2 }' "$rendered/inference.yaml")
 [ "$model" = "$SERVED_MODEL_NAME" ] || fail 'Deployment model does not match model config'
 grep -Fq 'kind: PersistentVolumeClaim' "$rendered/all.yaml" || fail 'Missing results PVC'
 grep -Fq 'kind: Pod' "$rendered/all.yaml" || fail 'Missing results reader Pod'
@@ -64,7 +65,7 @@ for profile_name in qwen2.5 32-qwen2.5 128-qwen2.5; do
     size=${profile_name%-qwen2.5}
     suffix="-$profile_name"
     if [ "$profile_name" = qwen2.5 ]; then size=16; fi
-    read_manifests "$ROOT/k8s/aiperf-$profile_name" > "$rendered/profile.yaml" || fail "Cannot render profile $profile_name"
+    read_manifests "$ROOT/k8s/aiperf/profiles/$profile_name.yaml" > "$rendered/profile.yaml" || fail "Cannot render profile $profile_name"
     [ "$(grep -c '^kind: Job$' "$rendered/profile.yaml")" -eq 1 ] || fail 'Each profile must use one Job'
     awk 'BEGIN { RS="---" } /kind: Job/ { print }' "$rendered/profile.yaml" > "$rendered/profile-job.yaml"
     profile="$rendered/profile-job.yaml"

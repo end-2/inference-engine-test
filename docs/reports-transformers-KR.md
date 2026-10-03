@@ -78,10 +78,10 @@ OpenAI API와 호환되는 `/v1/chat/completions`를 구현하여 AIPerf로 해�
 
 | 디렉터리 | 구성 |
 | --- | --- |
-| `k8s/transformers-base/` | `deployment.yaml`, `service.yaml` |
-| `k8s/transformers-enhanced-batch/` | `deployment.yaml`, `service.yaml` |
-| `k8s/transformers-enhanced-cache/` | `deployment.yaml`, `service.yaml`, `cache.yaml` (PVC, `/cache`) |
-| `k8s/aiperf/` 및 `k8s/aiperf-smollm2/` | AIPerf `Job`과 결과 PVC, 토크나이저 마운트 |
+| `k8s/inference/profiles/transformers-base-cpu.yaml` | `deployment.yaml`, `service.yaml` |
+| `k8s/inference/profiles/transformers-enhanced-batch-cpu.yaml` | `deployment.yaml`, `service.yaml` |
+| `k8s/inference/profiles/transformers-enhanced-cache-cpu.yaml` | `deployment.yaml`, `service.yaml`, `cache.yaml` (PVC, `/cache`) |
+| `k8s/aiperf/profiles/default.yaml` 및 `k8s/aiperf/profiles/smollm2.yaml` | AIPerf `Job`과 결과 PVC, 토크나이저 마운트 |
 
 세 추론 변형은 같은 `Deployment/transformers-base`와 `Service/transformers-base:8000`을 공유합니다.
 

@@ -26,7 +26,7 @@ The default [kind config](../../config/cluster/kind.yaml) uses a CPU-only single
 
 Versions and node image digests are managed in [versions.env](../../config/versions.env). On change, use the kind and node image combination stated in [kind releases](https://github.com/kubernetes-sigs/kind/releases) and match the kubectl version.
 
-`install` validates SHA-256 of downloaded tools. The script searches `.bin/` before PATH when running tools.
+`install` downloads kind, kubectl and Helm and validates their SHA-256 checksums. The script searches `.bin/` before PATH when running tools.
 
 | Environment variable | Default | Purpose |
 | --- | --- | --- |
@@ -35,7 +35,7 @@ Versions and node image digests are managed in [versions.env](../../config/versi
 | `KIND_EXPERIMENTAL_PROVIDER` | `docker` | Use Docker. `auto` also selects Docker |
 | `WAIT_TIMEOUT` | `180s` | Wait time for creation and each readiness check |
 | `KIND_NODE_IMAGE` | See `config/versions.env` | Node image |
-| `KIND_VERSION`, `KUBECTL_VERSION` | See `config/versions.env` | Tool versions to install |
+| `KIND_VERSION`, `KUBECTL_VERSION`, `HELM_VERSION` | See `config/versions.env` | Tool versions to install |
 | `LOCAL_K8S_STATE_DIR` | `.local-k8s/` | kubeconfig, runtime selection records, and log storage |
 | `LOCAL_K8S_BIN_DIR` | `.bin/` | Tool install and priority search location |
 

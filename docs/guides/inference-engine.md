@@ -116,7 +116,7 @@ The [Dockerfile](../../src/Dockerfile) uses `src/` as context; Transformers targ
 make download-model
 ./scripts/local-k8s.sh up
 make build-image load-image
-./scripts/local-k8s.sh kubectl apply -f k8s/transformers-base/
+./scripts/k8s.sh apply k8s/inference/profiles/transformers-base-cpu.yaml
 ./scripts/local-k8s.sh kubectl rollout status deployment/transformers-base --timeout=300s
 ./scripts/local-k8s.sh kubectl port-forward service/transformers-base 8000:8000
 ```
@@ -125,21 +125,21 @@ Each directory has Deployment and Service manifests; cache also includes a PVC. 
 
 ```sh
 make build-image load-image VARIANT=transformers-enhanced-batch
-./scripts/local-k8s.sh kubectl apply -f k8s/transformers-enhanced-batch/
+./scripts/k8s.sh apply k8s/inference/profiles/transformers-enhanced-batch-cpu.yaml
 
 make build-image load-image VARIANT=transformers-enhanced-cache
-./scripts/local-k8s.sh kubectl apply -f k8s/transformers-enhanced-cache/
+./scripts/k8s.sh apply k8s/inference/profiles/transformers-enhanced-cache-cpu.yaml
 ```
 
 Select only one of the three configurations. They replace the same `Deployment/transformers-base` and `Service/transformers-base`; the cache PVC is kept when switching implementations. Do not run other inference jobs on the same node during performance measurement.
 
-Before deploying, you can validate with the API server using `./scripts/local-k8s.sh kubectl apply --dry-run=server -f k8s/transformers-base/`. The commands above use default image tags. If built with another `IMAGE_TAG`, set `image` in the selected `deployment.yaml` to the same tag.
+Before deploying, you can validate with the API server using `./scripts/render-k8s.sh k8s/inference/profiles/transformers-base-cpu.yaml > /tmp/inference.yaml && ./scripts/local-k8s.sh kubectl apply --dry-run=server -f /tmp/inference.yaml`. The commands above use default image tags. If built with another `IMAGE_TAG`, set `container.image` in the selected profile to the same tag.
 
 CPU, memory, and `--n-threads` are set in each Deployment.
 
-The model is mounted read-only from kind node `/models/smollm2-135m` to `/model`. The cache implementation connects a [dedicated PVC](../../k8s/transformers-enhanced-cache/cache.yaml) at `/cache` and needs the cluster default StorageClass.
+The model is mounted read-only from kind node `/models/smollm2-135m` to `/model`. The cache implementation connects a [dedicated PVC](../../k8s/inference/profiles/transformers-enhanced-cache-cpu.yaml) at `/cache` and needs the cluster default StorageClass.
 
-Measurement Pods set CPU and memory requests equal to limits. Actual resource values are in the [base Deployment](../../k8s/transformers-base/deployment.yaml).
+Measurement Pods set CPU and memory requests equal to limits. Actual resource values are in the [base Deployment](../../k8s/inference/values.yaml).
 
 ### Validation
 
@@ -184,7 +184,7 @@ From the repository root, specify `VARIANT=base-llamacpp` to prepare the model a
 make download-model VARIANT=base-llamacpp
 make up
 make build-image load-image VARIANT=base-llamacpp
-./scripts/local-k8s.sh kubectl apply -f k8s/base-llamacpp/
+./scripts/k8s.sh apply k8s/inference/profiles/base-llamacpp-cpu.yaml
 ```
 
 After deployment, wait for server readiness and connect the port.
@@ -208,7 +208,7 @@ curl http://127.0.0.1:8000/v1/chat/completions \
 
 ### Run and length limits
 
-Server options are at `PYTHONPATH=src python -m llamacpp.base.server --help`; deployed values are in the [Deployment](../../k8s/base-llamacpp/deployment.yaml).
+Server options are at `PYTHONPATH=src python -m llamacpp.base.server --help`; deployed values are in the [Deployment](../../k8s/inference/profiles/base-llamacpp-cpu.yaml).
 
 Prompts apply the GGUF chat template, then tokenize. If input limits, output limits, or input plus requested output exceed context size, return HTTP 400 without auto-shortening lengths.
 
@@ -254,7 +254,7 @@ After preparing model and cluster in the base deployment, build and apply the se
 
 ```sh
 make build-image load-image VARIANT=enhanced-batch-llamacpp
-./scripts/local-k8s.sh kubectl apply -f k8s/enhanced-batch-llamacpp/
+./scripts/k8s.sh apply k8s/inference/profiles/enhanced-batch-llamacpp-cpu.yaml
 ./scripts/local-k8s.sh kubectl rollout status deployment/base-llamacpp --timeout=300s
 ```
 
@@ -283,7 +283,7 @@ HTTP worker threads wait for scheduler results. Only the batching worker accesse
 
 Native KV space is allocated for `n_ctx x max_parallel`; actual size can grow from library alignment. The batching version does not keep cross-request prefix cache.
 
-See `PYTHONPATH=src python -m llamacpp.enhanced.batch.server --help` for defaults, and the [Deployment](../../k8s/enhanced-batch-llamacpp/deployment.yaml) for deployed values.
+See `PYTHONPATH=src python -m llamacpp.enhanced.batch.server --help` for defaults, and the [Deployment](../../k8s/inference/profiles/enhanced-batch-llamacpp-cpu.yaml) for deployed values.
 
 ### RAM and disk tiered cache
 
@@ -311,7 +311,7 @@ The RAM budget excludes Python indexes, containers, and temp buffers during rest
 
 See `PYTHONPATH=src python -m llamacpp.enhanced.cache.server --help` for defaults.
 
-The [cache Deployment](../../k8s/enhanced-cache-llamacpp/deployment.yaml) mounts a [PVC](../../k8s/enhanced-cache-llamacpp/cache.yaml) at `/cache`. The PVC is kept when switching implementations or restarting inference Pods. The cluster default StorageClass is required.
+The [cache Deployment](../../k8s/inference/profiles/enhanced-cache-llamacpp-cpu.yaml) mounts a [PVC](../../k8s/inference/profiles/enhanced-cache-llamacpp-cpu.yaml) at `/cache`. The PVC is kept when switching implementations or restarting inference Pods. The cluster default StorageClass is required.
 
 ### llama.cpp enhanced validation
 

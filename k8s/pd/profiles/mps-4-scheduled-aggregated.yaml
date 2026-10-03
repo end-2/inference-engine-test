@@ -1,0 +1,10 @@
+namespace: pd-comparison-4-scheduled
+mode: aggregated
+slots: 4
+image: local/transformers-pd-gpu:token-budget-v1
+scheduler: token-budget
+settings:
+  MAX_PENDING: '32'
+  TOKEN_BUDGET: '256'
+  MAX_NUM_SEQS: '8'
+  MAX_KV_TOKENS: '8192'

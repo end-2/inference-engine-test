@@ -1,0 +1,5 @@
+apiVersion: v2
+name: pd
+description: Aggregated and disaggregated inference on MPS
+type: application
+version: 0.1.0

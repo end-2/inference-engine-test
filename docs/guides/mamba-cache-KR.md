@@ -27,7 +27,7 @@ make benchmark DEVICE=gpu VARIANT=transformers-mamba-cache
 python scripts/run-benchmark.py --backend mamba --device gpu \
   --build-context '' --benchmark-build-context '' --concurrencies 1 \
   --image local/transformers-mamba-cache-gpu:0.1.0 \
-  --manifests k8s/gpu/transformers-mamba-cache --cache-policy clear-before-sweep
+  --manifests k8s/inference/profiles/transformers-mamba-cache-gpu.yaml --cache-policy clear-before-sweep
 ```
 
 전체 반복은 기본 엔진, 동시성마다 캐시 초기화, sweep 시작 시에만 초기화하는 세 조건으로 구성됩니다. 각 조건은 동시성 `1,2,4,8`에서 warmup 2개와 측정 요청 100개를 사용합니다.
@@ -40,12 +40,12 @@ make benchmark-suite DEVICE=gpu VARIANT=transformers-mamba-base REPETITIONS=3
 
 ```sh
 make build-image load-image DEVICE=gpu VARIANT=transformers-mamba-cache
-./scripts/local-k8s-gpu.sh kubectl apply -f k8s/gpu/transformers-mamba-cache
+LOCAL_K8S_SCRIPT=./scripts/local-k8s-gpu.sh ./scripts/k8s.sh apply k8s/inference/profiles/transformers-mamba-cache-gpu.yaml
 ./scripts/local-k8s-gpu.sh kubectl rollout status deployment/transformers-mamba-base --timeout=300s
 ./scripts/local-k8s-gpu.sh kubectl port-forward service/transformers-mamba-base 8000:8000
 ```
 
-CPU는 `DEVICE=cpu`와 `k8s/transformers-mamba-cache`를 사용합니다. 로컬 실행 의존성은 [Transformers requirements](../../src/transformer/requirements.txt)를 따릅니다.
+CPU는 `DEVICE=cpu`와 `k8s/inference/profiles/transformers-mamba-cache-cpu.yaml`를 사용합니다. 로컬 실행 의존성은 [Transformers requirements](../../src/transformer/requirements.txt)를 따릅니다.
 
 ```sh
 PYTHONPATH=src python -m transformer.mamba.cache.server \

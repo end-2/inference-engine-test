@@ -12,6 +12,7 @@ from pathlib import Path, PurePosixPath
 import re
 import subprocess
 import sys
+import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -187,8 +188,19 @@ def ensure_image(image, context, target=None, load_nodes=None):
 
 def render(path):
     path = Path(path)
-    output = kube("create", "--dry-run=client", "--validate=false", "-f", path,
-                  "-o", "json", capture=True).stdout
+    chart = path if path.is_dir() else path.parent
+    while chart != chart.parent and not (chart / "Chart.yaml").is_file():
+        chart = chart.parent
+    if (chart / "Chart.yaml").is_file():
+        rendered = run(ROOT / "scripts/render-k8s.sh", path, capture=True).stdout
+        with tempfile.TemporaryDirectory(prefix="inference-manifests-") as directory:
+            manifest = Path(directory) / "resources.yaml"
+            manifest.write_text(rendered)
+            output = kube("create", "--dry-run=client", "--validate=false", "-f", manifest,
+                          "-o", "json", capture=True).stdout
+    else:
+        output = kube("create", "--dry-run=client", "--validate=false", "-f", path,
+                      "-o", "json", capture=True).stdout
     decoder = json.JSONDecoder()
     items = []
     while output.strip():
@@ -546,10 +558,7 @@ def image_name(backend, variant, device):
 
 
 def manifests_path(backend, variant, device):
-    directory = ROOT / "k8s"
-    if device == "gpu":
-        directory /= "gpu"
-    return directory / variant_name(backend, variant)
+    return ROOT / "k8s/inference/profiles" / f"{variant_name(backend, variant)}-{device}.yaml"
 
 
 def parse_args():
@@ -623,8 +632,8 @@ def parse_args():
 
 
 def benchmark_manifests(backend):
-    profile = {"transformers": "aiperf", "mamba": "aiperf-mamba", "llamacpp": "aiperf-qwen2.5"}[backend]
-    return render(ROOT / "k8s" / profile)
+    profile = {"transformers": "default", "mamba": "mamba", "llamacpp": "qwen2.5"}[backend]
+    return render(ROOT / "k8s/aiperf/profiles" / f"{profile}.yaml")
 
 
 def benchmark_template(backend):

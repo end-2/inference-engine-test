@@ -24,7 +24,7 @@ GPU 공유 리소스 2개를 사용하는 별도 환경은 [MPS 클러스터 가
 
 버전과 노드 이미지 digest는 [versions.env](../../config/versions.env)에서 관리합니다. 변경 시 [kind 릴리스](https://github.com/kubernetes-sigs/kind/releases)에 명시된 kind와 노드 이미지 조합을 사용하고 kubectl 버전도 맞춥니다.
 
-`install`은 다운로드한 도구의 SHA-256을 검증합니다. 스크립트는 도구를 실행할 때 `.bin/`을 PATH보다 먼저 탐색합니다.
+`install`은 kind, kubectl과 Helm을 다운로드하고 SHA-256 체크섬을 검증합니다. 스크립트는 도구를 실행할 때 `.bin/`을 PATH보다 먼저 탐색합니다.
 
 | 환경 변수 | 기본값 | 용도 |
 | --- | --- | --- |
@@ -33,7 +33,7 @@ GPU 공유 리소스 2개를 사용하는 별도 환경은 [MPS 클러스터 가
 | `KIND_EXPERIMENTAL_PROVIDER` | `docker` | Docker 사용. `auto`도 Docker 선택 |
 | `WAIT_TIMEOUT` | `180s` | 생성과 각 준비 상태 확인의 대기 시간 |
 | `KIND_NODE_IMAGE` | `config/versions.env` 참조 | 노드 이미지 |
-| `KIND_VERSION`, `KUBECTL_VERSION` | `config/versions.env` 참조 | 설치할 도구 버전 |
+| `KIND_VERSION`, `KUBECTL_VERSION`, `HELM_VERSION` | `config/versions.env` 참조 | 설치할 도구 버전 |
 | `LOCAL_K8S_STATE_DIR` | `.local-k8s/` | kubeconfig, 런타임 선택 기록과 로그 저장 위치 |
 | `LOCAL_K8S_BIN_DIR` | `.bin/` | 도구 설치 및 우선 탐색 위치 |
 

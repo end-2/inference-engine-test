@@ -1,0 +1,11 @@
+namespace: availability-test-transformers
+scenario: availability
+backend: transformers
+loadReplicas: 0
+engineName: transformers-base-metric
+engineTitle: Transformers
+metricPrefix: transformers
+model: HuggingFaceTB/SmolLM2-135M-Instruct
+modelPath: /model
+modelHostPath: /models/smollm2-135m
+tokenizerHostPath: /models/smollm2-135m

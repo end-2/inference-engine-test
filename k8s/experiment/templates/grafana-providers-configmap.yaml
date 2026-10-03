@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-providers
+  namespace: {{ .Values.namespace }}
+data:
+  dashboards.yaml: |
+    {{- tpl (.Files.Get (printf "files/grafana-providers/%s/dashboards.yaml" .Values.scenario)) . | nindent 4 }}

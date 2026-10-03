@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from manifest_support import render
 from unittest.mock import patch
 
 try:
@@ -43,7 +44,7 @@ class GPUSettingsTests(unittest.TestCase):
             args = benchmark.parse_args()
         self.assertEqual(args.image, "local/transformers-base-gpu:0.1.0")
         self.assertEqual(args.build_target, "transformers-base-gpu")
-        self.assertEqual(args.manifests, ROOT / "k8s/gpu/transformers-base")
+        self.assertEqual(args.manifests, ROOT / "k8s/inference/profiles/transformers-base-gpu.yaml")
         self.assertEqual(args.reports_dir, ROOT / "docs/reports/gpu/transformers")
         with patch.dict(os.environ, {}, clear=True), patch("sys.argv", ["run-benchmark-suite.py", "--device", "gpu"]):
             options = suite.parse_args()
@@ -54,7 +55,7 @@ class GPUSettingsTests(unittest.TestCase):
         arguments = dict(zip(command[2::2], command[3::2], strict=True))
         self.assertEqual(arguments["--device"], "gpu")
         self.assertEqual(arguments["--image"], "local/transformers-base-gpu:test")
-        self.assertEqual(arguments["--manifests"], str(ROOT / "k8s/gpu/transformers-base"))
+        self.assertEqual(arguments["--manifests"], str(ROOT / "k8s/inference/profiles/transformers-base-gpu.yaml"))
 
     def test_gpu_image_build_uses_cuda_dockerfile(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -93,8 +94,7 @@ class GPUSettingsTests(unittest.TestCase):
                  "base-llamacpp", "enhanced-batch-llamacpp", "enhanced-cache-llamacpp")
         for name in names:
             with self.subTest(name=name):
-                path = ROOT / "k8s/gpu" / name / "deployment.yaml"
-                obj = yaml.safe_load(path.read_text())
+                obj = next(d for d in render(ROOT / "k8s/inference/profiles" / f"{name}-gpu.yaml") if d["kind"] == "Deployment")
                 pod = obj["spec"]["template"]["spec"]
                 container = pod["containers"][0]
                 self.assertEqual(pod["runtimeClassName"], "nvidia")
@@ -129,11 +129,11 @@ class GPUSettingsTests(unittest.TestCase):
             args = benchmark.parse_args()
         self.assertEqual(args.model, "state-spaces/mamba-130m-hf")
         self.assertEqual(args.image, "local/transformers-mamba-base-gpu:0.1.0")
-        self.assertEqual(args.manifests, ROOT / "k8s/gpu/transformers-mamba-base")
+        self.assertEqual(args.manifests, ROOT / "k8s/inference/profiles/transformers-mamba-base-gpu.yaml")
         self.assertEqual(args.reports_dir, ROOT / "docs/reports/gpu/mamba")
         with patch.object(benchmark, "render", return_value={}) as render:
             benchmark.benchmark_manifests("mamba")
-        render.assert_called_once_with(ROOT / "k8s/aiperf-mamba")
+        render.assert_called_once_with(ROOT / "k8s/aiperf/profiles/mamba.yaml")
         with patch.object(benchmark, "run") as run:
             benchmark.prepare_model("mamba")
         run.assert_called_once_with(ROOT / "scripts/download-transformers-model.sh", "mamba-130m")
@@ -149,11 +149,12 @@ class GPUSettingsTests(unittest.TestCase):
 
     @unittest.skipIf(yaml is None, "PyYAML is needed to inspect manifests")
     def test_mamba_manifests_use_own_weights_tokenizer_and_cache(self):
-        for device in ("", "gpu"):
+        for device in ("cpu", "gpu"):
             for variant in ("base", "cache"):
-                root = ROOT / "k8s" / device / f"transformers-mamba-{variant}"
-                deployment = yaml.safe_load((root / "deployment.yaml").read_text())
-                service = yaml.safe_load((root / "service.yaml").read_text())
+                root = ROOT / "k8s/inference/profiles" / f"transformers-mamba-{variant}-{device}.yaml"
+                resources = render(root)
+                deployment = next(d for d in resources if d["kind"] == "Deployment")
+                service = next(d for d in resources if d["kind"] == "Service")
                 pod = deployment["spec"]["template"]["spec"]
                 args = pod["containers"][0]["args"]
                 self.assertEqual(args[args.index("--served-model-name") + 1], "state-spaces/mamba-130m-hf")
@@ -163,7 +164,7 @@ class GPUSettingsTests(unittest.TestCase):
                 if variant == "cache":
                     cache = next(v for v in pod["volumes"] if v["name"] == "cache")
                     self.assertEqual(cache["persistentVolumeClaim"]["claimName"], "transformers-mamba-cache")
-        profile = yaml.safe_load((ROOT / "k8s/aiperf-mamba/job.yaml").read_text())
+        profile = next(d for d in render(ROOT / "k8s/aiperf/profiles/mamba.yaml") if d["kind"] == "Job")
         spec = profile["spec"]["template"]["spec"]
         self.assertEqual(next(v for v in spec["volumes"] if v["name"] == "tokenizer")["hostPath"]["path"],
                          "/models/mamba-130m")

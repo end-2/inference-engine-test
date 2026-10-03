@@ -72,7 +72,7 @@ make up
 
 The Transformers server uses `--model /model`, and the llama.cpp server uses `--model /model/qwen2.5-0.5b-instruct-q4_k_m.gguf`.
 
-For the actual volume configuration, see the [Transformers Deployment](../../k8s/transformers-base/deployment.yaml), [llama.cpp Deployment](../../k8s/base-llamacpp/deployment.yaml), and [AIPerf guide](aiperf.md). For how to run servers, see the [inference engine guide](inference-engine.md).
+For the actual volume configuration, see the [Transformers Deployment](../../k8s/inference/values.yaml), [llama.cpp Deployment](../../k8s/inference/profiles/base-llamacpp-cpu.yaml), and [AIPerf guide](aiperf.md). For how to run servers, see the [inference engine guide](inference-engine.md).
 
 ### Changing the storage location
 

@@ -1,7 +1,4 @@
-# Read only deployable files in the selected directory, excluding scenario patches.
+# Render the selected Helm profile without contacting the cluster.
 read_manifests() {
-    for manifest in "$1"/*.yaml; do
-        cat "$manifest" || return
-        printf '\n---\n'
-    done
+    "$ROOT/scripts/render-k8s.sh" "$1"
 }

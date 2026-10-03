@@ -29,7 +29,7 @@ If images are already loaded on the GPU worker and control plane, as in the vali
 python scripts/run-benchmark.py --backend mamba --device gpu \
   --build-context '' --benchmark-build-context '' --concurrencies 1 \
   --image local/transformers-mamba-cache-gpu:0.1.0 \
-  --manifests k8s/gpu/transformers-mamba-cache --cache-policy clear-before-sweep
+  --manifests k8s/inference/profiles/transformers-mamba-cache-gpu.yaml --cache-policy clear-before-sweep
 ```
 
 A full repetition covers three conditions: the base engine, cache cleared per concurrency, and cache cleared only at sweep start. Each condition uses 2 warmup and 100 measured requests at concurrencies `1,2,4,8`.
@@ -42,12 +42,12 @@ To deploy only the server, use the following commands. On a single-GPU setup, fi
 
 ```sh
 make build-image load-image DEVICE=gpu VARIANT=transformers-mamba-cache
-./scripts/local-k8s-gpu.sh kubectl apply -f k8s/gpu/transformers-mamba-cache
+LOCAL_K8S_SCRIPT=./scripts/local-k8s-gpu.sh ./scripts/k8s.sh apply k8s/inference/profiles/transformers-mamba-cache-gpu.yaml
 ./scripts/local-k8s-gpu.sh kubectl rollout status deployment/transformers-mamba-base --timeout=300s
 ./scripts/local-k8s-gpu.sh kubectl port-forward service/transformers-mamba-base 8000:8000
 ```
 
-For CPU, use `DEVICE=cpu` and `k8s/transformers-mamba-cache`. Local run dependencies follow [Transformers requirements](../../src/transformer/requirements.txt).
+For CPU, use `DEVICE=cpu` and `k8s/inference/profiles/transformers-mamba-cache-cpu.yaml`. Local run dependencies follow [Transformers requirements](../../src/transformer/requirements.txt).
 
 ```sh
 PYTHONPATH=src python -m transformer.mamba.cache.server \

@@ -27,11 +27,11 @@ MPS 모드의 kubeconfig는 `.local-k8s/<클러스터 이름>/kubeconfig`에 저
 
 ## 두 Pod 추론 예제
 
-SmolLM2 모델과 기존 GPU 이미지를 사용하는 [Deployment와 Service](../../k8s/gpu-mps/transformers-base.yaml)를 배포합니다. Deployment는 2 replicas이며 각 Pod가 공유 GPU 리소스 1개를 요청합니다. 기본 GPU Deployment의 CPU 요청량도 조정해 두 Pod가 함께 배치되도록 구성했습니다.
+SmolLM2 모델과 기존 GPU 이미지를 사용하는 [Deployment와 Service](../../k8s/inference/profiles/transformers-base-mps.yaml)를 배포합니다. Deployment는 2 replicas이며 각 Pod가 공유 GPU 리소스 1개를 요청합니다. 기본 GPU Deployment의 CPU 요청량도 조정해 두 Pod가 함께 배치되도록 구성했습니다.
 
 ```sh
 make build-image load-image DEVICE=gpu GPU_SHARING=mps VARIANT=transformers-base
-GPU_SHARING=mps ./scripts/local-k8s-gpu.sh kubectl apply -f k8s/gpu-mps/transformers-base.yaml
+GPU_SHARING=mps LOCAL_K8S_SCRIPT=./scripts/local-k8s-gpu.sh ./scripts/k8s.sh apply k8s/inference/profiles/transformers-base-mps.yaml
 GPU_SHARING=mps ./scripts/local-k8s-gpu.sh kubectl rollout status deployment/transformers-mps --timeout=300s
 GPU_SHARING=mps ./scripts/local-k8s-gpu.sh kubectl get pods -l app=transformers-mps -o wide
 GPU_SHARING=mps ./scripts/local-k8s-gpu.sh kubectl port-forward service/transformers-mps 8000:8000

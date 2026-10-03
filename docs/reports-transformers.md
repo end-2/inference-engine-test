@@ -79,10 +79,10 @@ Images and deployment resources are in `src/Dockerfile` and the `k8s/` directory
 
 | Directory | Contents |
 | --- | --- |
-| `k8s/transformers-base/` | `deployment.yaml`, `service.yaml` |
-| `k8s/transformers-enhanced-batch/` | `deployment.yaml`, `service.yaml` |
-| `k8s/transformers-enhanced-cache/` | `deployment.yaml`, `service.yaml`, `cache.yaml` (PVC, `/cache`) |
-| `k8s/aiperf/` and `k8s/aiperf-smollm2/` | AIPerf `Job` and result PVC, tokenizer mount |
+| `k8s/inference/profiles/transformers-base-cpu.yaml` | `deployment.yaml`, `service.yaml` |
+| `k8s/inference/profiles/transformers-enhanced-batch-cpu.yaml` | `deployment.yaml`, `service.yaml` |
+| `k8s/inference/profiles/transformers-enhanced-cache-cpu.yaml` | `deployment.yaml`, `service.yaml`, `cache.yaml` (PVC, `/cache`) |
+| `k8s/aiperf/profiles/default.yaml` and `k8s/aiperf/profiles/smollm2.yaml` | AIPerf `Job` and result PVC, tokenizer mount |
 
 The three inference variants share the same `Deployment/transformers-base` and `Service/transformers-base:8000`.
 

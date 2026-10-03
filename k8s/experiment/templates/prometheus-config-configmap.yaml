@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: {{ .Values.namespace }}
+data:
+  prometheus.yml: |
+    {{- tpl (.Files.Get "files/prometheus-config/prometheus.yml") . | nindent 4 }}
+  rules.yml: |
+    {{- tpl (.Files.Get (printf "files/prometheus-config/%s/rules.yml" .Values.scenario)) . | nindent 4 }}

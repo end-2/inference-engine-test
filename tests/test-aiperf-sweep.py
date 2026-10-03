@@ -9,7 +9,7 @@ import sys
 import tempfile
 import threading
 
-import yaml
+from manifest_support import render
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -48,7 +48,7 @@ def main():
         "TEST_TOKENIZER_PATH", ROOT / ".models/smollm2-135m")).resolve()
     if not tokenizer.is_dir():
         raise SystemExit("Run make download-model first, or set TEST_TOKENIZER_PATH.")
-    job = yaml.safe_load((ROOT / "k8s/aiperf/job.yaml").read_text())
+    job = next(d for d in render(ROOT / "k8s/aiperf/profiles/default.yaml") if d["kind"] == "Job")
     container = job["spec"]["template"]["spec"]["containers"][0]
     values = {item["name"]: item["value"] for item in container["env"] if "value" in item}
     server = ThreadingHTTPServer(("127.0.0.1", 0), ChatHandler)

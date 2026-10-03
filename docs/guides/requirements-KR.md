@@ -27,7 +27,7 @@ CPU 클러스터는 `local-k8s.sh up`으로 생성하며 GPU 설정은 포함하
 
 | 작업 | 추가 요구사항 |
 | --- | --- |
-| kind와 kubectl 설치 | 다운로드용 `curl` 또는 `wget`, 체크섬 검증용 `sha256sum` 또는 `shasum` |
+| kind, kubectl과 Helm 설치 | 다운로드용 `curl` 또는 `wget`, 체크섬 검증용 `sha256sum` 또는 `shasum`, Helm 압축 해제용 gzip 지원 `tar` |
 | 모델과 토크나이저 다운로드 | `curl`, 체크섬 검증용 `sha256sum` 또는 `shasum` |
 | 이미지 빌드 | `docker build` |
 | [벤치마크 자동 측정](benchmark.md#pod-재시작을-포함한-자동-측정) | Python 3.10 이상 |
@@ -35,7 +35,7 @@ CPU 클러스터는 `local-k8s.sh up`으로 생성하며 GPU 설정은 포함하
 
 ## CPU, 메모리와 디스크
 
-선택한 추론 Deployment와 [AIPerf Job](../../k8s/aiperf/job.yaml)의 자원 요청량을 합산하고 Kubernetes 시스템 Pod의 여유분을 확보합니다. 추론 설정은 [Transformers](../../k8s/transformers-base/deployment.yaml) 또는 [llama.cpp](../../k8s/base-llamacpp/deployment.yaml) 매니페스트에서 확인합니다.
+선택한 추론 Deployment와 [AIPerf Job](../../k8s/aiperf/values.yaml)의 자원 요청량을 합산하고 Kubernetes 시스템 Pod의 여유분을 확보합니다. 추론 설정은 [Transformers](../../k8s/inference/values.yaml) 또는 [llama.cpp](../../k8s/inference/profiles/base-llamacpp-cpu.yaml) 매니페스트에서 확인합니다.
 
 Docker를 VM에서 실행하면 VM에 할당한 자원도 확인합니다. 측정 자원은 실행 환경에 맞춰 조정하되 `requests=limits`를 유지합니다.
 
@@ -47,7 +47,7 @@ Docker를 VM에서 실행하면 VM에 할당한 자원도 확인합니다. 측�
 
 | 대상 | 주요 배포처 |
 | --- | --- |
-| kind와 kubectl | GitHub 릴리스, `dl.k8s.io` |
+| kind, kubectl과 Helm | GitHub 릴리스, `dl.k8s.io`, `get.helm.sh` |
 | 노드와 보조 이미지 | Docker Hub 등의 컨테이너 레지스트리 |
 | 이미지 빌드 의존성 | Debian 패키지 저장소, PyPI |
 | 모델과 토크나이저 | Hugging Face |

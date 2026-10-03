@@ -29,11 +29,11 @@ The [MPS config](../../config/cluster/mps.yaml) sets each CUDA client's memory l
 
 ## Two-Pod inference example
 
-Deploy the [Deployment and Service](../../k8s/gpu-mps/transformers-base.yaml) that use the SmolLM2 model and existing GPU images. The Deployment has 2 replicas and each Pod requests 1 shared GPU resource. CPU requests of the default GPU Deployment are also adjusted so both Pods fit together.
+Deploy the [Deployment and Service](../../k8s/inference/profiles/transformers-base-mps.yaml) that use the SmolLM2 model and existing GPU images. The Deployment has 2 replicas and each Pod requests 1 shared GPU resource. CPU requests of the default GPU Deployment are also adjusted so both Pods fit together.
 
 ```sh
 make build-image load-image DEVICE=gpu GPU_SHARING=mps VARIANT=transformers-base
-GPU_SHARING=mps ./scripts/local-k8s-gpu.sh kubectl apply -f k8s/gpu-mps/transformers-base.yaml
+GPU_SHARING=mps LOCAL_K8S_SCRIPT=./scripts/local-k8s-gpu.sh ./scripts/k8s.sh apply k8s/inference/profiles/transformers-base-mps.yaml
 GPU_SHARING=mps ./scripts/local-k8s-gpu.sh kubectl rollout status deployment/transformers-mps --timeout=300s
 GPU_SHARING=mps ./scripts/local-k8s-gpu.sh kubectl get pods -l app=transformers-mps -o wide
 GPU_SHARING=mps ./scripts/local-k8s-gpu.sh kubectl port-forward service/transformers-mps 8000:8000

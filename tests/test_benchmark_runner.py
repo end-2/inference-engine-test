@@ -110,6 +110,23 @@ class BenchmarkTests(unittest.TestCase):
             rendered = benchmark.render(self.context)
         self.assertEqual([item["kind"] for item in rendered["items"]], ["Deployment", "Service"])
 
+    def test_helm_profile_is_rendered_before_kubectl_reads_it(self):
+        manifest = "apiVersion: v1\nkind: List\nitems: []\n"
+        result = subprocess.CompletedProcess([], 0, manifest, "")
+        paths = []
+
+        def read_manifest(*args, **kwargs):
+            path = args[args.index("-f") + 1]
+            self.assertEqual(path.read_text(), manifest)
+            paths.append(path)
+            return subprocess.CompletedProcess([], 0, '{"kind":"List","items":[]}', "")
+
+        with patch.object(benchmark, "run", return_value=result) as run, \
+                patch.object(benchmark, "kube", side_effect=read_manifest):
+            self.assertEqual(benchmark.render(benchmark.ROOT / "k8s/inference/profiles/transformers-base-cpu.yaml")["items"], [])
+        self.assertEqual(run.call_args.args[0], benchmark.ROOT / "scripts/render-k8s.sh")
+        self.assertFalse(paths[0].exists())
+
     def test_transformers_defaults_select_smollm2_and_cpu_image(self):
         with patch.dict(os.environ, {}, clear=True), patch(
             "sys.argv", ["run-benchmark.py"]
@@ -117,7 +134,7 @@ class BenchmarkTests(unittest.TestCase):
             args = benchmark.parse_args()
         self.assertEqual(args.image, "local/transformers-base:0.1.0")
         self.assertEqual(args.build_target, "transformers-base")
-        self.assertEqual(args.manifests, benchmark.ROOT / "k8s/transformers-base")
+        self.assertEqual(args.manifests, benchmark.ROOT / "k8s/inference/profiles/transformers-base-cpu.yaml")
         self.assertEqual(args.deployment, "transformers-base")
         self.assertEqual(args.api_url, "http://transformers-base:8000")
         self.assertEqual(args.model, "HuggingFaceTB/SmolLM2-135M-Instruct")
@@ -137,7 +154,7 @@ class BenchmarkTests(unittest.TestCase):
             self.assertEqual(args.image, f"local/{name}:0.1.0")
             self.assertEqual(args.deployment, name)
             self.assertEqual(args.build_target, name)
-            self.assertEqual(args.manifests, benchmark.ROOT / "k8s" / name)
+            self.assertEqual(args.manifests, benchmark.ROOT / "k8s/inference/profiles" / f"{name}-cpu.yaml")
             self.assertEqual(args.api_url, f"http://{name}:8000")
 
     def test_custom_report_root_is_used_without_adding_backend(self):
@@ -148,12 +165,12 @@ class BenchmarkTests(unittest.TestCase):
 
     def test_backends_select_matching_aiperf_profiles(self):
         job = {"kind": "Job", "metadata": {"name": "aiperf"}}
-        for backend, profile in [("transformers", "aiperf"), ("llamacpp", "aiperf-qwen2.5")]:
+        for backend, profile in [("transformers", "default"), ("llamacpp", "qwen2.5")]:
             with self.subTest(backend=backend), patch.object(benchmark, "render", return_value={
                 "items": [{"kind": "PersistentVolumeClaim"}, job, {"kind": "Pod"}]
             }) as render:
                 self.assertIs(benchmark.benchmark_template(backend), job)
-            render.assert_called_once_with(benchmark.ROOT / "k8s" / profile)
+            render.assert_called_once_with(benchmark.ROOT / "k8s/aiperf/profiles" / f"{profile}.yaml")
 
     def test_empty_benchmark_context_keeps_prebuilt_aiperf(self):
         with patch.dict(os.environ, {}, clear=True), patch(

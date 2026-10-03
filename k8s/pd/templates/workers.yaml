@@ -1,0 +1,80 @@
+{{- $roles := list "aggregated" }}
+{{- if eq .Values.mode "disaggregated" }}
+{{- $roles = list "prefill" "decode" }}
+{{- end }}
+{{- range $role := $roles }}
+{{- $name := printf "pd-%s" $role }}
+{{- $replicas := 1 }}
+{{- $stateful := false }}
+{{- if eq $role "aggregated" }}
+  {{- $name = "pd-aggregate" }}
+  {{- $replicas = int $.Values.slots }}
+  {{- $stateful = true }}
+{{- else if and (eq $role "decode") (eq (int $.Values.slots) 4) }}
+  {{- $replicas = 3 }}
+  {{- $stateful = true }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: {{ ternary "StatefulSet" "Deployment" $stateful }}
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Values.namespace }}
+spec:
+  replicas: {{ $replicas }}
+  {{- if $stateful }}
+  serviceName: {{ $name }}
+  podManagementPolicy: Parallel
+  {{- else }}
+  strategy:
+    type: Recreate
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+        app.kubernetes.io/part-of: pd-comparison
+        pd-role: {{ $role }}
+    spec:
+      {{- toYaml $.Values.worker.pod | nindent 6 }}
+      containers:
+        - {{- toYaml $.Values.worker.container | nindent 10 }}
+          image: {{ $.Values.image }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "pd.settingsName" $ }}
+          args:
+            - --role
+            - {{ $role }}
+            {{- toYaml $.Values.worker.args | nindent 12 }}
+            {{- if eq $.Values.scheduler "token-budget" }}
+            - --scheduler
+            - token-budget
+            - --max-num-batched-tokens
+            - $(TOKEN_BUDGET)
+            - --max-num-seqs
+            - $(MAX_NUM_SEQS)
+            - --max-kv-tokens
+            - $(MAX_KV_TOKENS)
+            - --scheduler-trace
+            {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Values.namespace }}
+spec:
+  {{- if $stateful }}
+  clusterIP: None
+  {{- end }}
+  selector:
+    app: {{ $name }}
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+{{- end }}

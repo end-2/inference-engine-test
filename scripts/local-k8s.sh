@@ -17,7 +17,7 @@ usage() {
     cat <<'EOF'
 Usage: ./scripts/local-k8s.sh COMMAND [ARGS]
 
-  install              Download pinned kind and kubectl into .bin
+  install              Download pinned kind, kubectl and Helm into .bin
   doctor               Check tools and container runtime access
   up                   Create or reuse the CPU-only cluster
   test                 Run a no-GPU smoke Job with DNS lookup
@@ -183,8 +183,10 @@ select_provider
 case $command in
     doctor)
         require kubectl
+        require helm
         kind version
         kubectl version --client=true
+        helm version --short
         printf 'Runtime: %s\nCluster: %s\nConfig: %s\nKubeconfig: %s\n' \
             "$provider" "$CLUSTER_NAME" "$KIND_CONFIG" "$KUBECONFIG"
         [ -r "$KIND_CONFIG" ] || die "Cannot read config: $KIND_CONFIG"

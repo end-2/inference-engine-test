@@ -10,13 +10,19 @@ trap 'exit 143' TERM
 mkdir -p "$sandbox/mocks" "$sandbox/downloads"
 export MOCK_ROOT="$sandbox/downloads" MOCK_TRACE="$sandbox/trace"
 export LOCAL_K8S_BIN_DIR="$sandbox/installed tools"
-unset KIND_VERSION KUBECTL_VERSION
+unset KIND_VERSION KUBECTL_VERSION HELM_VERSION
 # shellcheck source-path=SCRIPTDIR
 # shellcheck source=../config/versions.env
 . "$ROOT/config/versions.env"
 printf 'kind binary\n' > "$MOCK_ROOT/kind"
 printf 'kubectl binary\n' > "$MOCK_ROOT/kubectl"
-for binary in kind kubectl; do
+printf 'helm binary\n' > "$MOCK_ROOT/helm"
+for platform in linux-amd64 linux-arm64 darwin-amd64 darwin-arm64; do
+    mkdir -p "$MOCK_ROOT/$platform"
+    cp "$MOCK_ROOT/helm" "$MOCK_ROOT/$platform/helm"
+done
+tar -czf "$MOCK_ROOT/helm.tar.gz" -C "$MOCK_ROOT" linux-amd64 linux-arm64 darwin-amd64 darwin-arm64
+for binary in kind kubectl helm.tar.gz; do
     if command -v sha256sum >/dev/null 2>&1; then
         sha256sum "$MOCK_ROOT/$binary" > "$MOCK_ROOT/$binary.sha256"
     else
@@ -46,10 +52,12 @@ case $url in
     *kind-*) file=kind ;;
     */kubectl.sha256) file=kubectl.sha256 ;;
     */kubectl) file=kubectl ;;
+    *helm-*.tar.gz.sha256sum) file=helm.tar.gz.sha256 ;;
+    *helm-*.tar.gz) file=helm.tar.gz ;;
     *) exit 2 ;;
 esac
 [ ! -f "$MOCK_ROOT/fail-download" ] || exit 22
-if [ -f "$MOCK_ROOT/bad-checksum" ] && [ "$file" = kubectl.sha256 ]; then
+if [ -f "$MOCK_ROOT/bad-checksum" ] && [ "$file" = "$(cat "$MOCK_ROOT/bad-checksum")" ]; then
     printf '%064d\n' 0 > "$output"
 else
     cp "$MOCK_ROOT/$file" "$output"
@@ -70,21 +78,38 @@ for os in Linux Darwin; do
         case $arch in x86_64) expected_arch=amd64 ;; *) expected_arch=arm64 ;; esac
         grep -Fq "/$KIND_VERSION/kind-$expected_os-$expected_arch" "$MOCK_TRACE" || fail 'Wrong kind asset'
         grep -Fq "/$KUBECTL_VERSION/bin/$expected_os/$expected_arch/kubectl" "$MOCK_TRACE" || fail 'Wrong kubectl asset'
+        grep -Fq "/helm-$HELM_VERSION-$expected_os-$expected_arch.tar.gz" "$MOCK_TRACE" || fail 'Wrong Helm asset'
         cmp "$LOCAL_K8S_BIN_DIR/kind" "$MOCK_ROOT/kind" || fail 'Wrong kind binary'
         cmp "$LOCAL_K8S_BIN_DIR/kubectl" "$MOCK_ROOT/kubectl" || fail 'Wrong kubectl binary'
+        cmp "$LOCAL_K8S_BIN_DIR/helm" "$MOCK_ROOT/helm" || fail 'Wrong Helm binary'
         [ -x "$LOCAL_K8S_BIN_DIR/kind" ] || fail 'kind not executable'
         [ -x "$LOCAL_K8S_BIN_DIR/kubectl" ] || fail 'kubectl not executable'
+        [ -x "$LOCAL_K8S_BIN_DIR/helm" ] || fail 'Helm not executable'
     done
 done
 
 printf 'existing kind\n' > "$LOCAL_K8S_BIN_DIR/kind"
 printf 'existing kubectl\n' > "$LOCAL_K8S_BIN_DIR/kubectl"
-touch "$MOCK_ROOT/bad-checksum"
-if install_tools; then fail 'Accepted a bad checksum'; fi
-grep -Fq 'Checksum mismatch' "$sandbox/output" || fail 'Missing checksum error'
-[ "$(cat "$LOCAL_K8S_BIN_DIR/kind")" = 'existing kind' ] || fail 'Replaced kind on failed verification'
-[ "$(cat "$LOCAL_K8S_BIN_DIR/kubectl")" = 'existing kubectl' ] || fail 'Replaced kubectl on failed verification'
+printf 'existing helm\n' > "$LOCAL_K8S_BIN_DIR/helm"
+for checksum in kubectl.sha256 helm.tar.gz.sha256; do
+    printf '%s\n' "$checksum" > "$MOCK_ROOT/bad-checksum"
+    if install_tools; then fail 'Accepted a bad checksum'; fi
+    grep -Fq 'Checksum mismatch' "$sandbox/output" || fail 'Missing checksum error'
+    [ "$(cat "$LOCAL_K8S_BIN_DIR/kind")" = 'existing kind' ] || fail 'Replaced kind on failed verification'
+    [ "$(cat "$LOCAL_K8S_BIN_DIR/kubectl")" = 'existing kubectl' ] || fail 'Replaced kubectl on failed verification'
+    [ "$(cat "$LOCAL_K8S_BIN_DIR/helm")" = 'existing helm' ] || fail 'Replaced Helm on failed verification'
+done
 rm "$MOCK_ROOT/bad-checksum"
+printf 'invalid archive\n' > "$MOCK_ROOT/helm.tar.gz"
+if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$MOCK_ROOT/helm.tar.gz" > "$MOCK_ROOT/helm.tar.gz.sha256"
+else
+    shasum -a 256 "$MOCK_ROOT/helm.tar.gz" > "$MOCK_ROOT/helm.tar.gz.sha256"
+fi
+if install_tools; then fail 'Accepted an invalid Helm archive'; fi
+for binary in kind kubectl helm; do
+    [ "$(cat "$LOCAL_K8S_BIN_DIR/$binary")" = "existing $binary" ] || fail "Replaced $binary on failed extraction"
+done
 touch "$MOCK_ROOT/fail-download"
 if install_tools; then fail 'Accepted a failed download'; fi
 [ "$(cat "$LOCAL_K8S_BIN_DIR/kind")" = 'existing kind' ] || fail 'Replaced kind on failed download'

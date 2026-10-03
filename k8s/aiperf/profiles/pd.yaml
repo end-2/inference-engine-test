@@ -1,0 +1,111 @@
+name: pd-benchmark
+namespace: pd-comparison
+labels:
+  app: pd-benchmark
+  benchmark: null
+pod:
+  volumes:
+  - hostPath:
+      path: /models/smollm2-135m
+      type: Directory
+    name: tokenizer
+  - name: results
+    persistentVolumeClaim:
+      claimName: pd-results
+  - emptyDir:
+      sizeLimit: 1Gi
+    name: tmp
+  nodeSelector:
+    nvidia.com/mps.capable: 'true'
+container:
+  args:
+  - profile
+  - --model
+  - $(MODEL_ID)
+  - --tokenizer
+  - /tokenizer
+  - --url
+  - $(API_URL)
+  - --endpoint-type
+  - chat
+  - --streaming
+  - --use-server-token-count
+  - --sequence-distribution
+  - 64,128:50;512,32:50
+  - --num-dataset-entries
+  - $(DATASET_ENTRIES)
+  - --random-seed
+  - '42'
+  - --parameter-sweep-same-seed
+  - --dataset-sampling-strategy
+  - sequential
+  - --extra-inputs
+  - ignore_eos:true
+  - --concurrency
+  - $(CONCURRENCIES)
+  - --workers-max
+  - '1'
+  - --warmup-request-count
+  - '4'
+  - --warmup-concurrency
+  - '1'
+  - --request-count
+  - '100'
+  - --request-timeout-seconds
+  - '120'
+  - --no-server-metrics
+  - --ui
+  - none
+  - --artifact-dir
+  - /results/$(POD_NAME)
+  env:
+  - name: POD_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+  - name: CONCURRENCIES
+    value: 1,2,4,8
+  - name: DATASET_ENTRIES
+    value: '16'
+  - name: API_URL
+    value: http://pd-router:8000
+  - name: MODEL_ID
+    value: HuggingFaceTB/SmolLM2-135M-Instruct
+persistence:
+  name: pd-results
+  spec:
+    resources:
+      requests:
+        storage: 2Gi
+    storageClassName: null
+reader:
+  nodeSelector:
+    nvidia.com/mps.capable: 'true'
+  containers:
+  - name: results
+    image: busybox:1.37.0
+    command:
+    - sleep
+    - '3600'
+    resources:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+        - ALL
+    volumeMounts:
+    - name: results
+      mountPath: /results
+      readOnly: true
+  volumes:
+  - name: results
+    persistentVolumeClaim:
+      claimName: pd-results
+  restartPolicy: Never

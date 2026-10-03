@@ -93,4 +93,4 @@ make up DEVICE=gpu GPU_SHARING=mps MPS_REPLICAS=2
 make pd-deploy MPS_REPLICAS=2 PD_MODE=aggregated
 ```
 
-4-way manifests are in the [Aggregation overlay](../../k8s/gpu-mps-4/pd/aggregated/kustomization.yaml) and [Disaggregation overlay](../../k8s/gpu-mps-4/pd/disaggregated/kustomization.yaml). Run validation with the common guide's PD tests and `tests/test_gpu_cluster.py`.
+4-way manifests are in the [Aggregation profile](../../k8s/pd/profiles/mps-4-aggregated.yaml) and [Disaggregation profile](../../k8s/pd/profiles/mps-4-disaggregated.yaml). Run validation with the common guide's PD tests and `tests/test_gpu_cluster.py`.

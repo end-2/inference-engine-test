@@ -23,6 +23,8 @@ make install
 make benchmark-suite
 ```
 
+`make install` prepares kind, kubectl and Helm. Workload profiles use shared charts described in the [manifest guide](docs/guides/manifests.md).
+
 The default experiment repeats concurrency `1,2,4,8` three times for each of three implementations. Results are saved to `docs/reports/transformers/benchmark-suite-*/summary.md`. For metrics, cache policy, and runtime see the [benchmark guide](docs/guides/benchmark.md). `make benchmark` and `make benchmark-suite` automatically include image build through kind load, deployment, and AIPerf execution when needed.
 
 For GPU runs see [GPU benchmark preparation and results](docs/guides/benchmark.md#gpu-benchmarks).
@@ -52,8 +54,8 @@ python3 scripts/run-benchmark-suite.py --backend llamacpp # full llamacpp repeat
 ./scripts/run-benchmark.py # same as make benchmark
 ./scripts/run-benchmark.py --help # show all options
 # enhanced example
-./scripts/run-benchmark.py --image local/transformers-enhanced-batch:0.1.0 --build-target transformers-enhanced-batch --manifests k8s/transformers-enhanced-batch
-./scripts/run-benchmark.py --image local/transformers-enhanced-cache:0.1.0 --build-target transformers-enhanced-cache --manifests k8s/transformers-enhanced-cache --cache-policy clear-per-concurrency
+./scripts/run-benchmark.py --image local/transformers-enhanced-batch:0.1.0 --build-target transformers-enhanced-batch --manifests k8s/inference/profiles/transformers-enhanced-batch-cpu.yaml
+./scripts/run-benchmark.py --image local/transformers-enhanced-cache:0.1.0 --build-target transformers-enhanced-cache --manifests k8s/inference/profiles/transformers-enhanced-cache-cpu.yaml --cache-policy clear-per-concurrency
 ```
 
 | Purpose | make | Run script directly |

@@ -1,0 +1,61 @@
+name: transformers-mamba-base
+podLabels:
+  inference-variant: mamba-cache
+pod:
+  securityContext:
+    fsGroup: 1000
+  volumes:
+  - name: model
+    hostPath:
+      path: /models/mamba-130m
+      type: Directory
+  - name: tmp
+    emptyDir:
+      sizeLimit: 1Gi
+  - name: cache
+    persistentVolumeClaim:
+      claimName: transformers-mamba-cache
+container:
+  image: local/transformers-mamba-cache:0.1.0
+  args:
+  - --model
+  - /model
+  - --served-model-name
+  - state-spaces/mamba-130m-hf
+  - --n-threads
+  - '4'
+  - --cache-dir
+  - /cache
+  - --cache-ram-mib
+  - '64'
+  - --cache-disk-mib
+  - '1024'
+  - --cache-min-prefix
+  - '32'
+  - --dtype
+  - float32
+  - --n-ctx
+  - '1024'
+  - --max-input-tokens
+  - '768'
+  - --max-output-tokens
+  - '128'
+  - --default-output-tokens
+  - '32'
+  volumeMounts:
+  - name: model
+    mountPath: /model
+    readOnly: true
+  - name: tmp
+    mountPath: /tmp
+  - name: cache
+    mountPath: /cache
+cache:
+  enabled: true
+  name: transformers-mamba-cache
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: 2Gi

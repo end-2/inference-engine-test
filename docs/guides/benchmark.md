@@ -80,7 +80,7 @@ python3 scripts/run-benchmark-suite.py --resume 'docs/reports/transformers/bench
 
 ### Selecting llama.cpp
 
-Select the [dedicated profile](../../k8s/aiperf-qwen2.5/) that uses Qwen2.5 GGUF and a local tokenizer.
+Select the [dedicated profile](../../k8s/aiperf/profiles/qwen2.5.yaml) that uses Qwen2.5 GGUF and a local tokenizer.
 
 ```sh
 make benchmark VARIANT=base-llamacpp
@@ -113,7 +113,7 @@ Git retention of originals and detailed logs follows the [exclusion rules](../re
 
 ## GPU benchmarks
 
-The GPU cluster is `local-k8s-gpu`, separate from the CPU cluster. It needs the NVIDIA driver, Docker NVIDIA runtime, NVIDIA Container Toolkit, Go, and Helm. Enable the Toolkit `accept-nvidia-visible-devices-as-volume-mounts` value. `make install DEVICE=gpu` installs pinned nvkind, kind, and kubectl versions. Startup checks Docker GPU access, GPU allocation, and Pod `nvidia-smi` access.
+The GPU cluster is `local-k8s-gpu`, separate from the CPU cluster. It needs the NVIDIA driver, Docker NVIDIA runtime, NVIDIA Container Toolkit, and Go. Enable the Toolkit `accept-nvidia-visible-devices-as-volume-mounts` value. `make install DEVICE=gpu` installs pinned nvkind, kind, kubectl and Helm versions. Startup checks Docker GPU access, GPU allocation, and Pod `nvidia-smi` access.
 
 ```sh
 sudo nvidia-ctk config --set accept-nvidia-visible-devices-as-volume-mounts=true --in-place

@@ -75,10 +75,12 @@ def profile(replicas, scheduler="serial"):
         raise ValueError("Token-budget scheduling requires the four-slot profile")
     selected = {"cluster": "local-k8s-gpu-mps" + ("4" if replicas == 4 else ""),
             "namespace": "pd-comparison" + ("-4" if replicas == 4 else ""),
-            "manifests": ROOT / ("k8s/gpu-mps-4/pd" if replicas == 4 else "k8s/gpu-mps/pd"),
             "workers": {"aggregated": replicas, "prefill": 1, "decode": replicas - 1}}
+    prefix = f"mps-{replicas}"
     if scheduler == "token-budget":
-        selected.update(namespace="pd-comparison-4-scheduled", manifests=ROOT / "k8s/gpu-mps-4/pd-scheduled")
+        selected["namespace"] = "pd-comparison-4-scheduled"
+        prefix += "-scheduled"
+    selected["values"] = {mode: ROOT / "k8s/pd/profiles" / f"{prefix}-{mode}.yaml" for mode in MODES}
     return selected
 
 
@@ -301,12 +303,17 @@ def main():
         write_json(raw / "nodes.json", nodes)
         check_slots(nodes, args.mps_replicas)
         metadata["gpu"] = command(["nvidia-smi", "--query-gpu=name,uuid,driver_version,memory.total", "--format=csv,noheader"]).strip()
-        manifests = list(yaml.safe_load_all((ROOT / "k8s/gpu-mps/pd/benchmark.yaml").read_text()))
+        manifests = list(yaml.safe_load_all(command([
+            ROOT / "scripts/render-k8s.sh", ROOT / "k8s/aiperf/profiles/pd.yaml",
+            "--set-string", "namespace=" + topology["namespace"],
+        ])))
         pvc = next(m for m in manifests if m["kind"] == "PersistentVolumeClaim")
         template = next(m for m in manifests if m["kind"] == "Job")
-        kube("apply", "-f", topology["manifests"] / "namespace.yaml")
+        namespace = command([ROOT / "scripts/render-k8s.sh", topology["values"]["aggregated"],
+                             "--show-only", "templates/namespace.yaml"])
+        kube("apply", "-f", "-", input=namespace)
         apply(pvc)
-        reader = yaml.safe_load((ROOT / "k8s/gpu-mps/pd/results.yaml").read_text())
+        reader = next(m for m in manifests if m["kind"] == "Pod")
         reader["metadata"]["name"] = reader_name
         reader["spec"]["containers"][0].update(image="local/aiperf:0.12.0", imagePullPolicy="Never",
                                                command=["sleep", "infinity"])

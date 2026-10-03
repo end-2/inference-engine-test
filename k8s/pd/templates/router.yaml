@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd-router
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: pd-router
+  template:
+    metadata:
+      labels:
+        app: pd-router
+        app.kubernetes.io/part-of: pd-comparison
+    spec:
+      {{- toYaml .Values.router.pod | nindent 6 }}
+      containers:
+        - {{- omit .Values.router.container "args" | toYaml | nindent 10 }}
+          image: {{ .Values.image }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "pd.settingsName" . }}
+          env:
+            - name: PD_MODE
+              value: {{ .Values.mode }}
+          args:
+            {{- toYaml .Values.router.container.args | nindent 12 }}
+            {{- if eq (int .Values.slots) 4 }}
+            {{- $role := ternary "aggregate" "decode" (eq .Values.mode "aggregated") }}
+            {{- $count := ternary 4 3 (eq .Values.mode "aggregated") }}
+            - --{{ $role }}-urls
+            {{- range $i := until $count }}
+            - http://pd-{{ $role }}-{{ $i }}.pd-{{ $role }}:8000
+            {{- end }}
+            {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pd-router
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: pd-router
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

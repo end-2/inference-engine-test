@@ -1,0 +1,34 @@
+name: aiperf-qwen2.5
+pod:
+  volumes:
+  - hostPath:
+      path: /models/qwen2.5-0.5b/tokenizer
+      type: Directory
+    name: tokenizer
+  - name: results
+    persistentVolumeClaim:
+      claimName: aiperf-results-qwen2.5
+  - emptyDir:
+      sizeLimit: 1Gi
+    name: tmp
+container:
+  env:
+  - name: API_URL
+    value: http://base-llamacpp:8000
+  - name: MODEL_ID
+    value: Qwen/Qwen2.5-0.5B-Instruct
+  - name: POD_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+  - name: CONCURRENCIES
+    value: 1,2,4,8
+  - name: DATASET_ENTRIES
+    value: '16'
+persistence:
+  name: aiperf-results-qwen2.5
+reader:
+  volumes:
+  - name: results
+    persistentVolumeClaim:
+      claimName: aiperf-results-qwen2.5

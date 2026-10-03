@@ -1,0 +1,5 @@
+apiVersion: v2
+name: inference
+description: Local CPU, GPU and MPS inference workloads
+type: application
+version: 0.1.0

@@ -2,17 +2,21 @@
 set -eu
 ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 . "$ROOT/config/models/smollm2-135m-transformers.env"
-KUBECTL=${KUBECTL:-$ROOT/.bin/kubectl}
-KUBECONFIG=$("$ROOT/scripts/local-k8s.sh" kubeconfig)
+PATH="${LOCAL_K8S_BIN_DIR:-$ROOT/.bin}:$PATH"
+export PATH
+KUBECTL=${KUBECTL:-kubectl}
+KUBECONFIG=$("${LOCAL_K8S_SCRIPT:-$ROOT/scripts/local-k8s.sh}" kubeconfig)
 export KUBECONFIG
 rendered=$(mktemp -d "${TMPDIR:-/tmp}/transformers-manifests.XXXXXX")
 trap 'rm -rf "$rendered"' 0
 trap 'exit 130' INT
 trap 'exit 143' TERM
 for variant in base enhanced-batch enhanced-cache; do
-    "$KUBECTL" create --dry-run=client --validate=false -f "$ROOT/k8s/transformers-$variant" -o json > "$rendered/$variant.json"
+    "$ROOT/scripts/render-k8s.sh" "$ROOT/k8s/inference/profiles/transformers-$variant-cpu.yaml" > "$rendered/$variant.yaml"
+    "$KUBECTL" create --dry-run=client --validate=false -f "$rendered/$variant.yaml" -o json > "$rendered/$variant.json"
 done
-"$KUBECTL" create --dry-run=client --validate=false -f "$ROOT/k8s/aiperf-smollm2" -o json > "$rendered/aiperf.json"
+"$ROOT/scripts/render-k8s.sh" "$ROOT/k8s/aiperf/profiles/smollm2.yaml" > "$rendered/aiperf.yaml"
+"$KUBECTL" create --dry-run=client --validate=false -f "$rendered/aiperf.yaml" -o json > "$rendered/aiperf.json"
 python3 - "$rendered" "$SERVED_MODEL_NAME" "$MODEL_DIRECTORY" <<'PY'
 import json
 from pathlib import Path

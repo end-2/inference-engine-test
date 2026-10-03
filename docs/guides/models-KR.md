@@ -70,7 +70,7 @@ make up
 
 Transformers 서버의 `--model`은 `/model`, llama.cpp 서버의 `--model`은 `/model/qwen2.5-0.5b-instruct-q4_k_m.gguf`입니다.
 
-실제 볼륨 설정은 [Transformers Deployment](../../k8s/transformers-base/deployment.yaml), [llama.cpp Deployment](../../k8s/base-llamacpp/deployment.yaml)와 [AIPerf 가이드](aiperf.md)를 참고합니다. 서버 실행 방법은 [추론 엔진 가이드](inference-engine.md)에서 확인할 수 있습니다.
+실제 볼륨 설정은 [Transformers Deployment](../../k8s/inference/values.yaml), [llama.cpp Deployment](../../k8s/inference/profiles/base-llamacpp-cpu.yaml)와 [AIPerf 가이드](aiperf.md)를 참고합니다. 서버 실행 방법은 [추론 엔진 가이드](inference-engine.md)에서 확인할 수 있습니다.
 
 ### 저장 위치 변경
 

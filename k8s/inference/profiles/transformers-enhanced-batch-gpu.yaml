@@ -1,0 +1,38 @@
+podLabels:
+  inference-variant: enhanced-batch
+pod:
+  runtimeClassName: nvidia
+container:
+  image: local/transformers-enhanced-batch-gpu:0.1.0
+  args:
+  - --model
+  - /model
+  - --served-model-name
+  - HuggingFaceTB/SmolLM2-135M-Instruct
+  - --n-threads
+  - '4'
+  - --max-parallel
+  - '4'
+  - --batch-wait-ms
+  - '5'
+  - --dtype
+  - float16
+  - --n-ctx
+  - '1024'
+  - --max-input-tokens
+  - '768'
+  - --max-output-tokens
+  - '128'
+  - --default-output-tokens
+  - '32'
+  - --device
+  - cuda
+  resources:
+    requests:
+      cpu: '4'
+      memory: 4Gi
+      nvidia.com/gpu: 1
+    limits:
+      cpu: '4'
+      memory: 4Gi
+      nvidia.com/gpu: 1

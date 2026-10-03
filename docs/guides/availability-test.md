@@ -24,7 +24,7 @@ All measurement containers use CPU and memory `requests=limits`. Check resource 
 
 kind nodes share the same Docker host resources, so stop other load experiments during measurement.
 
-Configuration sources are the [availability manifests](../../k8s/availability-test-transformers/), [multi-node topology](../../config/cluster/kind-multi-node.yaml), and [model snapshot](../../config/models/smollm2-135m-transformers.env).
+Configuration sources are the [availability manifests](../../k8s/experiment/profiles/availability-transformers.yaml), [multi-node topology](../../config/cluster/kind-multi-node.yaml), and [model snapshot](../../config/models/smollm2-135m-transformers.env).
 
 ## Preparation
 
@@ -48,11 +48,10 @@ The availability test runner checks for 2 engine workers and 1 monitor worker, a
 
 ## Deploy and run
 
-If you ran the HPA test on the same cluster, export its results first and clean up with `./scripts/local-k8s.sh kubectl delete -f k8s/hpa-test-transformers`. This command also deletes that test's PVC.
+If you ran the HPA test on the same cluster, export its results first and clean up with `./scripts/k8s.sh delete k8s/experiment/profiles/hpa-transformers.yaml`. This command also deletes that test's PVC.
 
 ```sh
-./scripts/local-k8s.sh kubectl apply -f k8s/availability-test-transformers/namespace.yaml
-./scripts/local-k8s.sh kubectl apply -f k8s/availability-test-transformers
+./scripts/k8s.sh apply k8s/experiment/profiles/availability-transformers.yaml
 for deployment in transformers-base-metric prometheus kube-state-metrics grafana; do
   ./scripts/local-k8s.sh kubectl -n availability-test-transformers rollout status "deployment/$deployment" --timeout=300s
 done
@@ -113,7 +112,7 @@ PYTHONPATH=src python3 -m unittest discover -s tests -p 'test_transformers_metri
 python3 -m unittest discover -s tests -p 'test_availability_runner_transformers.py'
 sh tests/test-hpa-manifests-transformers.sh
 # After collecting original results, clean up the test namespace and PVC
-./scripts/local-k8s.sh kubectl delete -f k8s/availability-test-transformers
+./scripts/k8s.sh delete k8s/experiment/profiles/availability-transformers.yaml
 ```
 
 The metric unit tests need the Transformers runtime and dependencies in `src/transformer/base_metric/requirements.txt`. To delete the cluster, run `./scripts/local-k8s.sh down` with the same `CLUSTER_NAME`. Host-collected results and models are kept.
@@ -127,12 +126,12 @@ Change the following values in the procedure above. Use the selected `CLUSTER_NA
 | Cluster example | `transformers-tests` | `availability-test-llamacpp` |
 | Model preparation | `./scripts/download-transformers-model.sh` | `./scripts/download-model-llamacpp.sh` and `./scripts/download-tokenizer-llamacpp.sh` |
 | Inference image and Deployment | `transformers-base-metric` | `base-metric-llamacpp` |
-| Manifests | `k8s/availability-test-transformers` | `k8s/availability-test-llamacpp` |
+| Manifests | `k8s/experiment/profiles/availability-transformers.yaml` | `k8s/experiment/profiles/availability-llamacpp.yaml` |
 | Namespace and dashboard | `availability-test-transformers` | `availability-test-llamacpp` |
 | Runner script | `scripts/run-availability-test-transformers.py` | `scripts/run-availability-test-llamacpp.py` |
 | Result root | `reports/transformers/` | `reports/llamacpp/` |
 
-The model uses the [Qwen GGUF settings](../../config/models/qwen2.5-0.5b-gguf-llamacpp.env); match the server and AIPerf model and tokenizer. Use the [llama.cpp manifests](../../k8s/availability-test-llamacpp/) for resources and load settings. When cleaning up another test on the same cluster, select that engine's namespace and manifests.
+The model uses the [Qwen GGUF settings](../../config/models/qwen2.5-0.5b-gguf-llamacpp.env); match the server and AIPerf model and tokenizer. Use the [llama.cpp manifests](../../k8s/experiment/profiles/availability-llamacpp.yaml) for resources and load settings. When cleaning up another test on the same cluster, select that engine's namespace and manifests.
 
 After initial deployment and before reruns, stop AIPerf and the renderer with the commands below. The llama.cpp AIPerf manifest defaults to 1 replica, so this step is needed even for the first run. Each scenario runs independently and does not depend on order.
 

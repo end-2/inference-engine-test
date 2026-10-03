@@ -14,6 +14,7 @@ import tempfile
 import threading
 import tracemalloc
 import unittest
+from manifest_support import render
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -514,15 +515,10 @@ class RouterMemoryTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ManifestTests(unittest.TestCase):
-    def test_scheduled_overlays_keep_four_shares_and_enable_all_worker_schedulers(self):
-        import yaml
-
-        if not shutil.which("kubectl"):
-            self.skipTest("kubectl required")
+    def test_scheduled_profiles_keep_four_shares_and_enable_all_worker_schedulers(self):
         for mode in ("aggregated", "disaggregated"):
-            docs = list(yaml.safe_load_all(subprocess.check_output(
-                ["kubectl", "kustomize", str(ROOT / "k8s/gpu-mps-4/pd-scheduled" / mode)], text=True)))
-            self.assertTrue(all(d["metadata"]["namespace"] == "pd-comparison-4-scheduled" for d in docs))
+            docs = render(ROOT / "k8s/pd/profiles" / f"mps-4-scheduled-{mode}.yaml")
+            self.assertTrue(all(d["metadata"]["namespace"] == "pd-comparison-4-scheduled" for d in docs if d["kind"] != "Namespace"))
             gpu = [d for d in docs if d["kind"] in {"Deployment", "StatefulSet"}
                    and d["metadata"]["name"] != "pd-router"]
             self.assertEqual(sum(d["spec"]["replicas"] for d in gpu), 4)
@@ -535,15 +531,10 @@ class ManifestTests(unittest.TestCase):
             config = next(d for d in docs if d["kind"] == "ConfigMap")["data"]
             self.assertEqual((config["MAX_PENDING"], config["MAX_STATE_TRANSFERS"]), ("32", "2"))
 
-    def test_four_slot_overlays_have_equal_budgets_and_direct_pod_routes(self):
-        import yaml
-
-        if not shutil.which('kubectl'):
-            self.skipTest('kubectl required')
+    def test_four_slot_profiles_have_equal_budgets_and_direct_pod_routes(self):
         for mode in ('aggregated', 'disaggregated'):
-            docs = list(yaml.safe_load_all(subprocess.check_output(
-                ['kubectl', 'kustomize', str(ROOT / 'k8s/gpu-mps-4/pd' / mode)], text=True)))
-            self.assertTrue(all(d['metadata']['namespace'] == 'pd-comparison-4' for d in docs))
+            docs = render(ROOT / "k8s/pd/profiles" / f"mps-4-{mode}.yaml")
+            self.assertTrue(all(d['metadata']['namespace'] == 'pd-comparison-4' for d in docs if d["kind"] != "Namespace"))
             workloads = [d for d in docs if d['kind'] in ('Deployment', 'StatefulSet')]
             gpu = [d for d in workloads if d['metadata']['name'] != 'pd-router']
             self.assertEqual(sum(d['spec']['replicas'] for d in gpu), 4)
@@ -564,12 +555,11 @@ class ManifestTests(unittest.TestCase):
             self.assertEqual(config['data']['MAX_STATE_TRANSFERS'], '2')
 
     def test_worker_budgets_and_roles(self):
-        import yaml
-
         budgets = []
         for mode in ("aggregated", "disaggregated"):
-            docs = list(yaml.safe_load_all((ROOT / "k8s/gpu-mps/pd" / mode / "workers.yaml").read_text()))
-            workloads = [d for d in docs if d["kind"] in {"Deployment", "StatefulSet"}]
+            docs = render(ROOT / "k8s/pd/profiles" / f"mps-2-{mode}.yaml")
+            workloads = [d for d in docs if d["kind"] in {"Deployment", "StatefulSet"}
+                         and d["metadata"]["name"] != "pd-router"]
             roles, slots, cpu, memory = [], 0, 0, 0
             for workload in workloads:
                 spec = workload["spec"]["template"]["spec"]
@@ -583,18 +573,13 @@ class ManifestTests(unittest.TestCase):
                 memory += count * int(resources["limits"]["memory"].removesuffix("Gi"))
                 roles.extend([container["args"][1]] * count)
             self.assertEqual(slots, 2)
-            self.assertEqual(roles, ["aggregated", "aggregated"] if mode == "aggregated" else ["prefill", "decode"])
+            self.assertCountEqual(roles, ["aggregated", "aggregated"] if mode == "aggregated" else ["prefill", "decode"])
             budgets.append((slots, cpu, memory))
         self.assertEqual(budgets[0], budgets[1])
 
     def test_rendered_router_targets_both_baseline_replicas(self):
-        import yaml
-
-        if not shutil.which("kubectl"):
-            self.skipTest("kubectl required")
         for mode in ("aggregated", "disaggregated"):
-            rendered = subprocess.check_output(["kubectl", "kustomize", str(ROOT / "k8s/gpu-mps/pd" / mode)], text=True)
-            docs = list(yaml.safe_load_all(rendered))
+            docs = render(ROOT / "k8s/pd/profiles" / f"mps-2-{mode}.yaml")
             gateway = next(d for d in docs if d["kind"] == "Deployment" and d["metadata"]["name"] == "pd-router")
             spec = gateway["spec"]["template"]["spec"]
             container = spec["containers"][0]
@@ -607,7 +592,7 @@ class ManifestTests(unittest.TestCase):
             self.assertEqual(container["resources"]["requests"]["memory"], "512Mi")
             self.assertEqual(container["resources"]["limits"]["memory"], "1Gi")
             self.assertEqual(container["envFrom"][0]["configMapRef"]["name"], config["metadata"]["name"])
-            self.assertTrue(all(d["metadata"]["namespace"] == "pd-comparison" for d in docs))
+            self.assertTrue(all(d["metadata"]["namespace"] == "pd-comparison" for d in docs if d["kind"] != "Namespace"))
 
 
 class DeployTests(unittest.TestCase):
@@ -618,6 +603,13 @@ class DeployTests(unittest.TestCase):
         (self.root / "scripts/lib").mkdir(parents=True)
         for name in ("deploy-pd.sh", "lib/gpu-settings.sh", "lib/pd-settings.sh"):
             shutil.copyfile(ROOT / "scripts" / name, self.root / "scripts" / name)
+        renderer = self.root / "scripts/render-k8s.sh"
+        renderer.write_text('''#!/bin/sh
+[ "${PD_RENDER_FAIL:-0}" = 0 ] || exit 1
+printf '%s\\n' "$1" > "$PD_RENDER_TRACE"
+printf 'kind: List\\nitems: []\\n'
+''')
+        renderer.chmod(0o755)
         self.trace = self.root / "trace.jsonl"
         self.mock = self.root / "scripts/local-k8s-gpu.sh"
         self.mock.write_text('''#!/usr/bin/env python3
@@ -629,7 +621,8 @@ if args[1:3] == ['get', 'nodes']: print(os.environ.get('PD_SLOTS', '2'))
 elif 'jobs' in args: print(os.environ.get('PD_ACTIVE', ''))
 ''')
         self.mock.chmod(0o755)
-        self.env = {**os.environ, "GPU_SHARING": "mps", "MPS_REPLICAS": "2", "PD_TRACE": str(self.trace)}
+        self.env = {**os.environ, "GPU_SHARING": "mps", "MPS_REPLICAS": "2",
+                    "PD_TRACE": str(self.trace), "PD_RENDER_TRACE": str(self.root / "render-trace")}
         self.env.pop("CLUSTER_NAME", None)
 
     def run_deploy(self, **env):
@@ -641,7 +634,7 @@ elif 'jobs' in args: print(os.environ.get('PD_ACTIVE', ''))
         self.assertEqual(result.returncode, 0, result.stderr)
         calls = [json.loads(line) for line in self.trace.read_text().splitlines()]
         wait = next(i for i, call in enumerate(calls) if "--for=delete" in call)
-        apply = next(i for i, call in enumerate(calls) if "-k" in call)
+        apply = next(i for i, call in enumerate(calls) if "apply" in call and not call[-1].endswith("namespace.yaml"))
         self.assertLess(wait, apply)
         self.assertFalse(any("namespace" in c or "pvc" in c or "job" in c for c in calls if "delete" in c))
 
@@ -653,12 +646,17 @@ elif 'jobs' in args: print(os.environ.get('PD_ACTIVE', ''))
             self.assertNotEqual(result.returncode, 0)
             self.assertNotIn('"delete"', self.trace.read_text())
 
+    def test_render_failure_preserves_running_topology(self):
+        result = self.run_deploy(PD_RENDER_FAIL="1")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(self.trace.exists())
+
     def test_four_slot_deploy_only_mutates_its_namespace(self):
         result = self.run_deploy(MPS_REPLICAS='4', PD_SLOTS='4')
         self.assertEqual(result.returncode, 0, result.stderr)
         calls = [json.loads(line) for line in self.trace.read_text().splitlines()]
         self.assertTrue(any('statefulset/pd-decode' in c for c in calls))
-        self.assertTrue(any(str(self.root / 'k8s/gpu-mps-4/pd/disaggregated') in c for c in calls))
+        self.assertEqual((self.root / 'render-trace').read_text().strip(), str(self.root / 'k8s/pd/profiles/mps-4-disaggregated.yaml'))
         for call in calls:
             if '-n' in call:
                 self.assertEqual(call[call.index('-n') + 1], 'pd-comparison-4')

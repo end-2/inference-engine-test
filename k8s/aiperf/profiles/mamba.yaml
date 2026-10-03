@@ -1,0 +1,33 @@
+pod:
+  volumes:
+  - hostPath:
+      path: /models/mamba-130m
+      type: Directory
+    name: tokenizer
+  - name: results
+    persistentVolumeClaim:
+      claimName: aiperf-results-mamba
+  - emptyDir:
+      sizeLimit: 1Gi
+    name: tmp
+container:
+  env:
+  - name: POD_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+  - name: CONCURRENCIES
+    value: 1,2,4,8
+  - name: DATASET_ENTRIES
+    value: '16'
+  - name: API_URL
+    value: http://transformers-mamba-base:8000
+  - name: MODEL_ID
+    value: state-spaces/mamba-130m-hf
+persistence:
+  name: aiperf-results-mamba
+reader:
+  volumes:
+  - name: results
+    persistentVolumeClaim:
+      claimName: aiperf-results-mamba

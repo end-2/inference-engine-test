@@ -10,7 +10,7 @@ For inference implementation and API, see the [inference engine guide](inference
 
 ## Preparation and deployment
 
-Use 1 control-plane, 1 monitor worker, 2 engine workers, and the `transformers-base-metric` image. Resources and threads are set in the [deployment manifests](../../k8s/hpa-test-transformers/) with `requests=limits` kept.
+Use 1 control-plane, 1 monitor worker, 2 engine workers, and the `transformers-base-metric` image. Resources and threads are set in the [deployment manifests](../../k8s/experiment/profiles/hpa-transformers.yaml) with `requests=limits` kept.
 
 Reserve inference capacity based on per-Pod resource requests and max replica count, plus extra resources for the monitor and Kubernetes system.
 
@@ -30,15 +30,14 @@ KIND_CONFIG=config/cluster/kind-multi-node.yaml ./scripts/local-k8s.sh up
 
 `up` does not change an existing cluster topology. If a single-node cluster with the same name exists, pick a new name. Run all commands with the same `CLUSTER_NAME`.
 
-If the availability test is deployed, export its results then clean up with `./scripts/local-k8s.sh kubectl delete -f k8s/availability-test-transformers`. This command also deletes that test's PVC. Do not run it together with other load experiments.
+If the availability test is deployed, export its results then clean up with `./scripts/k8s.sh delete k8s/experiment/profiles/availability-transformers.yaml`. This command also deletes that test's PVC. Do not run it together with other load experiments.
 
 ```sh
 export CLUSTER_NAME=transformers-tests
-./scripts/local-k8s.sh kubectl apply -f k8s/metrics-server
+./scripts/k8s.sh apply k8s/metrics-server
 ./scripts/local-k8s.sh kubectl -n kube-system rollout status deployment/metrics-server --timeout=180s
 ./scripts/local-k8s.sh kubectl wait --for=condition=Available apiservice/v1beta1.metrics.k8s.io --timeout=180s
-./scripts/local-k8s.sh kubectl apply -f k8s/hpa-test-transformers/namespace.yaml
-./scripts/local-k8s.sh kubectl apply -f k8s/hpa-test-transformers
+./scripts/k8s.sh apply k8s/experiment/profiles/hpa-transformers.yaml
 for deployment in transformers-base-metric prometheus kube-state-metrics grafana; do
   ./scripts/local-k8s.sh kubectl -n hpa-test-transformers rollout status "deployment/$deployment" --timeout=300s
 done
@@ -66,7 +65,7 @@ The CPU target is utilization relative to Pod CPU request. The inference Deploym
 
 The model is a fixed SmolLM2-135M-Instruct FP32 snapshot; server and AIPerf use that snapshot's tokenizer. Input and output length distribution is `64,32:50;256,64:50`, 16 inputs, seed 42, sequential, `ignore_eos:true`.
 
-The [HPA manifests](../../k8s/hpa-test-transformers/) define namespace, RBAC, dashboard, and load independently.
+The [HPA manifests](../../k8s/experiment/profiles/hpa-transformers.yaml) define namespace, RBAC, dashboard, and load independently.
 
 ## Run
 
@@ -113,9 +112,9 @@ Pass or fail is judged by request success in the high- and low-load intervals; e
 python3 -m unittest discover -s tests -p 'test_hpa_runner_transformers.py'
 sh tests/test-hpa-manifests-transformers.sh
 # After collecting results, delete workloads and PVC
-./scripts/local-k8s.sh kubectl delete -f k8s/hpa-test-transformers
+./scripts/k8s.sh delete k8s/experiment/profiles/hpa-transformers.yaml
 # When this Metrics Server is only used for this experiment
-./scripts/local-k8s.sh kubectl delete -f k8s/metrics-server
+./scripts/k8s.sh delete k8s/metrics-server
 ```
 
 ## llama.cpp
@@ -127,12 +126,12 @@ Change the following values in the procedure above. Use the selected `CLUSTER_NA
 | Cluster example | `transformers-tests` | `hpa-test-llamacpp` |
 | Model preparation | `./scripts/download-transformers-model.sh` | `./scripts/download-model-llamacpp.sh` and `./scripts/download-tokenizer-llamacpp.sh` |
 | Inference image and Deployment | `transformers-base-metric` | `base-metric-llamacpp` |
-| Manifests | `k8s/hpa-test-transformers` | `k8s/hpa-test-llamacpp` |
+| Manifests | `k8s/experiment/profiles/hpa-transformers.yaml` | `k8s/experiment/profiles/hpa-llamacpp.yaml` |
 | Namespace and dashboard | `hpa-test-transformers` | `hpa-test-llamacpp` |
 | Runner script | `scripts/run-hpa-test-transformers.py` | `scripts/run-hpa-test-llamacpp.py` |
 | Result root | `reports/transformers/` | `reports/llamacpp/` |
 
-The model uses the [Qwen GGUF settings](../../config/models/qwen2.5-0.5b-gguf-llamacpp.env); match the server and AIPerf model and tokenizer. Use the [llama.cpp manifests](../../k8s/hpa-test-llamacpp/) for resources and load settings. When cleaning up another test on the same cluster, select that engine's namespace and manifests.
+The model uses the [Qwen GGUF settings](../../config/models/qwen2.5-0.5b-gguf-llamacpp.env); match the server and AIPerf model and tokenizer. Use the [llama.cpp manifests](../../k8s/experiment/profiles/hpa-llamacpp.yaml) for resources and load settings. When cleaning up another test on the same cluster, select that engine's namespace and manifests.
 
 ```sh
 export CLUSTER_NAME=hpa-test-llamacpp
@@ -149,8 +148,7 @@ If forced termination skipped cleanup, stop the load, copy results, then restore
 ./scripts/local-k8s.sh kubectl -n hpa-test-llamacpp wait --for=delete pod -l app=aiperf --timeout=150s
 mkdir -p reports/llamacpp/hpa-manual
 ./scripts/local-k8s.sh kubectl -n hpa-test-llamacpp cp aiperf-results:/results reports/llamacpp/hpa-manual/aiperf
-./scripts/local-k8s.sh kubectl apply -f k8s/hpa-test-llamacpp/namespace.yaml
-./scripts/local-k8s.sh kubectl apply -f k8s/hpa-test-llamacpp
+./scripts/k8s.sh apply k8s/experiment/profiles/hpa-llamacpp.yaml
 ```
 
 Use the following commands for llama.cpp runner and manifest validation.

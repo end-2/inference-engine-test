@@ -1,0 +1,5 @@
+apiVersion: v2
+name: metrics-server
+description: Metrics Server configuration for kind
+type: application
+version: 0.1.0

@@ -22,6 +22,8 @@ make install
 make benchmark-suite
 ```
 
+`make install`은 kind, kubectl과 Helm을 준비합니다. 워크로드 프로필과 공통 차트는 [매니페스트 가이드](docs/guides/manifests-KR.md)를 참고합니다.
+
 기본 실험은 세 구현마다 동시성 `1,2,4,8`을 3회 반복합니다. 결과는 `docs/reports/transformers/benchmark-suite-*/summary.md`에 저장됩니다. 측정값, 캐시 정책과 실행 시간은 [벤치마크 가이드](docs/guides/benchmark.md)을 참고하세요. `make benchmark`와 `make benchmark-suite`는 필요 시 이미지 빌드부터 kind 로드, 배포와 AIPerf 실행까지 포함해 자동 수행합니다.
 
 GPU 실행은 [GPU 벤치마크 준비와 결과](docs/guides/benchmark.md#gpu-벤치마크)를 참고합니다.
@@ -51,8 +53,8 @@ python3 scripts/run-benchmark-suite.py --backend llamacpp # llama.cpp 전체 반
 ./scripts/run-benchmark.py # make benchmark와 동일
 ./scripts/run-benchmark.py --help # 전체 옵션 확인
 # enhanced 예시
-./scripts/run-benchmark.py --image local/transformers-enhanced-batch:0.1.0 --build-target transformers-enhanced-batch --manifests k8s/transformers-enhanced-batch
-./scripts/run-benchmark.py --image local/transformers-enhanced-cache:0.1.0 --build-target transformers-enhanced-cache --manifests k8s/transformers-enhanced-cache --cache-policy clear-per-concurrency
+./scripts/run-benchmark.py --image local/transformers-enhanced-batch:0.1.0 --build-target transformers-enhanced-batch --manifests k8s/inference/profiles/transformers-enhanced-batch-cpu.yaml
+./scripts/run-benchmark.py --image local/transformers-enhanced-cache:0.1.0 --build-target transformers-enhanced-cache --manifests k8s/inference/profiles/transformers-enhanced-cache-cpu.yaml --cache-policy clear-per-concurrency
 ```
 
 | 목적 | make | 스크립트 직접 실행 |

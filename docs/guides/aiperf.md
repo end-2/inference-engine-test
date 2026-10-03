@@ -12,9 +12,9 @@ The default target is the SmolLM2 Transformers server. The values below are the 
 
 | Setting | Source |
 | --- | --- |
-| Concurrency, request count, input and output lengths, seed | [AIPerf Job](../../k8s/aiperf/job.yaml) |
+| Concurrency, request count, input and output lengths, seed | [AIPerf Job](../../k8s/aiperf/values.yaml) |
 | Model and tokenizer revision | [Model settings](../../config/models/smollm2-135m-transformers.env) |
-| Inference resources, threads, and token limits | [Deployment](../../k8s/transformers-base/deployment.yaml) |
+| Inference resources, threads, and token limits | [Deployment](../../k8s/inference/values.yaml) |
 | Cluster and tool versions | [kind settings](../../config/cluster/kind.yaml), [versions.env](../../config/versions.env) |
 
 Measurement Pods keep CPU and memory `requests=limits`.
@@ -46,7 +46,7 @@ The AIPerf container sets CPU `1` and memory `1Gi` equally in requests and limit
 
 The Job limit is `activeDeadlineSeconds: 14400` and is separate from the per-request timeout. The automated script overrides the Job limit with the `--job-timeout` value, default 3,600 seconds.
 
-The [llama.cpp profile](../../k8s/aiperf-qwen2.5/job.yaml) changes the model to `Qwen/Qwen2.5-0.5B-Instruct`, the address to `http://base-llamacpp:8000`, and the host tokenizer path to `/models/qwen2.5-0.5b/tokenizer`. Common load options are the same, and the automated script sets the model and address for the selected server.
+The [llama.cpp profile](../../k8s/aiperf/profiles/qwen2.5.yaml) changes the model to `Qwen/Qwen2.5-0.5B-Instruct`, the address to `http://base-llamacpp:8000`, and the host tokenizer path to `/models/qwen2.5-0.5b/tokenizer`. Common load options are the same, and the automated script sets the model and address for the selected server.
 
 ## Preparing the tokenizer
 

@@ -1,4 +1,4 @@
-.PHONY: help install up down test status download-model download-tokenizer build-image load-image build-benchmark-image load-benchmark-image benchmark benchmark-suite pd-deploy pd-benchmark
+.PHONY: help install up down test status download-model download-tokenizer build-image load-image build-benchmark-image load-benchmark-image render deploy benchmark benchmark-suite pd-deploy pd-benchmark
 
 IMAGE_TAG ?= 0.1.0
 DEVICE ?= cpu
@@ -14,7 +14,7 @@ INFERENCE_BACKEND ?= $(if $(filter transformers-mamba-%,$(VARIANT)),mamba,$(if $
 INFERENCE_IMAGE ?= local/$(VARIANT)$(if $(filter gpu,$(DEVICE)),-gpu):$(IMAGE_TAG)
 INFERENCE_CONTEXT ?= src
 INFERENCE_TARGET ?= $(VARIANT)$(if $(filter gpu,$(DEVICE)),-gpu)
-INFERENCE_MANIFESTS ?= k8s/$(if $(filter gpu,$(DEVICE)),gpu/)$(VARIANT)
+INFERENCE_MANIFESTS ?= k8s/inference/profiles/$(VARIANT)-$(DEVICE).yaml
 CACHE_POLICY ?= $(if $(filter transformers-enhanced-cache transformers-mamba-cache,$(VARIANT)),clear-before-sweep,preserve)
 REPETITIONS ?= 3
 INFERENCE_NODE ?=
@@ -25,7 +25,7 @@ PD_BENCHMARK_CONFIG ?= config/benchmarks/pd.json
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-24s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-install: ## Download pinned kind and kubectl into .bin
+install: ## Download pinned kind, kubectl and Helm into .bin
 up: ## Create or reuse the local cluster
 down: ## Delete the local cluster
 test: ## Run the cluster smoke test
@@ -44,6 +44,13 @@ build-image: ## Build the selected VARIANT
 
 load-image: ## Load the selected VARIANT into kind
 	IMAGE_TAG=$(IMAGE_TAG) DEVICE=$(DEVICE) ./scripts/load-inference-images.sh $(VARIANT)
+
+render: ## Render the selected VARIANT through Helm without a cluster
+	@./scripts/render-k8s.sh "$(INFERENCE_MANIFESTS)" --set-string "container.image=$(INFERENCE_IMAGE)"
+
+deploy: ## Apply the selected VARIANT to the local cluster
+	LOCAL_K8S_SCRIPT="$(CURDIR)/scripts/local-k8s$(if $(filter gpu,$(DEVICE)),-gpu).sh" \
+	./scripts/k8s.sh apply "$(INFERENCE_MANIFESTS)" --set-string "container.image=$(INFERENCE_IMAGE)"
 
 pd-deploy: ## Deploy aggregated or disaggregated inference on the MPS cluster
 	GPU_SHARING=mps ./scripts/deploy-pd.sh "$(PD_MODE)"

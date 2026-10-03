@@ -1,0 +1,34 @@
+{{- if eq .Values.scenario "hpa" }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.engineName }}
+  namespace: {{ .Values.namespace }}
+spec:
+  behavior:
+    scaleDown:
+      policies:
+      - periodSeconds: 30
+        type: Pods
+        value: 1
+      stabilizationWindowSeconds: 120
+    scaleUp:
+      policies:
+      - periodSeconds: 30
+        type: Pods
+        value: 1
+      stabilizationWindowSeconds: 0
+  maxReplicas: 4
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 50
+        type: Utilization
+    type: Resource
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.engineName }}
+{{- end }}

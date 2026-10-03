@@ -1,0 +1,32 @@
+name: base-llamacpp
+pod:
+  volumes:
+  - name: model
+    hostPath:
+      path: /models/qwen2.5-0.5b
+      type: Directory
+  - name: tmp
+    emptyDir:
+      sizeLimit: 1Gi
+container:
+  image: local/base-llamacpp:0.1.0
+  args:
+  - --model
+  - /model/qwen2.5-0.5b-instruct-q4_k_m.gguf
+  - --served-model-name
+  - Qwen/Qwen2.5-0.5B-Instruct
+  - --n-threads
+  - '12'
+  - --n-ctx
+  - '1024'
+  - --max-input-tokens
+  - '768'
+  - --max-output-tokens
+  - '128'
+  - --default-output-tokens
+  - '32'
+  resources:
+    requests:
+      cpu: '12'
+    limits:
+      cpu: '12'

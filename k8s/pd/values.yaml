@@ -1,0 +1,153 @@
+namespace: pd-comparison
+mode: aggregated
+slots: 2
+image: local/transformers-pd-gpu:0.1.0
+scheduler: serial
+settings:
+  MAX_INPUT_TOKENS: '768'
+  MAX_OUTPUT_TOKENS: '256'
+  MAX_PENDING: '8'
+  MAX_STATE_MIB: '64'
+  MAX_STATE_TRANSFERS: '2'
+  MODEL_ID: HuggingFaceTB/SmolLM2-135M-Instruct
+  N_CTX: '1024'
+  OMP_NUM_THREADS: '2'
+worker:
+  pod:
+    automountServiceAccountToken: false
+    runtimeClassName: nvidia
+    terminationGracePeriodSeconds: 150
+    nodeSelector:
+      nvidia.com/mps.capable: 'true'
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+    volumes:
+    - name: model
+      hostPath:
+        path: /models/smollm2-135m
+        type: Directory
+    - name: tmp
+      emptyDir:
+        sizeLimit: 1Gi
+  container:
+    name: worker
+    imagePullPolicy: Never
+    ports:
+    - name: http
+      containerPort: 8000
+    startupProbe:
+      httpGet:
+        path: /readyz
+        port: http
+      failureThreshold: 90
+      periodSeconds: 2
+    readinessProbe:
+      httpGet:
+        path: /readyz
+        port: http
+      periodSeconds: 5
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: http
+      periodSeconds: 10
+    resources:
+      requests:
+        cpu: '1'
+        memory: 2Gi
+        nvidia.com/gpu.shared: 1
+      limits:
+        cpu: '2'
+        memory: 2Gi
+        nvidia.com/gpu.shared: 1
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+        - ALL
+    volumeMounts:
+    - name: model
+      mountPath: /model
+      readOnly: true
+    - name: tmp
+      mountPath: /tmp
+  args:
+  - --model
+  - /model
+  - --served-model-name
+  - $(MODEL_ID)
+  - --device
+  - cuda
+  - --dtype
+  - float16
+  - --n-threads
+  - '2'
+  - --n-ctx
+  - $(N_CTX)
+  - --max-input-tokens
+  - $(MAX_INPUT_TOKENS)
+  - --max-output-tokens
+  - $(MAX_OUTPUT_TOKENS)
+  - --max-pending
+  - $(MAX_PENDING)
+  - --max-state-mib
+  - $(MAX_STATE_MIB)
+router:
+  pod:
+    automountServiceAccountToken: false
+    terminationGracePeriodSeconds: 150
+    nodeSelector:
+      nvidia.com/mps.capable: 'true'
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
+  container:
+    name: router
+    imagePullPolicy: Never
+    command:
+    - python
+    - -m
+    - transformer.pd.router
+    args:
+    - --mode
+    - $(PD_MODE)
+    - --served-model-name
+    - $(MODEL_ID)
+    - --max-pending
+    - $(MAX_PENDING)
+    - --max-state-mib
+    - $(MAX_STATE_MIB)
+    - --max-state-transfers
+    - $(MAX_STATE_TRANSFERS)
+    ports:
+    - name: http
+      containerPort: 8000
+    readinessProbe:
+      httpGet:
+        path: /readyz
+        port: http
+      timeoutSeconds: 6
+      periodSeconds: 10
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: http
+      periodSeconds: 10
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: '1'
+        memory: 1Gi
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+        - ALL

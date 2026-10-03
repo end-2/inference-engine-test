@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard
+  namespace: {{ .Values.namespace }}
+data:
+  availability.json: |
+    {{- (.Files.Get (printf "files/grafana-dashboard/%s/availability.json" .Values.scenario)) | replace "__NAMESPACE__" .Values.namespace | replace "__ENGINE_NAME__" .Values.engineName | replace "__METRIC_PREFIX__" .Values.metricPrefix | nindent 4 }}

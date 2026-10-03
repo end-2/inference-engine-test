@@ -1,0 +1,4 @@
+namespace: availability-test-llamacpp
+scenario: availability
+backend: llamacpp
+loadReplicas: 1

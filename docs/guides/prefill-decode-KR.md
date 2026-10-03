@@ -18,11 +18,11 @@ SmolLM2를 MPS 슬롯 2개에서 실행하며 aggregation과 disaggregation을 �
 
 ### Router 메모리 한도
 
-공통 [설정](../../k8s/gpu-mps/pd/base/kustomization.yaml)의 `MAX_PENDING=8`은 응답 완료까지 수용하는 요청 수이며, `MAX_STATE_TRANSFERS=2`는 동시에 Prefill 상태를 만들고 Decode에 전달하는 요청 수입니다. 전송 슬롯이 없으면 KV를 만들기 전에 기다립니다. 기본 120초 안에 슬롯을 얻지 못하면 HTTP 504를 반환하고, 클라이언트가 끊으면 대기를 취소합니다. 슬롯은 Decode 응답 헤더 수신 시 반환하므로 비스트리밍 요청에서는 생성 완료까지 유지할 수 있습니다.
+공통 [설정](../../k8s/pd/values.yaml)의 `MAX_PENDING=8`은 응답 완료까지 수용하는 요청 수이며, `MAX_STATE_TRANSFERS=2`는 동시에 Prefill 상태를 만들고 Decode에 전달하는 요청 수입니다. 전송 슬롯이 없으면 KV를 만들기 전에 기다립니다. 기본 120초 안에 슬롯을 얻지 못하면 HTTP 504를 반환하고, 클라이언트가 끊으면 대기를 취소합니다. 슬롯은 Decode 응답 헤더 수신 시 반환하므로 비스트리밍 요청에서는 생성 완료까지 유지할 수 있습니다.
 
 상태 하나의 한도는 `MAX_STATE_MIB=64`입니다. 기본 설정에서 전송 중인 원본 상태는 합계 128 MiB까지이며, 수신 버퍼를 `bytes`로 변환하는 동안 복사본도 필요합니다. Router는 64 KiB 청크로 업로드하고 성공, 실패와 취소 시 본문 참조를 해제합니다. 이 한도는 프로세스 전체 RSS 상한을 의미하지 않습니다.
 
-[Router 배포](../../k8s/gpu-mps/pd/base/router.yaml)는 두 mode 모두 메모리 요청 512 MiB, 상한 1 GiB를 사용합니다. 상태 크기나 전송 슬롯 수를 늘리면 일시적인 복사본, HTTP 버퍼와 Python 메모리까지 고려해 상한을 다시 검증해야 합니다. 변경한 소스는 추론 이미지를 다시 빌드하고 로드한 뒤 `pd-deploy`로 배포합니다.
+[Router 배포](../../k8s/pd/templates/router.yaml)는 두 mode 모두 메모리 요청 512 MiB, 상한 1 GiB를 사용합니다. 상태 크기나 전송 슬롯 수를 늘리면 일시적인 복사본, HTTP 버퍼와 Python 메모리까지 고려해 상한을 다시 검증해야 합니다. 변경한 소스는 추론 이미지를 다시 빌드하고 로드한 뒤 `pd-deploy`로 배포합니다.
 
 ## 실행
 
@@ -90,15 +90,15 @@ python3 scripts/report-pd.py docs/reports/gpu/pd/pd-<시각>
 
 ### 단일 분포 수동 측정
 
-[전용 AIPerf Job](../../k8s/gpu-mps/pd/benchmark.yaml)의 `--sequence-distribution`을 원하는 분포로 바꾸고, 비교할 mode를 배포한 후 실행합니다. 예를 들어 `704,16:100`은 긴 입력, 짧은 출력 부하입니다.
+[전용 AIPerf Job](../../k8s/aiperf/profiles/pd.yaml)의 `--sequence-distribution`을 원하는 분포로 바꾸고, 비교할 mode를 배포한 후 실행합니다. 예를 들어 `704,16:100`은 긴 입력, 짧은 출력 부하입니다.
 
 ```sh
 k() { GPU_SHARING=mps ./scripts/local-k8s-gpu.sh kubectl -n pd-comparison "$@"; }
 k delete job pd-benchmark --ignore-not-found
-k apply -f k8s/gpu-mps/pd/benchmark.yaml
+GPU_SHARING=mps LOCAL_K8S_SCRIPT=./scripts/local-k8s-gpu.sh ./scripts/k8s.sh apply k8s/aiperf/profiles/pd.yaml --show-only templates/pvc.yaml --show-only templates/job.yaml
 k wait --for=condition=complete job/pd-benchmark --timeout=14400s
 k logs job/pd-benchmark
-k apply -f k8s/gpu-mps/pd/results.yaml
+GPU_SHARING=mps LOCAL_K8S_SCRIPT=./scripts/local-k8s-gpu.sh ./scripts/k8s.sh apply k8s/aiperf/profiles/pd.yaml --show-only templates/reader.yaml
 k wait --for=condition=Ready pod/pd-results --timeout=120s
 k cp pd-results:/results reports/pd-manual
 ```
@@ -127,8 +127,8 @@ JSON 응답의 `metrics`, SSE 종료 chunk의 `metrics`와 worker의 `pd_request
 
 ## 구성과 검증
 
-- 공통 토큰과 대기열 한도: [base/kustomization.yaml](../../k8s/gpu-mps/pd/base/kustomization.yaml)
-- GPU 자원, 모델 mount와 역할: [aggregation workers](../../k8s/gpu-mps/pd/aggregated/workers.yaml), [disaggregation workers](../../k8s/gpu-mps/pd/disaggregated/workers.yaml)
+- 공통 토큰과 대기열 한도: [pd/values.yaml](../../k8s/pd/values.yaml)
+- GPU 자원, 모델 mount와 역할: [workers](../../k8s/pd/templates/workers.yaml)
 - 엔진, 내부 API와 router: [src/transformer/pd](../../src/transformer/pd)
 
 CPU 환경에서도 작은 Llama 모델로 상태 전달과 출력 동등성을 검증할 수 있습니다.
@@ -137,8 +137,8 @@ CPU 환경에서도 작은 Llama 모델로 상태 전달과 출력 동등성을 
 python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
 python -m pip install -r src/transformer/requirements.txt -r src/transformer/pd/requirements.txt pyyaml
 python -m unittest discover -s tests -p 'test_pd*.py' -v
-kubectl kustomize k8s/gpu-mps/pd/aggregated
-kubectl kustomize k8s/gpu-mps/pd/disaggregated
+./scripts/render-k8s.sh k8s/pd/profiles/mps-2-aggregated.yaml
+./scripts/render-k8s.sh k8s/pd/profiles/mps-2-disaggregated.yaml
 ```
 
 결과를 호스트로 복사한 뒤 종료합니다. namespace 삭제는 결과 PVC도 삭제합니다.

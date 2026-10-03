@@ -27,7 +27,7 @@ if command -v curl >/dev/null 2>&1; then
 elif command -v wget >/dev/null 2>&1; then
     downloader=wget
 else
-    die "Install curl or wget, or provide kind and kubectl on PATH."
+    die "Install curl or wget, or provide kind, kubectl and helm on PATH."
 fi
 if command -v sha256sum >/dev/null 2>&1; then
     hasher=sha256sum
@@ -68,16 +68,23 @@ trap 'exit 143' TERM
 
 kind_url="https://github.com/kubernetes-sigs/kind/releases/download/$KIND_VERSION/kind-$os-$arch"
 kubectl_url="https://dl.k8s.io/release/$KUBECTL_VERSION/bin/$os/$arch/kubectl"
-printf 'Downloading kind %s and kubectl %s for %s/%s...\n' "$KIND_VERSION" "$KUBECTL_VERSION" "$os" "$arch"
+helm_url="https://get.helm.sh/helm-$HELM_VERSION-$os-$arch.tar.gz"
+printf 'Downloading kind %s, kubectl %s and Helm %s for %s/%s...\n' "$KIND_VERSION" "$KUBECTL_VERSION" "$HELM_VERSION" "$os" "$arch"
 download "$kind_url" "$staging/kind"
 download "$kind_url.sha256sum" "$staging/kind.sha256"
 verify "$staging/kind" "$staging/kind.sha256"
 download "$kubectl_url" "$staging/kubectl"
 download "$kubectl_url.sha256" "$staging/kubectl.sha256"
 verify "$staging/kubectl" "$staging/kubectl.sha256"
+download "$helm_url" "$staging/helm.tar.gz"
+download "$helm_url.sha256sum" "$staging/helm.sha256"
+verify "$staging/helm.tar.gz" "$staging/helm.sha256"
+tar -xzf "$staging/helm.tar.gz" -C "$staging" "$os-$arch/helm"
+mv "$staging/$os-$arch/helm" "$staging/helm"
 
-# Verify both downloads before replacing any installed executable.
-chmod 755 "$staging/kind" "$staging/kubectl"
+# Verify all downloads before replacing any installed executable.
+chmod 755 "$staging/kind" "$staging/kubectl" "$staging/helm"
 mv -f "$staging/kind" "$BIN_DIR/kind"
 mv -f "$staging/kubectl" "$BIN_DIR/kubectl"
+mv -f "$staging/helm" "$BIN_DIR/helm"
 printf 'Installed tools in %s\n' "$BIN_DIR"

@@ -10,8 +10,8 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 
-read_manifests "$ROOT/k8s/availability-test-transformers" > "$rendered/availability.yaml"
-read_manifests "$ROOT/k8s/hpa-test-transformers" > "$rendered/hpa.yaml"
+read_manifests "$ROOT/k8s/experiment/profiles/availability-transformers.yaml" > "$rendered/availability.yaml"
+read_manifests "$ROOT/k8s/experiment/profiles/hpa-transformers.yaml" > "$rendered/hpa.yaml"
 read_manifests "$ROOT/k8s/metrics-server" > "$rendered/metrics.yaml"
 # HPA namespace and RBAC must remain isolated from the availability experiment.
 if grep -Fq 'availability-test-transformers' "$rendered/hpa.yaml"; then fail 'Stale availability namespace or RBAC'; fi

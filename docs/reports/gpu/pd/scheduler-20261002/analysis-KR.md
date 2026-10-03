@@ -87,7 +87,7 @@ A는 Aggregation worker 4개, D는 Prefill 1개와 Decode 3개입니다. 모든 
 
 ## 구현과 검증
 
-기본 serial 모드는 유지하고 [별도 scheduler manifest](../../../../../k8s/gpu-mps-4/pd-scheduled/aggregated/kustomization.yaml)를 추가했습니다. 동작과 재현 명령은 [스케줄러 가이드](../../../../guides/prefill-decode-scheduler.md)에 있습니다.
+기본 serial 모드는 유지하고 [별도 scheduler manifest](../../../../../k8s/pd/profiles/mps-4-scheduled-aggregated.yaml)를 추가했습니다. 동작과 재현 명령은 [스케줄러 가이드](../../../../guides/prefill-decode-scheduler.md)에 있습니다.
 
 CPU 테스트 54개와 클러스터 테스트 13개가 통과했습니다. 실제 GPU에서는 입력 64, 94, 286과 734토큰에 대해 두 budget의 16토큰 greedy 출력이 기존 serial 경로와 일치했습니다. 734토큰 KV를 전달한 decode 결과도 일치했습니다. [GPU 검증](gpu-validation.json)에 이미지 소스 해시와 CUDA 버전을 기록했습니다.
 

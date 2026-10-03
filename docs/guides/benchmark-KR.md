@@ -78,7 +78,7 @@ python3 scripts/run-benchmark-suite.py --resume 'docs/reports/transformers/bench
 
 ### llama.cpp 선택
 
-Qwen2.5 GGUF와 로컬 토크나이저를 사용하는 [전용 프로필](../../k8s/aiperf-qwen2.5/)을 선택합니다.
+Qwen2.5 GGUF와 로컬 토크나이저를 사용하는 [전용 프로필](../../k8s/aiperf/profiles/qwen2.5.yaml)을 선택합니다.
 
 ```sh
 make benchmark VARIANT=base-llamacpp
@@ -111,7 +111,7 @@ llama.cpp suite는 base, batch, cache 초기화와 cache 보존의 네 조건을
 
 ## GPU 벤치마크
 
-GPU 클러스터는 CPU 클러스터와 별도인 `local-k8s-gpu`입니다. NVIDIA 드라이버, Docker의 NVIDIA 런타임, NVIDIA Container Toolkit, Go와 Helm이 필요합니다. Toolkit의 `accept-nvidia-visible-devices-as-volume-mounts` 값을 활성화해야 합니다. `make install DEVICE=gpu`는 고정 버전의 nvkind와 kind, kubectl을 설치합니다. 시작 시 Docker의 GPU 접근, GPU 할당과 Pod의 `nvidia-smi` 접근을 검사합니다.
+GPU 클러스터는 CPU 클러스터와 별도인 `local-k8s-gpu`입니다. NVIDIA 드라이버, Docker의 NVIDIA 런타임, NVIDIA Container Toolkit, Go가 필요합니다. Toolkit의 `accept-nvidia-visible-devices-as-volume-mounts` 값을 활성화해야 합니다. `make install DEVICE=gpu`는 고정 버전의 nvkind, kind, kubectl과 Helm을 설치합니다. 시작 시 Docker의 GPU 접근, GPU 할당과 Pod의 `nvidia-smi` 접근을 검사합니다.
 
 ```sh
 sudo nvidia-ctk config --set accept-nvidia-visible-devices-as-volume-mounts=true --in-place

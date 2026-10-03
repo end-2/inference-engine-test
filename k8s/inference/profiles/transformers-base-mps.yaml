@@ -1,0 +1,36 @@
+name: transformers-mps
+replicas: 2
+pod:
+  runtimeClassName: nvidia
+  nodeSelector:
+    nvidia.com/mps.capable: 'true'
+container:
+  image: local/transformers-base-gpu:0.1.0
+  args:
+  - --model
+  - /model
+  - --served-model-name
+  - HuggingFaceTB/SmolLM2-135M-Instruct
+  - --n-threads
+  - '2'
+  - --dtype
+  - float16
+  - --n-ctx
+  - '1024'
+  - --max-input-tokens
+  - '768'
+  - --max-output-tokens
+  - '128'
+  - --default-output-tokens
+  - '32'
+  - --device
+  - cuda
+  resources:
+    requests:
+      cpu: '1'
+      memory: 2Gi
+      nvidia.com/gpu.shared: 1
+    limits:
+      cpu: '2'
+      memory: 2Gi
+      nvidia.com/gpu.shared: 1

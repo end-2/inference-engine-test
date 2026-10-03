@@ -29,7 +29,7 @@ Create the CPU cluster with `local-k8s.sh up`; it does not include GPU settings.
 
 | Task | Additional requirements |
 | --- | --- |
-| kind and kubectl installation | `curl` or `wget` for downloads, `sha256sum` or `shasum` for checksum verification |
+| kind, kubectl and Helm installation | `curl` or `wget` for downloads, `sha256sum` or `shasum` for checksum verification, `tar` with gzip support for Helm |
 | Model and tokenizer downloads | `curl`, `sha256sum` or `shasum` for checksum verification |
 | Image builds | `docker build` |
 | [Automated benchmark](benchmark.md#automated-measurement-with-pod-restarts) | Python 3.10 or later |
@@ -37,7 +37,7 @@ Create the CPU cluster with `local-k8s.sh up`; it does not include GPU settings.
 
 ## CPU, memory, and disk
 
-Sum the resource requests of the selected inference Deployment and the [AIPerf Job](../../k8s/aiperf/job.yaml), and reserve headroom for Kubernetes system Pods. Check inference settings in the [Transformers](../../k8s/transformers-base/deployment.yaml) or [llama.cpp](../../k8s/base-llamacpp/deployment.yaml) manifest.
+Sum the resource requests of the selected inference Deployment and the [AIPerf Job](../../k8s/aiperf/values.yaml), and reserve headroom for Kubernetes system Pods. Check inference settings in the [Transformers](../../k8s/inference/values.yaml) or [llama.cpp](../../k8s/inference/profiles/base-llamacpp-cpu.yaml) manifest.
 
 When Docker runs in a VM, also check resources assigned to the VM. Adjust measurement resources for the environment while keeping `requests=limits`.
 
@@ -49,7 +49,7 @@ Initial installation and image builds, plus model and tokenizer downloads, need 
 
 | Target | Main sources |
 | --- | --- |
-| kind and kubectl | GitHub releases, `dl.k8s.io` |
+| kind, kubectl and Helm | GitHub releases, `dl.k8s.io`, `get.helm.sh` |
 | Node and auxiliary images | Container registries such as Docker Hub |
 | Image build dependencies | Debian package repositories, PyPI |
 | Models and tokenizers | Hugging Face |

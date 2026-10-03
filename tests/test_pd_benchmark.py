@@ -7,7 +7,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-import yaml
+from manifest_support import render
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("pd_benchmark", ROOT / "scripts/benchmark-pd.py")
@@ -60,11 +60,11 @@ class BenchmarkTests(unittest.TestCase):
             benchmark.profile(2, "token-budget")
         profile = benchmark.profile(4, "token-budget")
         self.assertEqual(profile["namespace"], "pd-comparison-4-scheduled")
-        self.assertTrue((profile["manifests"] / "namespace.yaml").is_file())
+        self.assertTrue(all(path.is_file() for path in profile["values"].values()))
 
     def setUp(self):
         self.config = json.loads((ROOT / "config/benchmarks/pd.json").read_text())
-        self.template = next(d for d in yaml.safe_load_all((ROOT / "k8s/gpu-mps/pd/benchmark.yaml").read_text()) if d["kind"] == "Job")
+        self.template = next(d for d in render(ROOT / "k8s/aiperf/profiles/pd.yaml") if d["kind"] == "Job")
 
     def test_grid_and_mixed_use_same_budget_seed_and_endpoint(self):
         jobs = [benchmark.job_manifest(self.template, self.config, group, "test", "/results/test")
@@ -94,7 +94,7 @@ class BenchmarkTests(unittest.TestCase):
             p = benchmark.profile(slots)
             self.assertEqual(p['workers'], {'aggregated':slots, 'prefill':1, 'decode':slots-1})
             self.assertEqual(p['namespace'], 'pd-comparison-4' if slots == 4 else 'pd-comparison')
-            self.assertTrue((p['manifests'] / 'namespace.yaml').is_file())
+            self.assertTrue(all(path.is_file() for path in p['values'].values()))
             job = benchmark.job_manifest(self.template, self.config, 'grid', 'test', '/results/test', p['namespace'])
             self.assertEqual(job['metadata']['namespace'], p['namespace'])
             node = {'metadata':{'labels':{'nvidia.com/mps.capable':'true'}},

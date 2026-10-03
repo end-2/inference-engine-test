@@ -10,9 +10,9 @@ CPU 추론 서버에 동시성별 부하를 보내 처리량, TTFT, ITL과 응�
 
 | 설정 | 원본 |
 | --- | --- |
-| 동시성, 요청 수, 입력과 출력 길이, seed | [AIPerf Job](../../k8s/aiperf/job.yaml) |
+| 동시성, 요청 수, 입력과 출력 길이, seed | [AIPerf Job](../../k8s/aiperf/values.yaml) |
 | 모델과 토크나이저 revision | [모델 설정](../../config/models/smollm2-135m-transformers.env) |
-| 추론 자원, 스레드와 토큰 제한 | [Deployment](../../k8s/transformers-base/deployment.yaml) |
+| 추론 자원, 스레드와 토큰 제한 | [Deployment](../../k8s/inference/values.yaml) |
 | 클러스터와 도구 버전 | [kind 설정](../../config/cluster/kind.yaml), [versions.env](../../config/versions.env) |
 
 측정 Pod는 CPU와 메모리 `requests=limits`를 유지합니다.
@@ -44,7 +44,7 @@ AIPerf 컨테이너는 CPU `1`, 메모리 `1Gi`를 requests와 limits에 동일�
 
 Job 제한 시간은 `activeDeadlineSeconds: 14400`이며 개별 요청 timeout과 별개입니다. 자동 실행 스크립트는 Job 제한 시간을 `--job-timeout` 값으로 덮어쓰며 기본값은 3,600초입니다.
 
-[llama.cpp 프로필](../../k8s/aiperf-qwen2.5/job.yaml)은 모델을 `Qwen/Qwen2.5-0.5B-Instruct`, 주소를 `http://base-llamacpp:8000`, 호스트 토크나이저 경로를 `/models/qwen2.5-0.5b/tokenizer`로 변경합니다. 공통 부하 옵션은 동일하며, 자동 실행 스크립트는 선택한 서버에 맞춰 모델과 주소를 설정합니다.
+[llama.cpp 프로필](../../k8s/aiperf/profiles/qwen2.5.yaml)은 모델을 `Qwen/Qwen2.5-0.5B-Instruct`, 주소를 `http://base-llamacpp:8000`, 호스트 토크나이저 경로를 `/models/qwen2.5-0.5b/tokenizer`로 변경합니다. 공통 부하 옵션은 동일하며, 자동 실행 스크립트는 선택한 서버에 맞춰 모델과 주소를 설정합니다.
 
 ## 토크나이저 준비
 

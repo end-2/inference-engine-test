@@ -20,11 +20,11 @@ Both modes use the same single CPU router. Aggregation alternates requests acros
 
 ### Router memory limits
 
-In the common [configuration](../../k8s/gpu-mps/pd/base/kustomization.yaml), `MAX_PENDING=8` is the request count admitted until response completion, and `MAX_STATE_TRANSFERS=2` is the request count concurrently building Prefill state and transferring it to Decode. Without a free transfer slot, a request waits before building KV. If it cannot obtain a slot within the default 120 seconds, it returns HTTP 504, and client disconnect cancels the wait. A slot returns when the Decode response header is received, so a non-streaming request can hold it until generation completes.
+In the common [configuration](../../k8s/pd/values.yaml), `MAX_PENDING=8` is the request count admitted until response completion, and `MAX_STATE_TRANSFERS=2` is the request count concurrently building Prefill state and transferring it to Decode. Without a free transfer slot, a request waits before building KV. If it cannot obtain a slot within the default 120 seconds, it returns HTTP 504, and client disconnect cancels the wait. A slot returns when the Decode response header is received, so a non-streaming request can hold it until generation completes.
 
 The per-state limit is `MAX_STATE_MIB=64`. Under default settings, source states in transfer total up to 128 MiB, and copies are also needed while converting receive buffers with `bytes`. The router uploads in 64 KiB chunks and releases body references on success, failure, and cancellation. This limit is not a whole-process RSS cap.
 
-The [router Deployment](../../k8s/gpu-mps/pd/base/router.yaml) uses memory request 512 MiB and limit 1 GiB in both modes. After increasing state size or transfer slot count, revalidate the limit to account for transient copies, HTTP buffers, and Python memory. Rebuild and reload the inference image from changed sources, then deploy with `pd-deploy`.
+The [router Deployment](../../k8s/pd/templates/router.yaml) uses memory request 512 MiB and limit 1 GiB in both modes. After increasing state size or transfer slot count, revalidate the limit to account for transient copies, HTTP buffers, and Python memory. Rebuild and reload the inference image from changed sources, then deploy with `pd-deploy`.
 
 ## Running
 
@@ -92,15 +92,15 @@ The runner uses the existing cluster and does not create clusters or stop extern
 
 ### Manual measurement of a single distribution
 
-Change `--sequence-distribution` in the [dedicated AIPerf Job](../../k8s/gpu-mps/pd/benchmark.yaml) to the wanted distribution, deploy the mode to compare, then run it. For example, `704,16:100` is long-input, short-output load.
+Change `--sequence-distribution` in the [dedicated AIPerf Job](../../k8s/aiperf/profiles/pd.yaml) to the wanted distribution, deploy the mode to compare, then run it. For example, `704,16:100` is long-input, short-output load.
 
 ```sh
 k() { GPU_SHARING=mps ./scripts/local-k8s-gpu.sh kubectl -n pd-comparison "$@"; }
 k delete job pd-benchmark --ignore-not-found
-k apply -f k8s/gpu-mps/pd/benchmark.yaml
+GPU_SHARING=mps LOCAL_K8S_SCRIPT=./scripts/local-k8s-gpu.sh ./scripts/k8s.sh apply k8s/aiperf/profiles/pd.yaml --show-only templates/pvc.yaml --show-only templates/job.yaml
 k wait --for=condition=complete job/pd-benchmark --timeout=14400s
 k logs job/pd-benchmark
-k apply -f k8s/gpu-mps/pd/results.yaml
+GPU_SHARING=mps LOCAL_K8S_SCRIPT=./scripts/local-k8s-gpu.sh ./scripts/k8s.sh apply k8s/aiperf/profiles/pd.yaml --show-only templates/reader.yaml
 k wait --for=condition=Ready pod/pd-results --timeout=120s
 k cp pd-results:/results reports/pd-manual
 ```
@@ -129,8 +129,8 @@ This implementation measures HTTP KV transfer through CPU memory. Do not directl
 
 ## Configuration and verification
 
-- Common token and queue limits: [base/kustomization.yaml](../../k8s/gpu-mps/pd/base/kustomization.yaml)
-- GPU resources, model mounts, and roles: [aggregation workers](../../k8s/gpu-mps/pd/aggregated/workers.yaml), [disaggregation workers](../../k8s/gpu-mps/pd/disaggregated/workers.yaml)
+- Common token and queue limits: [pd/values.yaml](../../k8s/pd/values.yaml)
+- GPU resources, model mounts, and roles: [workers](../../k8s/pd/templates/workers.yaml)
 - Engine, internal API, and router: [src/transformer/pd](../../src/transformer/pd)
 
 A small Llama model in a CPU environment can also verify state transfer and output equivalence.
@@ -139,8 +139,8 @@ A small Llama model in a CPU environment can also verify state transfer and outp
 python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
 python -m pip install -r src/transformer/requirements.txt -r src/transformer/pd/requirements.txt pyyaml
 python -m unittest discover -s tests -p 'test_pd*.py' -v
-kubectl kustomize k8s/gpu-mps/pd/aggregated
-kubectl kustomize k8s/gpu-mps/pd/disaggregated
+./scripts/render-k8s.sh k8s/pd/profiles/mps-2-aggregated.yaml
+./scripts/render-k8s.sh k8s/pd/profiles/mps-2-disaggregated.yaml
 ```
 
 After copying results to the host, shut down. Deleting the namespace also deletes result PVCs.

@@ -35,7 +35,7 @@ class SuiteTests(unittest.TestCase):
             options = dict(zip(command[2::2], command[3::2], strict=True))
             self.assertEqual(options["--backend"], "transformers")
             self.assertEqual(options["--image"], f"local/transformers-{case['variant']}:test")
-            self.assertEqual(options["--manifests"], str(suite.ROOT / f"k8s/transformers-{case['variant']}"))
+            self.assertEqual(options["--manifests"], str(suite.ROOT / f"k8s/inference/profiles/transformers-{case['variant']}-cpu.yaml"))
             self.assertEqual(options["--deployment"], "transformers-base")
             self.assertEqual(options["--api-url"], "http://transformers-base:8000")
             self.assertEqual(options["--cache-policy"], case["cache_policy"])
@@ -109,7 +109,7 @@ class SuiteTests(unittest.TestCase):
             command = suite.case_command(case, metadata, Path("reports"))
             options = dict(zip(command[2::2], command[3::2], strict=True))
             self.assertEqual(options["--image"], f"local/{case['variant']}-llamacpp:test")
-            self.assertEqual(options["--manifests"], str(suite.ROOT / f"k8s/{case['variant']}-llamacpp"))
+            self.assertEqual(options["--manifests"], str(suite.ROOT / f"k8s/inference/profiles/{case['variant']}-llamacpp-cpu.yaml"))
             self.assertEqual(options["--deployment"], "base-llamacpp")
             self.assertEqual(options["--api-url"], "http://base-llamacpp:8000")
 

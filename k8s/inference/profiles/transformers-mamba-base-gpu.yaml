@@ -1,0 +1,41 @@
+name: transformers-mamba-base
+pod:
+  volumes:
+  - name: model
+    hostPath:
+      path: /models/mamba-130m
+      type: Directory
+  - name: tmp
+    emptyDir:
+      sizeLimit: 1Gi
+  runtimeClassName: nvidia
+container:
+  image: local/transformers-mamba-base-gpu:0.1.0
+  args:
+  - --model
+  - /model
+  - --served-model-name
+  - state-spaces/mamba-130m-hf
+  - --n-threads
+  - '4'
+  - --dtype
+  - float16
+  - --n-ctx
+  - '1024'
+  - --max-input-tokens
+  - '768'
+  - --max-output-tokens
+  - '128'
+  - --default-output-tokens
+  - '32'
+  - --device
+  - cuda
+  resources:
+    requests:
+      cpu: '4'
+      memory: 4Gi
+      nvidia.com/gpu: 1
+    limits:
+      cpu: '4'
+      memory: 4Gi
+      nvidia.com/gpu: 1

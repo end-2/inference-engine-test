@@ -114,7 +114,7 @@ RAM 예산은 실행 중인 모델 KV, 역직렬화 버퍼, Python 인덱스를 
 make download-model
 ./scripts/local-k8s.sh up
 make build-image load-image
-./scripts/local-k8s.sh kubectl apply -f k8s/transformers-base/
+./scripts/k8s.sh apply k8s/inference/profiles/transformers-base-cpu.yaml
 ./scripts/local-k8s.sh kubectl rollout status deployment/transformers-base --timeout=300s
 ./scripts/local-k8s.sh kubectl port-forward service/transformers-base 8000:8000
 ```
@@ -123,21 +123,21 @@ make build-image load-image
 
 ```sh
 make build-image load-image VARIANT=transformers-enhanced-batch
-./scripts/local-k8s.sh kubectl apply -f k8s/transformers-enhanced-batch/
+./scripts/k8s.sh apply k8s/inference/profiles/transformers-enhanced-batch-cpu.yaml
 
 make build-image load-image VARIANT=transformers-enhanced-cache
-./scripts/local-k8s.sh kubectl apply -f k8s/transformers-enhanced-cache/
+./scripts/k8s.sh apply k8s/inference/profiles/transformers-enhanced-cache-cpu.yaml
 ```
 
 세 구성 중 하나만 선택해 적용합니다. 같은 `Deployment/transformers-base`와 `Service/transformers-base`를 교체하며, 다른 구현으로 전환해도 캐시 PVC는 유지됩니다. 성능 측정 시 같은 노드의 다른 추론 작업을 함께 실행하지 않습니다.
 
-배포 전에는 `./scripts/local-k8s.sh kubectl apply --dry-run=server -f k8s/transformers-base/`로 API 서버 검증을 실행할 수 있습니다. 위 명령은 매니페스트의 기본 이미지 태그를 사용합니다. 다른 `IMAGE_TAG`로 빌드했다면 선택한 `deployment.yaml`의 `image`도 같은 태그로 맞춥니다.
+배포 전에는 `./scripts/render-k8s.sh k8s/inference/profiles/transformers-base-cpu.yaml > /tmp/inference.yaml && ./scripts/local-k8s.sh kubectl apply --dry-run=server -f /tmp/inference.yaml`로 API 서버 검증을 실행할 수 있습니다. 위 명령은 매니페스트의 기본 이미지 태그를 사용합니다. 다른 `IMAGE_TAG`로 빌드했다면 선택한 프로필의 `container.image`도 같은 태그로 맞춥니다.
 
 CPU, 메모리와 `--n-threads`는 각 Deployment에서 설정합니다.
 
-모델은 kind 노드의 `/models/smollm2-135m`에서 `/model`로 읽기 전용 마운트합니다. 캐시 구현은 [전용 PVC](../../k8s/transformers-enhanced-cache/cache.yaml)를 `/cache`에 연결하며 클러스터의 기본 StorageClass가 필요합니다.
+모델은 kind 노드의 `/models/smollm2-135m`에서 `/model`로 읽기 전용 마운트합니다. 캐시 구현은 [전용 PVC](../../k8s/inference/profiles/transformers-enhanced-cache-cpu.yaml)를 `/cache`에 연결하며 클러스터의 기본 StorageClass가 필요합니다.
 
-측정 Pod의 CPU와 메모리는 requests와 limits를 동일하게 설정합니다. 실제 자원값은 [base Deployment](../../k8s/transformers-base/deployment.yaml)에서 확인할 수 있습니다.
+측정 Pod의 CPU와 메모리는 requests와 limits를 동일하게 설정합니다. 실제 자원값은 [base Deployment](../../k8s/inference/values.yaml)에서 확인할 수 있습니다.
 
 ### 검증
 
@@ -182,7 +182,7 @@ Transformers에서 llama.cpp로 전환하려면 실행 중인 벤치마크를 �
 make download-model VARIANT=base-llamacpp
 make up
 make build-image load-image VARIANT=base-llamacpp
-./scripts/local-k8s.sh kubectl apply -f k8s/base-llamacpp/
+./scripts/k8s.sh apply k8s/inference/profiles/base-llamacpp-cpu.yaml
 ```
 
 위 배포 절차를 완료한 뒤 서버 준비를 기다리고 포트를 연결합니다.
@@ -206,7 +206,7 @@ curl http://127.0.0.1:8000/v1/chat/completions \
 
 ### 실행과 길이 제한
 
-서버 옵션은 `PYTHONPATH=src python -m llamacpp.base.server --help`, 배포 값은 [Deployment](../../k8s/base-llamacpp/deployment.yaml)에서 확인할 수 있습니다.
+서버 옵션은 `PYTHONPATH=src python -m llamacpp.base.server --help`, 배포 값은 [Deployment](../../k8s/inference/profiles/base-llamacpp-cpu.yaml)에서 확인할 수 있습니다.
 
 프롬프트는 GGUF 채팅 템플릿을 적용한 뒤 토큰화합니다. 입력 제한, 출력 제한 또는 입력과 요청 출력의 합이 컨텍스트 크기를 넘으면 HTTP 400을 반환하며 길이를 자동으로 줄이지 않습니다.
 
@@ -252,7 +252,7 @@ base 배포에서 모델과 클러스터를 준비한 뒤 선택한 이미지를
 
 ```sh
 make build-image load-image VARIANT=enhanced-batch-llamacpp
-./scripts/local-k8s.sh kubectl apply -f k8s/enhanced-batch-llamacpp/
+./scripts/k8s.sh apply k8s/inference/profiles/enhanced-batch-llamacpp-cpu.yaml
 ./scripts/local-k8s.sh kubectl rollout status deployment/base-llamacpp --timeout=300s
 ```
 
@@ -281,7 +281,7 @@ HTTP 작업자 스레드는 스케줄러의 결과를 기다립니다. 모델과
 
 native KV 공간은 `n_ctx × max_parallel`을 기준으로 할당하며, 라이브러리의 정렬 때문에 실제 크기는 늘어날 수 있습니다. 배칭 버전은 요청 간 prefix 캐시를 유지하지 않습니다.
 
-기본값은 `PYTHONPATH=src python -m llamacpp.enhanced.batch.server --help`, 배포 값은 [Deployment](../../k8s/enhanced-batch-llamacpp/deployment.yaml)에서 확인할 수 있습니다.
+기본값은 `PYTHONPATH=src python -m llamacpp.enhanced.batch.server --help`, 배포 값은 [Deployment](../../k8s/inference/profiles/enhanced-batch-llamacpp-cpu.yaml)에서 확인할 수 있습니다.
 
 ### RAM과 디스크 계층형 캐시
 
@@ -309,7 +309,7 @@ RAM 예산에는 Python 인덱스, 컨테이너와 복원 중 임시 버퍼가 �
 
 기본값은 `PYTHONPATH=src python -m llamacpp.enhanced.cache.server --help`에서 확인할 수 있습니다.
 
-[캐시 Deployment](../../k8s/enhanced-cache-llamacpp/deployment.yaml)는 `/cache`에 [PVC](../../k8s/enhanced-cache-llamacpp/cache.yaml)를 마운트합니다. 다른 구현으로 전환하거나 추론 Pod를 재시작해도 PVC는 유지됩니다. 클러스터의 기본 StorageClass가 필요합니다.
+[캐시 Deployment](../../k8s/inference/profiles/enhanced-cache-llamacpp-cpu.yaml)는 `/cache`에 [PVC](../../k8s/inference/profiles/enhanced-cache-llamacpp-cpu.yaml)를 마운트합니다. 다른 구현으로 전환하거나 추론 Pod를 재시작해도 PVC는 유지됩니다. 클러스터의 기본 StorageClass가 필요합니다.
 
 ### llama.cpp enhanced 검증
 

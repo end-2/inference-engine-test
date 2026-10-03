@@ -1,0 +1,47 @@
+name: base-llamacpp
+podLabels:
+  inference-variant: enhanced-batch
+pod:
+  volumes:
+  - name: model
+    hostPath:
+      path: /models/qwen2.5-0.5b
+      type: Directory
+  - name: tmp
+    emptyDir:
+      sizeLimit: 1Gi
+  runtimeClassName: nvidia
+container:
+  image: local/enhanced-batch-llamacpp-gpu:0.1.0
+  args:
+  - --model
+  - /model/qwen2.5-0.5b-instruct-q4_k_m.gguf
+  - --served-model-name
+  - Qwen/Qwen2.5-0.5B-Instruct
+  - --n-threads
+  - '4'
+  - --n-threads-batch
+  - '4'
+  - --max-parallel
+  - '8'
+  - --prefill-chunk
+  - '64'
+  - --n-ctx
+  - '1024'
+  - --max-input-tokens
+  - '768'
+  - --max-output-tokens
+  - '128'
+  - --default-output-tokens
+  - '32'
+  - --n-gpu-layers
+  - '-1'
+  resources:
+    requests:
+      cpu: '4'
+      memory: 4Gi
+      nvidia.com/gpu: 1
+    limits:
+      cpu: '4'
+      memory: 4Gi
+      nvidia.com/gpu: 1

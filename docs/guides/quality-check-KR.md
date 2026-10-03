@@ -15,7 +15,7 @@ Docker와 kind를 사용하는 아래 예제는 SmolLM2 base 서버를 준비하
 make download-model VARIANT=transformers-base
 make up
 make build-image load-image VARIANT=transformers-base
-./scripts/local-k8s.sh kubectl apply -f k8s/transformers-base
+./scripts/k8s.sh apply k8s/inference/profiles/transformers-base-cpu.yaml
 ./scripts/local-k8s.sh kubectl rollout status deployment/transformers-base --timeout=300s
 ```
 

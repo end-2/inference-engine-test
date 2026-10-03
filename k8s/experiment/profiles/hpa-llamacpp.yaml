@@ -1,0 +1,4 @@
+namespace: hpa-test-llamacpp
+scenario: hpa
+backend: llamacpp
+loadReplicas: 0

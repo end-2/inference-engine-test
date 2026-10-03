@@ -22,7 +22,7 @@ SmolLM2의 Transformers CPU base 서버 두 개에 AIPerf 부하를 보내면서
 
 kind 노드는 같은 Docker 호스트 자원을 공유하므로 측정 중에는 다른 부하 실험을 중지합니다.
 
-설정 원본은 [availability 매니페스트](../../k8s/availability-test-transformers/), [멀티 노드 토폴로지](../../config/cluster/kind-multi-node.yaml), [모델 snapshot](../../config/models/smollm2-135m-transformers.env)입니다.
+설정 원본은 [availability 매니페스트](../../k8s/experiment/profiles/availability-transformers.yaml), [멀티 노드 토폴로지](../../config/cluster/kind-multi-node.yaml), [모델 snapshot](../../config/models/smollm2-135m-transformers.env)입니다.
 
 ## 준비
 
@@ -46,11 +46,10 @@ KIND_CONFIG=config/cluster/kind-multi-node.yaml ./scripts/local-k8s.sh up
 
 ## 배포와 실행
 
-같은 클러스터에서 HPA 테스트를 실행했다면 먼저 결과를 내보내고 `./scripts/local-k8s.sh kubectl delete -f k8s/hpa-test-transformers`로 정리합니다. 이 명령은 해당 테스트 PVC도 삭제합니다.
+같은 클러스터에서 HPA 테스트를 실행했다면 먼저 결과를 내보내고 `./scripts/k8s.sh delete k8s/experiment/profiles/hpa-transformers.yaml`로 정리합니다. 이 명령은 해당 테스트 PVC도 삭제합니다.
 
 ```sh
-./scripts/local-k8s.sh kubectl apply -f k8s/availability-test-transformers/namespace.yaml
-./scripts/local-k8s.sh kubectl apply -f k8s/availability-test-transformers
+./scripts/k8s.sh apply k8s/experiment/profiles/availability-transformers.yaml
 for deployment in transformers-base-metric prometheus kube-state-metrics grafana; do
   ./scripts/local-k8s.sh kubectl -n availability-test-transformers rollout status "deployment/$deployment" --timeout=300s
 done
@@ -111,7 +110,7 @@ PYTHONPATH=src python3 -m unittest discover -s tests -p 'test_transformers_metri
 python3 -m unittest discover -s tests -p 'test_availability_runner_transformers.py'
 sh tests/test-hpa-manifests-transformers.sh
 # 원본 결과를 수집한 뒤 테스트 namespace와 PVC 정리
-./scripts/local-k8s.sh kubectl delete -f k8s/availability-test-transformers
+./scripts/k8s.sh delete k8s/experiment/profiles/availability-transformers.yaml
 ```
 
 metric 단위 테스트에는 Transformers 런타임과 `src/transformer/base_metric/requirements.txt`의 의존성이 필요합니다. 클러스터를 삭제하려면 같은 `CLUSTER_NAME`으로 `./scripts/local-k8s.sh down`을 실행합니다. 호스트에 수집된 결과와 모델은 유지됩니다.
@@ -125,12 +124,12 @@ metric 단위 테스트에는 Transformers 런타임과 `src/transformer/base_me
 | 클러스터 예시 | `transformers-tests` | `availability-test-llamacpp` |
 | 모델 준비 | `./scripts/download-transformers-model.sh` | `./scripts/download-model-llamacpp.sh`와 `./scripts/download-tokenizer-llamacpp.sh` |
 | 추론 이미지와 Deployment | `transformers-base-metric` | `base-metric-llamacpp` |
-| 매니페스트 | `k8s/availability-test-transformers` | `k8s/availability-test-llamacpp` |
+| 매니페스트 | `k8s/experiment/profiles/availability-transformers.yaml` | `k8s/experiment/profiles/availability-llamacpp.yaml` |
 | namespace와 대시보드 | `availability-test-transformers` | `availability-test-llamacpp` |
 | 실행 스크립트 | `scripts/run-availability-test-transformers.py` | `scripts/run-availability-test-llamacpp.py` |
 | 결과 루트 | `reports/transformers/` | `reports/llamacpp/` |
 
-모델은 [Qwen GGUF 설정](../../config/models/qwen2.5-0.5b-gguf-llamacpp.env)을 사용하며 서버와 AIPerf의 모델 및 토크나이저를 맞춥니다. 자원과 부하 설정은 [llama.cpp 매니페스트](../../k8s/availability-test-llamacpp/)를 기준으로 합니다. 같은 클러스터의 다른 테스트를 정리할 때도 해당 엔진의 namespace와 매니페스트를 선택합니다.
+모델은 [Qwen GGUF 설정](../../config/models/qwen2.5-0.5b-gguf-llamacpp.env)을 사용하며 서버와 AIPerf의 모델 및 토크나이저를 맞춥니다. 자원과 부하 설정은 [llama.cpp 매니페스트](../../k8s/experiment/profiles/availability-llamacpp.yaml)를 기준으로 합니다. 같은 클러스터의 다른 테스트를 정리할 때도 해당 엔진의 namespace와 매니페스트를 선택합니다.
 
 최초 배포 후와 재실행 전에 아래 명령으로 AIPerf와 renderer를 중지합니다. llama.cpp 매니페스트의 AIPerf는 기본 replicas가 1이므로 첫 실행에도 이 단계가 필요합니다. 각 시나리오는 독립 실행하며 순서에 의존하지 않습니다.
 

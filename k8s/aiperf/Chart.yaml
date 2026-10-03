@@ -1,0 +1,5 @@
+apiVersion: v2
+name: aiperf
+description: AIPerf benchmark Jobs and result storage
+type: application
+version: 0.1.0
