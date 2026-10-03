@@ -4,7 +4,7 @@ SmolLM2의 Transformers CPU base 서버 두 개에 AIPerf 부하를 보내면서
 
 기본 절차는 Transformers CPU를 사용합니다. llama.cpp를 사용할 때는 [엔진별 변경 사항](#llamacpp)을 적용하며 관찰과 판정 기준은 동일합니다.
 
-추론 구현과 API는 [추론 엔진 가이드](inference-engine.md), 매니페스트 적용과 ConfigMap 변경 방법은 [매니페스트 관리](manifests.md)를 참고합니다.
+추론 구현과 API는 [추론 엔진 가이드](inference-engine-KR.md), 매니페스트 적용과 ConfigMap 변경 방법은 [매니페스트 관리](manifests-KR.md)를 참고합니다.
 
 ## 구성
 
@@ -76,7 +76,7 @@ python3 scripts/run-availability-test-transformers.py --scenario sigkill-60s
 
 ## 결과와 관찰
 
-원본은 `reports/transformers/availability-<scenario>-<UTC>/`에 저장합니다. `run.json`, `actions.jsonl`, Kubernetes와 Docker 관측, 서버 로그, `aiperf/` 요청별 JSONL과 집계, Prometheus 시계열을 포함합니다. 요약 보고서는 [Transformers 결과 목록](../reports/transformers/README.md)에 있습니다.
+원본은 `reports/transformers/availability-<scenario>-<UTC>/`에 저장합니다. `run.json`, `actions.jsonl`, Kubernetes와 Docker 관측, 서버 로그, `aiperf/` 요청별 JSONL과 집계, Prometheus 시계열을 포함합니다. 요약 보고서는 [Transformers 결과 목록](../reports/transformers/README-KR.md)에 있습니다.
 
 Prometheus, Grafana와 AIPerf 결과는 monitor 노드의 PVC에 저장합니다. 기본 StorageClass와 모니터링 이미지 다운로드가 필요하며, 클러스터 삭제 시 PVC 데이터도 사라집니다. 보고서와 그래프는 실행 스크립트가 자동 생성하지 않습니다.
 

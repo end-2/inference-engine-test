@@ -85,7 +85,7 @@ New requests are not added to a batch in progress. New requests wait for the nex
 
 One worker runs model operations and HTTP threads wait for results. Worker errors propagate to waiting requests, and health and readiness fail.
 
-GPU batch uses the same worker. Requests with `temperature=0` and `ignore_eos=true` reuse decode operations through per-batch-width CUDA Graphs. Other sampling options use the regular GPU batch path. Build the GPU image with `make build-image DEVICE=gpu VARIANT=transformers-enhanced-batch`.
+GPU batch uses the same worker. With the default `--cuda-graph auto`, eligible requests with `temperature=0` and `ignore_eos=true` reuse decode operations through per-batch-width CUDA Graphs. Other requests use eager execution. `off` disables Graph, and `required` rejects incompatible requests. See [feature experiments](feature-experiments.md#cuda-graph-selection-and-evidence) for context limits and execution-path verification. Build the GPU image with `make build-image DEVICE=gpu VARIANT=transformers-enhanced-batch`.
 
 ### Prefix KV cache
 
@@ -121,7 +121,7 @@ make build-image load-image
 ./scripts/local-k8s.sh kubectl port-forward service/transformers-base 8000:8000
 ```
 
-Each directory has Deployment and Service manifests; cache also includes a PVC. Switch to batching and cache with the following commands.
+The shared `k8s/inference` chart renders a Deployment and Service from each selected profile; cache profiles also render a PVC. Switch to batching and cache with the following commands.
 
 ```sh
 make build-image load-image VARIANT=transformers-enhanced-batch

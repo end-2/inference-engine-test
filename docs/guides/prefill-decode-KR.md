@@ -2,9 +2,9 @@
 
 SmolLM2를 MPS 슬롯 2개에서 실행하며 aggregation과 disaggregation을 비교합니다. 두 모드는 [같은 엔진](../../src/huggingface/llama/inference_distributed/engine.py), 모델, FP16, greedy decoding, Pod별 batch 1을 사용합니다. Prefix cache와 continuous batching은 사용하지 않습니다.
 
-[실험 종합](../reports/gpu/pd/README.md)에 2분할, 4분할과 스케줄러 결과가 있습니다. [2분할 실측 보고서](../reports/gpu/pd/benchmark-20260930/summary.md)는 중단된 실행 중 완료한 1회의 workload 비교입니다.
+[실험 종합](../reports/gpu/pd/README-KR.md)에 2분할, 4분할과 스케줄러 결과가 있습니다. [2분할 실측 보고서](../reports/gpu/pd/benchmark-20260930/summary-KR.md)는 중단된 실행 중 완료한 1회의 workload 비교입니다.
 
-기존 2분할과 별도로 Aggregation 4개, Prefill 1개와 Decode 3개를 실행하려면 [4분할 PD 가이드](prefill-decode-4.md)를 따릅니다. 아래 명령의 기본값은 기존 `MPS_REPLICAS=2`입니다.
+기존 2분할과 별도로 Aggregation 4개, Prefill 1개와 Decode 3개를 실행하려면 [4분할 PD 가이드](prefill-decode-4-KR.md)를 따릅니다. 아래 명령의 기본값은 기존 `MPS_REPLICAS=2`입니다.
 
 | 구성 | Aggregation | Disaggregation |
 | --- | --- | --- |
@@ -26,7 +26,7 @@ SmolLM2를 MPS 슬롯 2개에서 실행하며 aggregation과 disaggregation을 �
 
 ## 실행
 
-[MPS 가이드](gpu-mps.md)에 따라 기존 GPU 워크로드를 중지하고 MPS 슬롯 2개를 비웁니다. `transformers-mps` 예제를 배포했다면 먼저 replicas를 0으로 변경합니다. 물리 GPU는 하나이며 두 개의 독립 GPU를 비교하는 실험은 아닙니다.
+[MPS 가이드](gpu-mps-KR.md)에 따라 기존 GPU 워크로드를 중지하고 MPS 슬롯 2개를 비웁니다. `transformers-mps` 예제를 배포했다면 먼저 replicas를 0으로 변경합니다. 물리 GPU는 하나이며 두 개의 독립 GPU를 비교하는 실험은 아닙니다.
 
 ```sh
 make download-model
@@ -57,7 +57,7 @@ curl -sS http://127.0.0.1:8000/v1/chat/completions \
 make pd-deploy PD_MODE=disaggregated
 ```
 
-이미지 기본 태그는 manifests에 명시되어 있습니다. `IMAGE_TAG`를 변경하면 각 overlay의 Kustomize `images` 설정도 함께 변경해야 합니다.
+기본 이미지는 [values.yaml](../../k8s/inference-distributed/values.yaml)의 `image`에 정의하며 scheduled 프로필은 이를 덮어씁니다. 빌드와 로드에 사용한 `IMAGE_TAG`에 맞춰 기본값과 선택한 프로필의 재정의 값을 수정합니다. `pd-deploy`는 Helm 프로필을 읽으며 `IMAGE_TAG`를 배포 설정으로 적용하지 않습니다.
 
 ## 여러 workload 자동 비교
 
@@ -84,7 +84,7 @@ python3 scripts/report-pd.py docs/reports/gpu/pd/pd-<시각>
 
 처리량과 평균 지연은 반복별 지표의 산술 평균이며, 표준편차는 반복 간 sample SD입니다. p95는 같은 조건의 모든 반복 요청을 합친 nearest-rank입니다. TTFT와 ITL은 streaming 응답 기준이며 TextStreamer의 단어 버퍼 영향을 포함합니다. 작은 차이나 꼬리 지연을 정밀하게 비교하려면 workload 설정의 요청 수와 반복 횟수를 늘립니다.
 
-보고서 생성, SLO별 goodput 분석과 Git 보존 파일은 [실험 결과 정리 가이드](experiment-results.md)를 참고합니다.
+보고서 생성, SLO별 goodput 분석과 Git 보존 파일은 [실험 결과 정리 가이드](experiment-results-KR.md)를 참고합니다.
 
 실행기는 기존 클러스터를 사용하며 클러스터 생성이나 외부 GPU 워크로드 중지는 수행하지 않습니다. 완료 후 마지막 mode의 추론 Pod는 유지하고, 생성한 Job과 결과 읽기용 Pod는 정리합니다. 결과 PVC는 유지합니다. 기존 `make benchmark`와 `make benchmark-suite`는 독점 GPU 측정용입니다.
 

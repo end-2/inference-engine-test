@@ -21,7 +21,7 @@ CPU 전용 kind 클러스터와 추론, 측정 워크로드에 필요한 호스�
 
 [versions.env](../../config/versions.env)의 kind, kubectl과 노드 이미지 조합을 사용합니다. 노드 이미지는 호스트와 같은 CPU 아키텍처여야 합니다. 버전을 변경할 때는 [kind 릴리스의 지원 이미지](https://github.com/kubernetes-sigs/kind/releases)와 [kubectl 버전 차이 정책](https://kubernetes.io/releases/version-skew-policy/#kubectl)을 확인합니다.
 
-CPU 클러스터는 `local-k8s.sh up`으로 생성하며 GPU 설정은 포함하지 않습니다. `up`은 호스트 모델 디렉터리를 노드의 `/models`에 읽기 전용으로 마운트합니다. GPU 클러스터는 [벤치마크 가이드](benchmark.md#gpu-벤치마크)를 참고합니다. 모델 다운로드와 경로 설정은 [모델 볼륨 가이드](models.md), 클러스터 설정 변경은 [클러스터 가이드](local-k8s.md)를 참고합니다.
+CPU 클러스터는 `local-k8s.sh up`으로 생성하며 GPU 설정은 포함하지 않습니다. `up`은 호스트 모델 디렉터리를 노드의 `/models`에 읽기 전용으로 마운트합니다. GPU 클러스터는 [벤치마크 가이드](benchmark-KR.md#gpu-벤치마크)를 참고합니다. 모델 다운로드와 경로 설정은 [모델 볼륨 가이드](models-KR.md), 클러스터 설정 변경은 [클러스터 가이드](local-k8s-KR.md)를 참고합니다.
 
 ## 작업별 추가 도구
 
@@ -30,7 +30,9 @@ CPU 클러스터는 `local-k8s.sh up`으로 생성하며 GPU 설정은 포함하
 | kind, kubectl과 Helm 설치 | 다운로드용 `curl` 또는 `wget`, 체크섬 검증용 `sha256sum` 또는 `shasum`, Helm 압축 해제용 gzip 지원 `tar` |
 | 모델과 토크나이저 다운로드 | `curl`, 체크섬 검증용 `sha256sum` 또는 `shasum` |
 | 이미지 빌드 | `docker build` |
-| [벤치마크 자동 측정](benchmark.md#pod-재시작을-포함한-자동-측정) | Python 3.10 이상 |
+| [벤치마크 자동 측정](benchmark-KR.md#pod-재시작을-포함한-자동-측정) | Python 3.10 이상 |
+| 로컬 추론과 엔진 테스트 | Python 3.12 환경과 [추론 가이드](inference-engine-KR.md)의 선택한 엔진 의존성 |
+| 분산 Prefill/Decode runner와 보고서 | PyYAML이 설치된 Python 환경. 보고서 그림에는 matplotlib도 필요하며 [PD 가이드](prefill-decode-KR.md) 참고 |
 | Makefile 명령 | `make`. 각 스크립트를 직접 실행할 때는 불필요 |
 
 ## CPU, 메모리와 디스크
@@ -39,7 +41,7 @@ CPU 클러스터는 `local-k8s.sh up`으로 생성하며 GPU 설정은 포함하
 
 Docker를 VM에서 실행하면 VM에 할당한 자원도 확인합니다. 측정 자원은 실행 환경에 맞춰 조정하되 `requests=limits`를 유지합니다.
 
-디스크에는 [모델 파일](models.md#다운로드), Docker 이미지와 빌드 캐시, kind 노드의 이미지 사본, 임시 아카이브와 결과를 저장할 공간이 필요합니다. `TMPDIR`와 Docker 데이터 경로의 여유 공간도 확인합니다.
+디스크에는 [모델 파일](models-KR.md#다운로드), Docker 이미지와 빌드 캐시, kind 노드의 이미지 사본, 임시 아카이브와 결과를 저장할 공간이 필요합니다. `TMPDIR`와 Docker 데이터 경로의 여유 공간도 확인합니다.
 
 ## 네트워크
 
@@ -54,9 +56,9 @@ Docker를 VM에서 실행하면 VM에 할당한 자원도 확인합니다. 측�
 
 프록시나 방화벽 환경에서는 리다이렉트되는 다운로드 호스트와 CDN도 허용해야 합니다.
 
-오프라인 실행에는 [도구와 이미지](local-k8s.md#환경-준비), 추론용 [모델](models.md), AIPerf 측정용 [토크나이저](aiperf.md#토크나이저-준비)를 미리 준비합니다.
+오프라인 실행에는 [도구와 이미지](local-k8s-KR.md#환경-준비), 추론용 [모델](models-KR.md), AIPerf 측정용 [토크나이저](aiperf-KR.md#토크나이저-준비)를 미리 준비합니다.
 
-기본 네트워크는 IPv4이며 Kubernetes API는 로컬 `127.0.0.1`에 바인딩됩니다. Docker 네트워크와 클러스터 DNS가 동작하고 Pod 및 Service 대역이 호스트나 VPN 대역과 충돌하지 않아야 합니다. 원격 접속이나 IPv6 구성이 필요하면 [클러스터 설정](local-k8s.md#클러스터-설정)을 변경해야 합니다.
+기본 네트워크는 IPv4이며 Kubernetes API는 로컬 `127.0.0.1`에 바인딩됩니다. Docker 네트워크와 클러스터 DNS가 동작하고 Pod 및 Service 대역이 호스트나 VPN 대역과 충돌하지 않아야 합니다. 원격 접속이나 IPv6 구성이 필요하면 [클러스터 설정](local-k8s-KR.md#클러스터-설정)을 변경해야 합니다.
 
 ## 실행 전 확인
 
@@ -70,4 +72,4 @@ uname -m
 
 `doctor`는 도구 존재와 Docker 접근을 확인하지만 모든 버전 조합과 파일 권한을 보장하지는 않습니다.
 
-기본 실험은 [빠른 시작](../../README.md#빠른-시작), 서버만 배포하는 방법은 [Transformers 가이드](inference-engine.md#docker와-kubernetes)를 따릅니다. 모델 없이 클러스터와 DNS만 확인하려면 `scripts/local-k8s.sh up` 후 `scripts/local-k8s.sh test`를 실행합니다.
+기본 실험은 [빠른 시작](../../README-KR.md#빠른-시작), 서버만 배포하는 방법은 [Transformers 가이드](inference-engine-KR.md#docker와-kubernetes)를 따릅니다. 모델 없이 클러스터와 DNS만 확인하려면 `scripts/local-k8s.sh up` 후 `scripts/local-k8s.sh test`를 실행합니다.

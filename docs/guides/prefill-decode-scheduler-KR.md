@@ -1,8 +1,8 @@
 # Token budget 스케줄러 검증
 
-기존 PD worker에 `--scheduler token-budget`을 추가하면 여러 요청의 decode와 chunked prefill을 한 번의 모델 forward로 처리합니다. 기본값은 기존 `serial`입니다. MPS 2분할과 4분할의 기존 manifest, 이미지 태그와 namespace는 유지합니다.
+기존 PD worker에 `--scheduler token-budget`을 추가하면 여러 요청의 decode와 chunked prefill을 한 번의 모델 forward로 처리합니다. Worker의 기본 스케줄러는 `serial`입니다. 전용 4슬롯 Helm 프로필은 `token-budget`, 이미지 태그 `token-budget-v1`, namespace `pd-comparison-4-scheduled`를 선택합니다.
 
-[실제 GPU 검증 결과](../reports/gpu/pd/scheduler-20261002/analysis.md)에 1,920개 요청의 비교와 TPOT SLO를 적용한 TTFT 차이를 기록했습니다.
+[실제 GPU 검증 결과](../reports/gpu/pd/scheduler-20261002/analysis-KR.md)에 1,920개 요청의 비교와 TPOT SLO를 적용한 TTFT 차이를 기록했습니다.
 
 ## 스케줄링 규칙
 
@@ -17,7 +17,7 @@
 
 ## 실행
 
-[MPS 4분할 가이드](prefill-decode-4.md)의 클러스터와 모델을 준비합니다. 새 구성도 GPU share 4개를 모두 사용하므로 같은 물리 GPU에서 기존 PD worker와 동시에 실행할 수 없습니다.
+[MPS 4분할 가이드](prefill-decode-4-KR.md)의 클러스터와 모델을 준비합니다. 새 구성도 GPU share 4개를 모두 사용하므로 같은 물리 GPU에서 기존 PD worker와 동시에 실행할 수 없습니다.
 
 ```sh
 DEVICE=gpu IMAGE_TAG=token-budget-v1 ./scripts/build-inference-images.sh transformers-pd

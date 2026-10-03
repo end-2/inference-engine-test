@@ -1,8 +1,8 @@
 # 로컬 모델 관리
 
-추론에 사용할 SmolLM2-135M-Instruct와 Qwen2.5-0.5B-Instruct를 다운로드하고 SHA-256을 검증합니다. 모델은 호스트에 저장하고 kind 노드와 Pod에 읽기 전용으로 마운트합니다.
+고정된 SmolLM2, Qwen2.5, Mamba와 Jamba checkpoint를 다운로드하고 SHA-256을 검증합니다. 모델은 호스트에 저장하고 kind 노드와 Pod 또는 로컬 컨테이너에 읽기 전용으로 마운트합니다.
 
-다운로드에는 `curl`, 인터넷 연결과 `sha256sum` 또는 `shasum`이 필요합니다. 디스크와 실행 자원은 [요구사항](requirements.md#cpu-메모리와-디스크)을 참고합니다.
+다운로드에는 `curl`, 인터넷 연결과 `sha256sum` 또는 `shasum`이 필요합니다. 디스크와 실행 자원은 [요구사항](requirements-KR.md#cpu-메모리와-디스크)을 참고합니다.
 
 ## 모델과 설정
 
@@ -11,6 +11,8 @@
 | 모델 | 실행 엔진 또는 용도 | 다운로드 설정과 체크섬 |
 | --- | --- | --- |
 | `HuggingFaceTB/SmolLM2-135M-Instruct` | Transformers | [설정](../../config/models/smollm2-135m-transformers.env), [파일별 SHA-256](../../config/models/smollm2-135m-transformers.sha256) |
+| `state-spaces/mamba-130m-hf` | Mamba base와 상태 캐시 | [설정](../../config/models/mamba-130m-transformers.env), [파일별 SHA-256](../../config/models/mamba-130m-transformers.sha256) |
+| `ai21labs/Jamba-tiny-dev` | Jamba base와 hybrid 엔진 비교 | [설정](../../config/models/jamba-tiny-dev-transformers.env), [파일별 SHA-256](../../config/models/jamba-tiny-dev-transformers.sha256) |
 | `Qwen/Qwen2.5-0.5B-Instruct-GGUF`, Q4_K_M | llama.cpp | [설정과 GGUF SHA-256](../../config/models/qwen2.5-0.5b-gguf-llamacpp.env) |
 | `Qwen/Qwen2.5-0.5B-Instruct` | AIPerf 토크나이저 | [설정](../../config/models/qwen2.5-0.5b-tokenizer-llamacpp.env), [파일별 SHA-256](../../config/models/qwen2.5-0.5b-tokenizer-llamacpp.sha256) |
 
@@ -43,17 +45,27 @@ make download-tokenizer VARIANT=base-llamacpp
 
 추론 서버는 GGUF 파일을 사용합니다. AIPerf 벤치마크에는 별도 토크나이저가 필요합니다. `enhanced-batch-llamacpp`와 `enhanced-cache-llamacpp`도 같은 모델을 사용합니다.
 
+### Mamba-130M과 Jamba-tiny-dev
+
+```sh
+make download-model VARIANT=transformers-mamba-base
+# 같은 동작: ./scripts/download-transformers-model.sh mamba-130m
+./scripts/download-transformers-model.sh jamba-tiny-dev
+```
+
+두 다운로드 모두 토크나이저를 포함합니다. Mamba는 `.models/mamba-130m/`과 [Mamba 벤치마크 프로필](mamba-cache-KR.md)을 사용합니다. Jamba는 `.models/jamba-tiny-dev/`와 별도의 [hybrid 엔진 벤치마크](hybrid-cache-KR.md#base와-성능-비교)를 사용합니다. Jamba는 명시한 다운로드 명령으로 준비합니다. `make download-model VARIANT=transformers-hybrid`는 기본 Transformers 모델을 선택합니다.
+
 ### 검증과 재시도
 
 모든 다운로드 스크립트는 새 파일과 기존 파일의 SHA-256을 검증합니다. 중단되면 같은 명령을 다시 실행합니다.
 
-- Qwen GGUF와 SmolLM2 다운로드는 중단된 파일을 이어받습니다.
-- SmolLM2 모델과 Qwen 토크나이저는 임시 디렉터리의 검증된 파일을 재사용하고, 전체 파일 검증 후 최종 디렉터리로 이동합니다. 토크나이저의 미완료 파일은 다시 다운로드합니다.
+- Qwen GGUF와 Hugging Face checkpoint 다운로드는 중단된 파일을 이어받습니다.
+- Hugging Face checkpoint와 Qwen 토크나이저는 임시 디렉터리의 검증된 파일을 재사용하고, 전체 파일 검증 후 최종 디렉터리로 이동합니다. Qwen 토크나이저의 미완료 파일은 다시 다운로드합니다.
 - 기존 파일의 검증에 실패하면 자동으로 덮어쓰지 않습니다. 오류에 표시된 GGUF 파일 또는 모델/토크나이저 디렉터리를 별도로 옮긴 뒤 다시 실행합니다.
 
 ## 클러스터와 볼륨 연결
 
-모델을 준비한 뒤 클러스터를 생성합니다. 클러스터 도구 설치와 설정은 [클러스터 가이드](local-k8s.md)를 참고합니다.
+모델을 준비한 뒤 클러스터를 생성합니다. 클러스터 도구 설치와 설정은 [클러스터 가이드](local-k8s-KR.md)를 참고합니다.
 
 ```sh
 make up
@@ -65,12 +77,13 @@ make up
 | --- | --- | --- | --- |
 | SmolLM2 추론 | `.models/smollm2-135m/` | `/models/smollm2-135m/` | `/model/` |
 | SmolLM2 AIPerf 토크나이저 | `.models/smollm2-135m/` | `/models/smollm2-135m/` | `/tokenizer/` |
+| Mamba 추론과 AIPerf 토크나이저 | `.models/mamba-130m/` | `/models/mamba-130m/` | 각 Pod의 `/model/`, `/tokenizer/` |
 | Qwen2.5 추론 | `.models/qwen2.5-0.5b/` | `/models/qwen2.5-0.5b/` | `/model/` |
 | Qwen2.5 AIPerf 토크나이저 | `.models/qwen2.5-0.5b/tokenizer/` | `/models/qwen2.5-0.5b/tokenizer/` | `/tokenizer/` |
 
 Transformers 서버의 `--model`은 `/model`, llama.cpp 서버의 `--model`은 `/model/qwen2.5-0.5b-instruct-q4_k_m.gguf`입니다.
 
-실제 볼륨 설정은 [Transformers Deployment](../../k8s/inference/values.yaml), [llama.cpp Deployment](../../k8s/inference/profiles/base-llamacpp-cpu.yaml)와 [AIPerf 가이드](aiperf.md)를 참고합니다. 서버 실행 방법은 [추론 엔진 가이드](inference-engine.md)에서 확인할 수 있습니다.
+실제 볼륨 설정은 [Transformers Deployment](../../k8s/inference/values.yaml), [llama.cpp Deployment](../../k8s/inference/profiles/base-llamacpp-cpu.yaml)와 [AIPerf 가이드](aiperf-KR.md)를 참고합니다. 서버 실행 방법은 [추론 엔진 가이드](inference-engine-KR.md)에서 확인할 수 있습니다.
 
 ### 저장 위치 변경
 

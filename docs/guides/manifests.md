@@ -2,7 +2,7 @@
 
 # Kubernetes manifests with Helm
 
-Every directory directly under `k8s/` is a Helm chart. Each chart keeps shared defaults in `values.yaml` and workload overrides in `profiles/*.yaml`. `make install` installs the pinned Helm version from [versions.env](../../config/versions.env). Charts have no external chart dependencies.
+Every directory directly under `k8s/` is a Helm chart. Each chart keeps shared defaults in `values.yaml`; charts with workload variants keep overrides in `profiles/*.yaml`. `make install` installs the pinned Helm version from [versions.env](../../config/versions.env). Charts have no external chart dependencies.
 
 ```text
 k8s/

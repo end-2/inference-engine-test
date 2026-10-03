@@ -2,7 +2,7 @@
 
 # Local Model Management
 
-Downloads SmolLM2-135M-Instruct and Qwen2.5-0.5B-Instruct and verifies SHA-256 checksums. Models are stored on the host and mounted read-only into kind nodes and Pods.
+Downloads the pinned SmolLM2, Qwen2.5, Mamba and Jamba checkpoints and verifies SHA-256 checksums. Models are stored on the host and mounted read-only into kind nodes and Pods or local containers.
 
 Downloads need `curl`, internet access, and `sha256sum` or `shasum`. For disk and runtime resources, see [requirements](requirements.md#cpu-memory-and-disk).
 
@@ -13,6 +13,8 @@ The default `VARIANT` for `make` is `transformers-base`. Model IDs and revisions
 | Model | Execution engine or purpose | Download configuration and checksums |
 | --- | --- | --- |
 | `HuggingFaceTB/SmolLM2-135M-Instruct` | Transformers | [Configuration](../../config/models/smollm2-135m-transformers.env), [per-file SHA-256](../../config/models/smollm2-135m-transformers.sha256) |
+| `state-spaces/mamba-130m-hf` | Mamba base and state cache | [Configuration](../../config/models/mamba-130m-transformers.env), [per-file SHA-256](../../config/models/mamba-130m-transformers.sha256) |
+| `ai21labs/Jamba-tiny-dev` | Jamba base and hybrid engine comparison | [Configuration](../../config/models/jamba-tiny-dev-transformers.env), [per-file SHA-256](../../config/models/jamba-tiny-dev-transformers.sha256) |
 | `Qwen/Qwen2.5-0.5B-Instruct-GGUF`, Q4_K_M | llama.cpp | [Configuration and GGUF SHA-256](../../config/models/qwen2.5-0.5b-gguf-llamacpp.env) |
 | `Qwen/Qwen2.5-0.5B-Instruct` | AIPerf tokenizer | [Configuration](../../config/models/qwen2.5-0.5b-tokenizer-llamacpp.env), [per-file SHA-256](../../config/models/qwen2.5-0.5b-tokenizer-llamacpp.sha256) |
 
@@ -45,12 +47,22 @@ make download-tokenizer VARIANT=base-llamacpp
 
 The inference server uses the GGUF file. AIPerf benchmarks need a separate tokenizer. `enhanced-batch-llamacpp` and `enhanced-cache-llamacpp` use the same model.
 
+### Mamba-130M and Jamba-tiny-dev
+
+```sh
+make download-model VARIANT=transformers-mamba-base
+# Direct equivalent: ./scripts/download-transformers-model.sh mamba-130m
+./scripts/download-transformers-model.sh jamba-tiny-dev
+```
+
+Both downloads include the tokenizer. Mamba uses `.models/mamba-130m/` and the [Mamba benchmark profiles](mamba-cache.md). Jamba uses `.models/jamba-tiny-dev/` and the separate [hybrid engine benchmark](hybrid-cache.md#base-and-performance-comparison). Use the explicit Jamba download command; `make download-model VARIANT=transformers-hybrid` selects the default Transformers model.
+
 ### Verification and retries
 
 All download scripts verify SHA-256 checksums of new and existing files. If interrupted, rerun the same command.
 
-- Qwen GGUF and SmolLM2 downloads resume partial files.
-- SmolLM2 model and Qwen tokenizer downloads reuse verified files in a temporary directory, then move them to the final directory after full-file verification. Incomplete tokenizer files are downloaded again.
+- Qwen GGUF and Hugging Face checkpoint downloads resume partial files.
+- Hugging Face checkpoints and Qwen tokenizer downloads reuse verified files in a temporary directory, then move them to the final directory after full-file verification. Incomplete Qwen tokenizer files are downloaded again.
 - A failed verification of an existing file does not overwrite it automatically. Move the GGUF file or model and tokenizer directories shown in the error aside, then rerun.
 
 ## Cluster and volume connections
@@ -67,6 +79,7 @@ make up
 | --- | --- | --- | --- |
 | SmolLM2 inference | `.models/smollm2-135m/` | `/models/smollm2-135m/` | `/model/` |
 | SmolLM2 AIPerf tokenizer | `.models/smollm2-135m/` | `/models/smollm2-135m/` | `/tokenizer/` |
+| Mamba inference and AIPerf tokenizer | `.models/mamba-130m/` | `/models/mamba-130m/` | `/model/`, `/tokenizer/` in their respective Pods |
 | Qwen2.5 inference | `.models/qwen2.5-0.5b/` | `/models/qwen2.5-0.5b/` | `/model/` |
 | Qwen2.5 AIPerf tokenizer | `.models/qwen2.5-0.5b/tokenizer/` | `/models/qwen2.5-0.5b/tokenizer/` | `/tokenizer/` |
 

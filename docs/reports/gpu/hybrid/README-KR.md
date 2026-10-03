@@ -40,7 +40,7 @@ warm 조건은 모든 요청의 prefix가 준비된 상태입니다. 실제 서�
 - [전체 조건 요약](benchmark-suite-20260930-063538/summary.md), [요약 CSV](benchmark-suite-20260930-063538/summary.csv), [측정 묶음별 CSV](benchmark-suite-20260930-063538/runs.csv)
 - [실행 설정, 입력, 기준 출력과 모델 및 소스 SHA-256](benchmark-suite-20260930-063538/run.json)
 - [검증 결과](benchmark-suite-20260930-063538/verification.json), [GPU 환경과 기존 서비스 복원 상태](benchmark-suite-20260930-063538/environment.json)
-- [실행 및 벤치마크 가이드](../../../guides/hybrid-cache.md#base와-성능-비교)
+- [실행 및 벤치마크 가이드](../../../guides/hybrid-cache-KR.md#base와-성능-비교)
 
 `scripts/benchmark-hybrid.py`로 다시 측정합니다. 차트는 matplotlib이 있는 환경에서 `python scripts/plot-hybrid-benchmark.py <결과 디렉터리>`로 생성합니다. 요청별 토큰 ID와 지연의 원본은 결과 디렉터리의 로컬 `requests.jsonl`에 보관합니다.
 

@@ -23,13 +23,12 @@ make benchmark DEVICE=gpu VARIANT=transformers-mamba-cache
 
 Each command includes image build, load, deployment, and AIPerf measurement. The base and cache Mamba engines share `Deployment/transformers-mamba-base`. The GPU benchmark runner stops other inference engines to free the GPU. Results are stored in `docs/reports/gpu/mamba/`.
 
-If images are already loaded on the GPU worker and control plane, as in the validation environment, skip the build with the following command. The base engine omits `--image`, `--manifests`, and `--cache-policy`.
+If images are already loaded on the GPU worker and control plane, skip builds with the following command. For the base engine, use `--variant base` and omit `--cache-policy`.
 
 ```sh
-python scripts/run-benchmark.py --backend mamba --device gpu \
+python3 scripts/run-benchmark.py --backend mamba --device gpu --variant cache \
   --build-context '' --benchmark-build-context '' --concurrencies 1 \
-  --image local/transformers-mamba-cache-gpu:0.1.0 \
-  --manifests k8s/inference/profiles/transformers-mamba-cache-gpu.yaml --cache-policy clear-before-sweep
+  --cache-policy clear-before-sweep
 ```
 
 A full repetition covers three conditions: the base engine, cache cleared per concurrency, and cache cleared only at sweep start. Each condition uses 2 warmup and 100 measured requests at concurrencies `1,2,4,8`.

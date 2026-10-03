@@ -70,7 +70,7 @@ Mamba 상태는 과거 위치로 잘라낼 수 없습니다. 따라서 저장된
 
 항목은 한 계층에 보관하며, hit 시 예산이 허용하는 상위 계층으로 이동합니다. GPU와 RAM 예산은 텐서 payload 및 토큰당 8바이트를 합산합니다. 디스크는 파일 크기를 계산합니다. 한 계층의 전체 예산보다 큰 항목은 하위 계층으로 넘기고, 모든 계층에 들어갈 수 없으면 보관하지 않습니다. GPU 캐시 복사 중 CUDA OOM이 발생하면 해당 항목을 RAM 또는 디스크로 넘깁니다.
 
-`--cache-gpu-mib`, `--cache-ram-mib`, `--cache-disk-mib`는 각 계층의 예산이며 0이면 비활성화합니다. `--cache-min-prefix`는 저장 및 복원할 최소 토큰 수입니다. 기본값은 [EngineSettings](../../src/huggingface/jamba/hybrid/engine.py)를 참고하고, 전체 CLI 옵션은 `python -m huggingface.jamba.hybrid.server --help`로 확인합니다.
+`--cache-gpu-mib`, `--cache-ram-mib`, `--cache-disk-mib`는 각 계층의 예산이며 0이면 비활성화합니다. `--cache-min-prefix`는 저장 및 복원할 최소 토큰 수입니다. 기본값은 [EngineSettings](../../src/huggingface/jamba/hybrid/engine.py)를 참고하고, 전체 CLI 옵션은 `PYTHONPATH=src python -m huggingface.jamba.hybrid.server --help`로 확인합니다.
 
 활성 배치 버퍼, 모델 가중치, prefill 결과 복사본, 역직렬화 버퍼 및 Python 객체는 캐시 예산에 포함되지 않습니다. 활성 추론 중 OOM에 대한 자동 재시도는 하지 않습니다. prefix 캐시의 복사본은 활성 버퍼와 분리되어 있어 배치 갱신과 eviction이 저장된 상태를 변경하지 않습니다.
 
@@ -109,4 +109,4 @@ HTTP와 입력 토큰화는 제외한 엔진 벤치마크입니다. 요청 대�
 
 `run.json`에는 모델과 소스 SHA-256, 입력 및 기준 출력, 실행 설정과 검증 개수가 기록됩니다. `summary.md`, `summary.csv`, `summary.jsonl`은 base 대비 처리량과 지연을, `runs.csv`와 로컬 `requests.jsonl`은 개별 측정 결과를 제공합니다.
 
-RTX 2060 SUPER에서 실행한 [base 및 hybrid 비교 결과](../reports/gpu/hybrid/README.md)에서 전체 조건과 검증 결과를 확인할 수 있습니다.
+RTX 2060 SUPER에서 실행한 [base 및 hybrid 비교 결과](../reports/gpu/hybrid/README-KR.md)에서 전체 조건과 검증 결과를 확인할 수 있습니다.

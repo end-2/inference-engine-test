@@ -2,7 +2,7 @@
 
 AIPerf로 base, batch, prefix KV cache 구현의 처리량과 지연을 비교합니다. 기본 장치는 CPU이며 NVIDIA GPU도 선택할 수 있습니다.
 
-추론 구현과 API는 [추론 엔진 가이드](inference-engine.md)를 참고합니다.
+추론 구현과 API는 [추론 엔진 가이드](inference-engine-KR.md)를 참고합니다.
 
 소스 구조, 비교 조건 추가와 CUDA Graph 성능 분리 측정은 [기능별 실험 가이드](feature-experiments-KR.md)를 참고합니다.
 
@@ -17,19 +17,19 @@ AIPerf로 base, batch, prefix KV cache 구현의 처리량과 지연을 비교�
 | 반복 측정 | 구현별 반복 실행, 회차마다 실행 순서 순환 |
 | 관측 | AIPerf 요청별 결과와 Kubernetes 노드, Pod, 컨테이너 자원 표본 |
 
-부하 조건과 옵션별 값은 [AIPerf 기본 벤치마크 설정](aiperf.md#기본-벤치마크-설정)을 따릅니다. 추론 자원과 스레드는 각 구현의 Deployment에서 관리하며 측정 Pod는 CPU와 메모리 `requests=limits`를 유지합니다.
+부하 조건과 옵션별 값은 [AIPerf 기본 벤치마크 설정](aiperf-KR.md#기본-벤치마크-설정)을 따릅니다. 추론 자원과 스레드는 각 구현의 Deployment에서 관리하며 측정 Pod는 CPU와 메모리 `requests=limits`를 유지합니다.
 
 ## 준비
 
-Docker, POSIX 셸, Python 3.10 이상과 make가 필요합니다. 모델과 이미지 다운로드 연결 및 [CPU, 메모리, 디스크 요구사항](requirements.md#cpu-메모리와-디스크)을 확인하고 저장소 루트에서 도구를 설치합니다.
+Docker, POSIX 셸, Python 3.10 이상과 make가 필요합니다. 모델과 이미지 다운로드 연결 및 [CPU, 메모리, 디스크 요구사항](requirements-KR.md#cpu-메모리와-디스크)을 확인하고 저장소 루트에서 도구를 설치합니다.
 
 ```sh
 ./scripts/local-k8s.sh install
 ```
 
-모델과 토크나이저 다운로드, 클러스터 생성, 이미지 빌드와 로드는 자동 실행 스크립트가 수행합니다. 토크나이저를 수동으로 준비하는 방법은 [AIPerf 가이드](aiperf.md#토크나이저-준비)를 참고합니다.
+모델과 토크나이저 다운로드, 클러스터 생성, 이미지 빌드와 로드는 자동 실행 스크립트가 수행합니다. 토크나이저를 수동으로 준비하는 방법은 [AIPerf 가이드](aiperf-KR.md#토크나이저-준비)를 참고합니다.
 
-측정 중에는 다른 부하 실험을 중지합니다. 같은 클러스터에 다른 엔진을 이미 배포했다면 [엔진 전환](inference-engine.md#엔진-전환)에 따라 기존 Pod를 중지합니다.
+측정 중에는 다른 부하 실험을 중지합니다. 같은 클러스터에 다른 엔진을 이미 배포했다면 [엔진 전환](inference-engine-KR.md#엔진-전환)에 따라 기존 Pod를 중지합니다.
 
 기본 실행은 단일 노드 클러스터를 사용합니다. 멀티 노드에서는 `--inference-node`와 `--benchmark-node`를 모두 지정하며, 캐시 PV의 node affinity에 맞춰 노드를 선택합니다. `up`은 기존 클러스터의 토폴로지를 변경하지 않습니다.
 
@@ -46,7 +46,15 @@ make benchmark VARIANT=transformers-enhanced-cache
 
 각 명령은 모델 다운로드와 검증, 클러스터 준비, 이미지 빌드와 로드, 배포와 측정을 수행합니다. 실패하면 다음 조건으로 진행하지 않으며, 완료된 결과와 진단 로그를 남깁니다. 완료 후 서버와 클러스터는 유지됩니다.
 
-make 없이 실행하려면 `./scripts/run-benchmark.py`를 사용합니다. 사용자 지정 이미지, 노드와 제한 시간 옵션은 `--help`에서 확인합니다.
+Runner는 [inference.json](../../benchmarks/inference.json)에서 이미지, 빌드 대상과 Helm 프로필을 선택합니다. `make`의 `VARIANT`는 이미지 이름을, runner는 backend별 variant ID를 사용합니다.
+
+```sh
+./scripts/run-benchmark.py --backend transformers --variant enhanced-batch
+./scripts/run-benchmark.py --backend transformers --variant enhanced-cache --cache-policy clear-before-sweep
+python3 scripts/run-benchmark-suite.py --backend transformers
+```
+
+`--image`, `--build-target`, `--manifests`, `--benchmark-manifests`로 개별 선택을 덮어쓸 수 있습니다. 노드와 제한 시간 옵션은 `--help`에서 확인합니다. AIPerf 이미지는 `benchmarks/aiperf/`에서 빌드합니다.
 
 ### 동시성별 PVC cache 초기화
 
@@ -56,7 +64,7 @@ make 없이 실행하려면 `./scripts/run-benchmark.py`를 사용합니다. 사
 | `clear-before-sweep` | 첫 동시성의 워밍업 전 |
 | `clear-per-concurrency` | 각 동시성의 워밍업 전 |
 
-Transformers cache variant의 기본값은 `clear-before-sweep`이며 나머지 variant는 `preserve`입니다.
+`make benchmark`는 Transformers와 Mamba의 cache variant에 `clear-before-sweep`을, 나머지 variant에 `preserve`를 기본 적용합니다. Runner를 직접 실행할 때의 기본값은 `preserve`이므로 캐시 조건을 비교할 때는 `--cache-policy`를 명시합니다.
 
 ```sh
 make benchmark VARIANT=transformers-enhanced-cache CACHE_POLICY=clear-per-concurrency
@@ -91,9 +99,18 @@ python3 scripts/run-benchmark-suite.py --backend llamacpp
 
 llama.cpp suite는 base, batch, cache 초기화와 cache 보존의 네 조건을 반복합니다. 캐시 정책은 각각 `clear-per-concurrency`, `clear-before-sweep`입니다.
 
+### Mamba 선택
+
+```sh
+make benchmark VARIANT=transformers-mamba-cache
+python3 scripts/run-benchmark-suite.py --backend mamba
+```
+
+Mamba suite는 base, 동시성마다 캐시 초기화, sweep 시작 전에 캐시 초기화를 비교합니다. 모델 준비와 캐시 동작은 [Mamba 상태 캐시](mamba-cache-KR.md)를 참고합니다. Jamba는 별도의 [hybrid 엔진 벤치마크](hybrid-cache-KR.md#base와-성능-비교)를 사용합니다.
+
 ## 결과와 관찰
 
-단일 측정 결과는 `docs/reports/<backend>/bench-<UTC 시각>-<이미지>/`에 저장합니다. `<backend>`는 `transformers` 또는 `llamacpp`입니다.
+단일 측정 결과는 `docs/reports/<backend>/bench-<UTC 시각>-<이미지>/`에 저장합니다. `<backend>`는 `transformers`, `llamacpp`, `mamba`입니다.
 
 반복 측정의 집계 결과는 `docs/reports/<backend>/benchmark-suite-<UTC 시각>/`에 저장합니다. p95 집계는 실행별 p95의 평균입니다.
 
@@ -128,15 +145,15 @@ make benchmark-suite DEVICE=gpu INFERENCE_BACKEND=llamacpp
 
 단일 구현은 `make benchmark DEVICE=gpu VARIANT=transformers-enhanced-cache`처럼 선택합니다. 종료할 때는 `make down DEVICE=gpu`를 사용합니다. GPU 클러스터의 모델 디렉터리는 노드의 `/models`에 읽기 전용으로 마운트됩니다. GPU 하나는 추론 Pod 하나에 할당되고 AIPerf는 control-plane 노드에서 실행됩니다.
 
-두 Pod에 GPU 공유 리소스를 할당하는 별도 환경은 [MPS 클러스터 가이드](gpu-mps.md)를 참고합니다. 이 문서의 벤치마크는 `GPU_SHARING=none`을 사용합니다.
+두 Pod에 GPU 공유 리소스를 할당하는 별도 환경은 [MPS 클러스터 가이드](gpu-mps-KR.md)를 참고합니다. 이 문서의 벤치마크는 `GPU_SHARING=none`을 사용합니다.
 
-Transformers GPU 배치는 `make benchmark DEVICE=gpu VARIANT=transformers-enhanced-batch`로 측정합니다. GPU 전용 배치 구현과 CUDA Graph 적용 조건은 [추론 엔진 가이드](inference-engine.md#요청-배칭)를 참고합니다.
+Transformers GPU 배치는 `make benchmark DEVICE=gpu VARIANT=transformers-enhanced-batch`로 측정합니다. GPU 전용 배치 구현과 CUDA Graph 적용 조건은 [추론 엔진 가이드](inference-engine-KR.md#요청-배칭)를 참고합니다.
 
 GPU 측정은 동시성 `1,2,4,8`에서 같은 모델과 AIPerf 프로필을 사용합니다. Transformers는 `float16`, llama.cpp는 `n_gpu_layers=-1`로 실행합니다.
 
 GPU 결과는 `docs/reports/gpu/<backend>/`에 저장합니다. `run.json`은 장치, dtype 또는 GPU 레이어 설정을 기록합니다. 각 동시성의 `gpu.csv`에는 GPU UUID, 사용률, 사용 메모리의 시계열이 있고 요약에는 평균과 최대값이 있습니다. CPU 결과는 기존 `docs/reports/<backend>/`에 저장합니다. 기존 CPU 결과와 이번 GPU 결과는 호스트 환경이 달라 성능 수치를 직접 비교하면 안 됩니다.
 
-실측 1회차의 결과와 주의 사항은 [GPU 결과](../reports/gpu/README.md)에 있습니다.
+실측 1회차의 결과와 주의 사항은 [GPU 결과](../reports/gpu/README-KR.md)에 있습니다.
 
 ## 검증과 문제 해결
 

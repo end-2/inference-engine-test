@@ -1,6 +1,6 @@
 # Helm으로 Kubernetes 매니페스트 관리
 
-`k8s/`의 하위 디렉터리는 모두 Helm 차트입니다. 각 차트의 `values.yaml`에 공통 기본값을 두고 `profiles/*.yaml`에 워크로드별 차이를 지정합니다. `make install`은 [versions.env](../../config/versions.env)의 고정 버전 Helm을 설치합니다. 외부 차트 의존성은 없습니다.
+`k8s/`의 하위 디렉터리는 모두 Helm 차트입니다. 각 차트의 `values.yaml`에 공통 기본값을 두며, 여러 워크로드를 지원하는 차트는 `profiles/*.yaml`에 차이를 지정합니다. `make install`은 [versions.env](../../config/versions.env)의 고정 버전 Helm을 설치합니다. 외부 차트 의존성은 없습니다.
 
 ```text
 k8s/

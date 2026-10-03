@@ -1,8 +1,8 @@
 # 추론 엔진
 
-base, batch, cache 추론 서버를 실행하고 설정합니다. 기본 장치는 CPU이며 [GPU 벤치마크](benchmark.md#gpu-벤치마크)도 지원합니다. 기본 엔진은 Transformers와 PyTorch이며 llama.cpp도 선택할 수 있습니다. 배칭과 캐시는 두 엔진 모두 독립적인 구현으로 제공합니다. 모델과 공통 실행 코드의 구조는 [소스 경계](feature-experiments-KR.md#소스-경계)를 참고합니다.
+base, batch, cache 추론 서버를 실행하고 설정합니다. 기본 장치는 CPU이며 [GPU 벤치마크](benchmark-KR.md#gpu-벤치마크)도 지원합니다. 기본 엔진은 Transformers와 PyTorch이며 llama.cpp도 선택할 수 있습니다. 배칭과 캐시는 두 엔진 모두 독립적인 구현으로 제공합니다. 모델과 공통 실행 코드의 구조는 [소스 경계](feature-experiments-KR.md#소스-경계)를 참고합니다.
 
-Transformers의 실행과 설정은 아래 절차를, llama.cpp는 [해당 엔진의 절차](#llamacpp)를 따릅니다. 매니페스트 적용과 ConfigMap 변경 방법은 [매니페스트 관리](manifests.md)를 참고합니다.
+Transformers의 실행과 설정은 아래 절차를, llama.cpp는 [해당 엔진의 절차](#llamacpp)를 따릅니다. 매니페스트 적용과 ConfigMap 변경 방법은 [매니페스트 관리](manifests-KR.md)를 참고합니다.
 
 ## Transformers
 
@@ -55,9 +55,9 @@ curl http://127.0.0.1:8000/v1/chat/completions \
 | Mamba prefix cache | `huggingface.mamba.cache.server` | `transformers-mamba-cache` |
 | Jamba hybrid batch + HiCache | `huggingface.jamba.hybrid.server` | `transformers-hybrid` |
 
-Mamba는 별도 모델과 상태 checkpoint를 사용합니다. 실행 방법과 캐시 규칙은 [Mamba 상태 캐시](mamba-cache.md)를 참고하세요.
+Mamba는 별도 모델과 상태 checkpoint를 사용합니다. 실행 방법과 캐시 규칙은 [Mamba 상태 캐시](mamba-cache-KR.md)를 참고하세요.
 
-Jamba의 Mamba 상태 버퍼, Attention KV 및 계층형 prefix 캐시를 함께 사용하는 추가 구현은 [Hybrid 배치와 HiCache](hybrid-cache.md)를 참고하세요.
+Jamba의 Mamba 상태 버퍼, Attention KV 및 계층형 prefix 캐시를 함께 사용하는 추가 구현은 [Hybrid 배치와 HiCache](hybrid-cache-KR.md)를 참고하세요.
 
 로컬 실행 명령의 모듈을 바꾸어 구현을 선택합니다. 공통 CLI와 기본값은 각 모듈의 `--help`에서 확인할 수 있습니다.
 
@@ -69,7 +69,7 @@ Base와 cache는 Transformers의 `generate()`로 생성하며 KV 갱신과 종�
 
 생성 전 취소된 요청은 모델을 호출하지 않습니다. 생성 중 취소는 `StoppingCriteria`가 토큰 생성 후 확인하므로 진행 중인 연산과 해당 토큰 출력을 즉시 중단하지 않습니다.
 
-Base + Prometheus는 같은 직렬 엔진에 `/metrics`의 `transformers_*` 요청, 토큰 수, TTFT 지표를 추가합니다. 로컬 실행에는 `src/huggingface/llama/metrics/requirements.txt`도 설치합니다. [멀티 노드 availability](availability-test.md)와 [HPA](hpa-test.md)는 이 이미지를 사용합니다.
+Base + Prometheus는 같은 직렬 엔진에 `/metrics`의 `transformers_*` 요청, 토큰 수, TTFT 지표를 추가합니다. 로컬 실행에는 `src/huggingface/llama/metrics/requirements.txt`도 설치합니다. [멀티 노드 availability](availability-test-KR.md)와 [HPA](hpa-test-KR.md)는 이 이미지를 사용합니다.
 
 ### 요청 배칭
 
@@ -83,7 +83,7 @@ Base + Prometheus는 같은 직렬 엔진에 `/metrics`의 `transformers_*` 요�
 
 모델 연산은 한 작업자만 실행하고 HTTP 스레드는 결과를 기다립니다. 작업자 오류는 대기 요청에 전달되며 health와 readiness가 실패합니다.
 
-GPU batch는 같은 작업자를 사용합니다. `temperature=0`, `ignore_eos=true`인 요청은 배치 폭별 CUDA Graph로 decode 연산을 재사용합니다. 다른 샘플링 옵션은 일반 GPU 배치 경로에서 처리합니다. GPU용 이미지는 `make build-image DEVICE=gpu VARIANT=transformers-enhanced-batch`로 빌드합니다.
+GPU batch는 같은 작업자를 사용합니다. 기본값 `--cuda-graph auto`에서는 지원 조건에 맞는 `temperature=0`, `ignore_eos=true` 요청의 decode 연산을 배치 폭별 CUDA Graph로 재사용하고, 나머지는 eager로 실행합니다. `off`는 Graph를 끄고 `required`는 호환되지 않는 요청을 거부합니다. 컨텍스트 제한과 실행 경로 검증은 [기능별 실험](feature-experiments-KR.md#cuda-graph-선택과-실행-증거)을 참고합니다. GPU용 이미지는 `make build-image DEVICE=gpu VARIANT=transformers-enhanced-batch`로 빌드합니다.
 
 ### Prefix KV 캐시
 
@@ -119,7 +119,7 @@ make build-image load-image
 ./scripts/local-k8s.sh kubectl port-forward service/transformers-base 8000:8000
 ```
 
-각 디렉터리에는 Deployment와 Service 매니페스트가 있으며 cache는 PVC도 포함합니다. 배칭과 캐시는 다음 명령으로 전환합니다.
+공통 `k8s/inference` 차트는 선택한 프로필로 Deployment와 Service를 렌더링하며 cache 프로필은 PVC도 생성합니다. 배칭과 캐시는 다음 명령으로 전환합니다.
 
 ```sh
 make build-image load-image VARIANT=transformers-enhanced-batch
@@ -214,7 +214,7 @@ curl http://127.0.0.1:8000/v1/chat/completions \
 
 ### llama.cpp base 검증
 
-대표 질문에 대한 응답 품질은 [간단한 품질 확인](quality-check.md)을 참고합니다.
+대표 질문에 대한 응답 품질은 [간단한 품질 확인](quality-check-KR.md)을 참고합니다.
 
 API 회귀 테스트는 모델 없이 실행할 수 있습니다. 별도 Python 환경에서 실행합니다.
 
@@ -260,7 +260,7 @@ make build-image load-image VARIANT=enhanced-batch-llamacpp
 
 Base + Prometheus는 [가용성 테스트](availability-test.md#llamacpp)와 [HPA 테스트](hpa-test.md#llamacpp)에 사용합니다.
 
-부하 설정은 [AIPerf](aiperf.md), 성능 비교는 [벤치마크](benchmark.md), 응답 품질은 [품질 확인](quality-check.md)을 참고합니다.
+부하 설정은 [AIPerf](aiperf-KR.md), 성능 비교는 [벤치마크](benchmark-KR.md), 응답 품질은 [품질 확인](quality-check-KR.md)을 참고합니다.
 
 ### Continuous batching
 

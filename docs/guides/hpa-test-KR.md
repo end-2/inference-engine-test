@@ -4,7 +4,7 @@ SmolLM2 Transformers CPU base 서버에 AIPerf 부하를 보내 CPU HPA의 1→4
 
 기본 절차는 Transformers CPU를 사용합니다. llama.cpp를 사용할 때는 [엔진별 변경 사항](#llamacpp)을 적용하며 관찰과 판정 기준은 동일합니다.
 
-추론 구현과 API는 [추론 엔진 가이드](inference-engine.md), 매니페스트 적용과 ConfigMap 변경 방법은 [매니페스트 관리](manifests.md)를 참고합니다.
+추론 구현과 API는 [추론 엔진 가이드](inference-engine-KR.md), 매니페스트 적용과 ConfigMap 변경 방법은 [매니페스트 관리](manifests-KR.md)를 참고합니다.
 
 ## 준비와 배포
 
@@ -102,7 +102,7 @@ Grafana `hpa-test-transformers` 대시보드에서 CPU, HPA replica, endpoint, `
 
 원본은 `reports/transformers/hpa-<UTC>/`에 저장합니다. `run.json`의 scenario, 단계 시각과 요청 수, `observations.csv`의 5초 표본, Kubernetes 원본, `aiperf/high/`, `aiperf/low/`, Prometheus 시계열을 포함합니다.
 
-고부하와 저부하 구간의 요청 성공 여부로 절차를 판정하며, 오류율과 지연은 별도로 해석합니다. 요약은 [Transformers 결과 목록](../reports/transformers/README.md)에서 확인할 수 있습니다.
+고부하와 저부하 구간의 요청 성공 여부로 절차를 판정하며, 오류율과 지연은 별도로 해석합니다. 요약은 [Transformers 결과 목록](../reports/transformers/README-KR.md)에서 확인할 수 있습니다.
 
 ## 검증과 정리
 

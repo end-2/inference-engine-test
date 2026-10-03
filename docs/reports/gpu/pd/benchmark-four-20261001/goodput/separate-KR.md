@@ -107,4 +107,4 @@ CSV의 비활성 SLO 임계값은 빈 칸이며 해당 지표의 pass count는 �
 python3 scripts/report-pd-goodput.py docs/reports/gpu/pd/benchmark-four-20261001
 ```
 
-이 명령은 기존 교집합 파일과 함께 `ttft-*.csv`, `tpot-*.csv`, `goodput-separated.png`를 생성합니다. 다른 임계값과 별도 출력 경로 사용법은 [재현 안내](summary.md#측정-해석과-재현)에 있습니다.
+이 명령은 기존 교집합 파일과 함께 `ttft-*.csv`, `tpot-*.csv`, `goodput-separated.png`를 생성합니다. 다른 임계값과 별도 출력 경로 사용법은 [재현 안내](summary-KR.md#측정-해석과-재현)에 있습니다.

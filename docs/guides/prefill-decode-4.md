@@ -2,7 +2,7 @@
 
 # MPS 4-Way Prefill/Decode Comparison
 
-Compares 4 Aggregation workers against 1 Prefill and 3 Decodes on SmolLM2-135M FP16. It is a separate overlay based on the [2-way setup](prefill-decode.md), and keeps the existing configuration files and base run commands.
+Compares 4 Aggregation workers against 1 Prefill and 3 Decodes on SmolLM2-135M FP16. It uses separate Helm profiles in the `inference-distributed` chart, sharing the [2-way setup](prefill-decode.md) and deployment commands.
 
 [GPU setup validation](../reports/gpu/pd/four-slot-check-20261001/validation.md) confirmed request distribution across four CUDA clients and both modes.
 

@@ -33,6 +33,8 @@ Create the CPU cluster with `local-k8s.sh up`; it does not include GPU settings.
 | Model and tokenizer downloads | `curl`, `sha256sum` or `shasum` for checksum verification |
 | Image builds | `docker build` |
 | [Automated benchmark](benchmark.md#automated-measurement-with-pod-restarts) | Python 3.10 or later |
+| Local inference and engine tests | Python 3.12 environment and the selected engine's dependencies in the [inference guide](inference-engine.md) |
+| Distributed Prefill/Decode runner and reports | Python with PyYAML; report figures also need matplotlib, as described in the [PD guide](prefill-decode.md) |
 | Makefile commands | `make`. Not needed when running scripts directly |
 
 ## CPU, memory, and disk

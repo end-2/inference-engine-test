@@ -1,6 +1,6 @@
 # PD 실험 결과 정리
 
-PD 실험은 `docs/reports/gpu/pd/<실행명>/`에 검토할 결과를, `reports/pd/<실행명>/`에 요청별 원본을 보관합니다. 서로 다른 설정, 소스 또는 실패 후 재측정은 별도 실행으로 남깁니다. 실험 목록은 [종합 보고서](../reports/gpu/pd/README.md)에 연결합니다.
+PD 실험은 `docs/reports/gpu/pd/<실행명>/`에 검토할 결과를, `reports/pd/<실행명>/`에 요청별 원본을 보관합니다. 서로 다른 설정, 소스 또는 실패 후 재측정은 별도 실행으로 남깁니다. 실험 목록은 [종합 보고서](../reports/gpu/pd/README-KR.md)에 연결합니다.
 
 ## 보존할 파일
 
@@ -19,7 +19,7 @@ PD 실험은 `docs/reports/gpu/pd/<실행명>/`에 검토할 결과를, `reports
 
 ## 집계와 보고서 생성
 
-Python 환경은 [PD 실행 가이드](prefill-decode.md)의 의존성을 사용합니다. 아래 변수에는 실행기가 출력한 보고서 경로를 지정합니다.
+Python 환경은 [PD 실행 가이드](prefill-decode-KR.md)의 의존성을 사용합니다. 아래 변수에는 실행기가 출력한 보고서 경로를 지정합니다.
 
 ```sh
 PD_REPORT='docs/reports/gpu/pd/pd4-<실행시각>'

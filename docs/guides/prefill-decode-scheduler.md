@@ -2,7 +2,7 @@
 
 # Token Budget Scheduler Verification
 
-Adding `--scheduler token-budget` to the existing PD workers handles multiple requests' decodes and chunked prefills in one model forward. The default is the existing `serial`. It keeps the MPS 2-way and 4-way manifests, image tags, and namespaces.
+Adding `--scheduler token-budget` to the existing PD workers handles multiple requests' decodes and chunked prefills in one model forward. The default worker scheduler is `serial`. Dedicated four-slot Helm profiles select `token-budget`, the `token-budget-v1` image tag and the `pd-comparison-4-scheduled` namespace.
 
 [GPU validation results](../reports/gpu/pd/scheduler-20261002/analysis.md) record a 1,920-request comparison and TTFT differences with TPOT SLOs applied.
 

@@ -19,3 +19,5 @@ For comparison of actual model outputs at high GPU batch concurrency see the [ou
 For Mamba-130M prefix state cache implementation, correctness checks, and concurrency-1 AIPerf comparison see [Mamba GPU test results](mamba/README.md).
 
 For base, batch, and GPU/RAM/disk HiCache comparison on the same Jamba-tiny-dev weights see [Jamba hybrid GPU results](hybrid/README.md). These results are engine measurements excluding HTTP.
+
+For concurrent model checks on shared GPU resources, see [MPS model validation](mps-check-20260930/summary.md). The [Prefill/Decode experiment index](pd/README.md) covers two-slot and four-slot placement, token-budget scheduling and SLO results.

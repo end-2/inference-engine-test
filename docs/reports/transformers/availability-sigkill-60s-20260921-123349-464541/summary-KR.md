@@ -2,7 +2,7 @@
 
 2026-09-21 `transformers-tests` kind의 engine worker 하나를 SIGKILL하고 대체 Pod, 노드 재시작과 원래 Docker 재시작 정책 복원을 확인했습니다. 절차는 완료됐고 관측 구간에 요청 오류 8건이 발생했습니다.
 
-모델, 이미지, 토폴로지, CPU와 AIPerf 조건은 [pause 실험](../availability-pause-60s-20260921-122415-594492/summary.md#측정-조건)과 같습니다. 두 engine worker의 SmolLM2 FP32 Pod는 각각 CPU 2개, 메모리 2Gi, 2스레드이며, AIPerf concurrency는 4입니다. SIGKILL 직전 Docker 자동 재시작을 중지하고, 복구 후 원래 정책을 복원했습니다.
+모델, 이미지, 토폴로지, CPU와 AIPerf 조건은 [pause 실험](../availability-pause-60s-20260921-122415-594492/summary-KR.md#측정-조건)과 같습니다. 두 engine worker의 SmolLM2 FP32 Pod는 각각 CPU 2개, 메모리 2Gi, 2스레드이며, AIPerf concurrency는 4입니다. SIGKILL 직전 Docker 자동 재시작을 중지하고, 복구 후 원래 정책을 복원했습니다.
 
 | 항목 | 시간 |
 | --- | ---: |

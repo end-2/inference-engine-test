@@ -1,8 +1,8 @@
 # AIPerf 측정
 
-CPU 추론 서버에 동시성별 부하를 보내 처리량, TTFT, ITL과 응답 지연을 측정합니다.
+CPU 또는 GPU 추론 서버에 동시성별 부하를 보내 처리량, TTFT, ITL과 응답 지연을 측정합니다.
 
-자동 실행, 캐시 정책, 반복 측정과 결과 해석은 [벤치마크 가이드](benchmark.md)를 참고합니다.
+자동 실행, 캐시 정책, 반복 측정과 결과 해석은 [벤치마크 가이드](benchmark-KR.md)를 참고합니다.
 
 ## 기본 벤치마크 설정
 
@@ -15,7 +15,7 @@ CPU 추론 서버에 동시성별 부하를 보내 처리량, TTFT, ITL과 응�
 | 추론 자원, 스레드와 토큰 제한 | [Deployment](../../k8s/inference/values.yaml) |
 | 클러스터와 도구 버전 | [kind 설정](../../config/cluster/kind.yaml), [versions.env](../../config/versions.env) |
 
-측정 Pod는 CPU와 메모리 `requests=limits`를 유지합니다.
+부하 생성기는 [AIPerf 이미지](../../benchmarks/aiperf/Dockerfile)를 사용하며 추론 서버가 GPU를 사용해도 CPU에서 실행합니다. 측정 Pod는 CPU와 메모리 `requests=limits`를 유지합니다.
 
 ### AIPerf 옵션과 설정값
 
@@ -63,4 +63,4 @@ make download-tokenizer VARIANT=base-llamacpp
 sh tests/test-aiperf-manifests.sh
 ```
 
-실행 오류 진단은 [벤치마크 문제 해결](benchmark.md#검증과-문제-해결)을 참고합니다.
+실행 오류 진단은 [벤치마크 문제 해결](benchmark-KR.md#검증과-문제-해결)을 참고합니다.

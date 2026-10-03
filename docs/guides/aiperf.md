@@ -2,7 +2,7 @@
 
 # AIPerf measurement
 
-Send concurrent load to a CPU inference server and measure throughput, TTFT, ITL, and response latency.
+Send concurrent load to a CPU or GPU inference server and measure throughput, TTFT, ITL, and response latency.
 
 For automated runs, cache policy, repeated measurements, and result interpretation, see the [benchmark guide](benchmark.md).
 
@@ -17,7 +17,7 @@ The default target is the SmolLM2 Transformers server. The values below are the 
 | Inference resources, threads, and token limits | [Deployment](../../k8s/inference/values.yaml) |
 | Cluster and tool versions | [kind settings](../../config/cluster/kind.yaml), [versions.env](../../config/versions.env) |
 
-Measurement Pods keep CPU and memory `requests=limits`.
+The load generator uses the [AIPerf image](../../benchmarks/aiperf/Dockerfile) on CPU even when the inference server uses GPU. Measurement Pods keep CPU and memory `requests=limits`.
 
 ### AIPerf options and values
 

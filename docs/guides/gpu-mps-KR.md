@@ -2,11 +2,11 @@
 
 `GPU_SHARING=mps`는 GPU 0을 공유 리소스 2개로 등록하는 별도 kind 클러스터를 만듭니다. 한 worker에서 두 Pod가 `nvidia.com/gpu.shared: 1`씩 요청할 수 있습니다. CPU 클러스터와 GPU 독점 모드의 기본 동작은 유지됩니다.
 
-`MPS_REPLICAS=4`는 기존 설정을 보존하면서 `local-k8s-gpu-mps4`와 [별도 4분할 설정](../../config/cluster/mps-4.yaml)을 선택합니다. Aggregation 4개와 Prefill 1개, Decode 3개를 비교하는 실행 절차는 [4분할 PD 가이드](prefill-decode-4.md)에 있습니다. 생략 시 `MPS_REPLICAS=2`이며 기존 클러스터의 분할 수를 다른 값으로 변경하는 명령은 거부합니다.
+`MPS_REPLICAS=4`는 기존 설정을 보존하면서 `local-k8s-gpu-mps4`와 [별도 4분할 설정](../../config/cluster/mps-4.yaml)을 선택합니다. Aggregation 4개와 Prefill 1개, Decode 3개를 비교하는 실행 절차는 [4분할 PD 가이드](prefill-decode-4-KR.md)에 있습니다. 생략 시 `MPS_REPLICAS=2`이며 기존 클러스터의 분할 수를 다른 값으로 변경하는 명령은 거부합니다.
 
 ## 준비와 생성
 
-[GPU 환경의 도구와 런타임](benchmark.md#gpu-벤치마크)을 먼저 준비합니다. MPS 클러스터와 기존 GPU 클러스터는 같은 물리 GPU 0을 사용하므로 GPU 워크로드를 동시에 실행하지 않습니다. MPS를 새로 시작할 때 GPU에 CUDA 프로세스가 있으면 `up`이 해당 PID를 출력하고 중단합니다. 기존 추론 Deployment를 0 replicas로 변경하거나 해당 GPU 작업을 종료한 뒤 실행합니다.
+[GPU 환경의 도구와 런타임](benchmark-KR.md#gpu-벤치마크)을 먼저 준비합니다. MPS 클러스터와 기존 GPU 클러스터는 같은 물리 GPU 0을 사용하므로 GPU 워크로드를 동시에 실행하지 않습니다. MPS를 새로 시작할 때 GPU에 CUDA 프로세스가 있으면 `up`이 해당 PID를 출력하고 중단합니다. 기존 추론 Deployment를 0 replicas로 변경하거나 해당 GPU 작업을 종료한 뒤 실행합니다.
 
 ```sh
 make install DEVICE=gpu
@@ -37,10 +37,10 @@ GPU_SHARING=mps ./scripts/local-k8s-gpu.sh kubectl get pods -l app=transformers-
 GPU_SHARING=mps ./scripts/local-k8s-gpu.sh kubectl port-forward service/transformers-mps 8000:8000
 ```
 
-API 요청 형식은 [추론 엔진 가이드](inference-engine.md)를 따릅니다. 다른 모델을 배포할 때도 `runtimeClassName: nvidia`와 `nvidia.com/gpu.shared: 1`을 사용합니다. 네 로컬 모델의 동시 실행 결과와 검증 조건은 [MPS 모델 보고서](../reports/gpu/mps-check-20260930/summary.md)에 있습니다.
+API 요청 형식은 [추론 엔진 가이드](inference-engine-KR.md)를 따릅니다. 다른 모델을 배포할 때도 `runtimeClassName: nvidia`와 `nvidia.com/gpu.shared: 1`을 사용합니다. 네 로컬 모델의 동시 실행 결과와 검증 조건은 [MPS 모델 보고서](../reports/gpu/mps-check-20260930/summary-KR.md)에 있습니다.
 
 `make benchmark`와 `make benchmark-suite`는 GPU 독점 측정용이므로 MPS 모드를 받지 않습니다. MPS 추론 서버는 위의 배포 절차로 실행합니다.
-Prefill과 Decode 분리 여부를 비교하는 소스, 전용 배포와 AIPerf 실행은 [PD 비교 가이드](prefill-decode.md)를 참고합니다.
+Prefill과 Decode 분리 여부를 비교하는 소스, 전용 배포와 AIPerf 실행은 [PD 비교 가이드](prefill-decode-KR.md)를 참고합니다.
 
 ## 검증과 종료
 

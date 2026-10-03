@@ -59,7 +59,7 @@ Switch to the disaggregated configuration. Rerun port-forward after the router r
 make pd-deploy PD_MODE=disaggregated
 ```
 
-The default image tag is stated in the manifests. After changing `IMAGE_TAG`, also change the Kustomize `images` setting in each overlay.
+The standard image is set by `image` in [values.yaml](../../k8s/inference-distributed/values.yaml); scheduled profiles override it. Match this value and any selected profile override to the `IMAGE_TAG` used for build and load. `pd-deploy` reads the Helm profile and does not apply `IMAGE_TAG` as a deployment override.
 
 ## Automatic comparison over multiple workloads
 

@@ -1,12 +1,12 @@
 # MPS 4분할 Prefill/Decode 비교
 
-SmolLM2-135M FP16에서 Aggregation worker 4개와 Prefill 1개, Decode 3개를 비교합니다. [2분할 구성](prefill-decode.md)을 기반으로 한 별도 overlay이며, 기존 설정 파일과 기본 실행 명령을 유지합니다.
+SmolLM2-135M FP16에서 Aggregation worker 4개와 Prefill 1개, Decode 3개를 비교합니다. `inference-distributed` 차트의 별도 Helm 프로필을 사용하며 [2분할 구성](prefill-decode-KR.md)과 배포 명령을 공유합니다.
 
-[실제 GPU 구성 검증](../reports/gpu/pd/four-slot-check-20261001/validation.md)에서 네 CUDA client와 두 mode의 요청 분산을 확인했습니다.
+[실제 GPU 구성 검증](../reports/gpu/pd/four-slot-check-20261001/validation-KR.md)에서 네 CUDA client와 두 mode의 요청 분산을 확인했습니다.
 
-[전체 workload 비교 결과](../reports/gpu/pd/benchmark-four-20261001/summary.md)에 3회 반복의 처리량, TTFT, 지연과 router 메모리 검증을 기록했습니다.
+[전체 workload 비교 결과](../reports/gpu/pd/benchmark-four-20261001/summary-KR.md)에 3회 반복의 처리량, TTFT, 지연과 router 메모리 검증을 기록했습니다.
 
-vLLM V1과 유사한 RUNNING 우선 정책과 chunked prefill은 [별도 token budget 스케줄러](prefill-decode-scheduler.md)로 검증할 수 있습니다.
+vLLM V1과 유사한 RUNNING 우선 정책과 chunked prefill은 [별도 token budget 스케줄러](prefill-decode-scheduler-KR.md)로 검증할 수 있습니다.
 
 | 항목 | 기존 2분할 | 추가 4분할 |
 | --- | --- | --- |
@@ -25,7 +25,7 @@ Router는 Aggregation 4개 또는 Decode 3개의 StatefulSet Pod 주소로 round
 
 ## 클러스터와 이미지 준비
 
-먼저 [MPS 준비 사항](gpu-mps.md#준비와-생성)을 충족하고 GPU 0의 기존 작업을 중지합니다. 두 클러스터는 같은 물리 GPU를 사용하므로 MPS 데몬을 동시에 운영하지 않습니다. 클러스터와 namespace 분리는 GPU 자원의 물리적 분리를 의미하지 않습니다.
+먼저 [MPS 준비 사항](gpu-mps-KR.md#준비와-생성)을 충족하고 GPU 0의 기존 작업을 중지합니다. 두 클러스터는 같은 물리 GPU를 사용하므로 MPS 데몬을 동시에 운영하지 않습니다. 클러스터와 namespace 분리는 GPU 자원의 물리적 분리를 의미하지 않습니다.
 
 실행 중인 2분할 PD 클러스터를 보존하며 정지하려면 벤치마크 Job이 끝난 뒤 다음을 실행합니다. 기존 PVC와 클러스터는 유지됩니다.
 
@@ -77,7 +77,7 @@ python3 scripts/benchmark-pd.py --mps-replicas 4 --config benchmarks/pd.json
 python3 scripts/report-pd.py docs/reports/gpu/pd/pd4-<시각>
 ```
 
-Router의 동시 전송 슬롯 2개, 요청 수용 한도 8개와 메모리 상한 1 GiB는 공통으로 적용합니다. 스트리밍에서는 Decode 응답 헤더가 도착하면 전송 슬롯을 반환하므로 Decode worker 3개가 동시에 생성할 수 있습니다. 비스트리밍에서는 응답 완료까지 슬롯을 잡을 수 있으므로 이 비교에는 기본 streaming workload를 사용합니다. 지표와 메모리 설정은 [공통 가이드](prefill-decode.md#router-메모리-한도)를 참고합니다.
+Router의 동시 전송 슬롯 2개, 요청 수용 한도 8개와 메모리 상한 1 GiB는 공통으로 적용합니다. 스트리밍에서는 Decode 응답 헤더가 도착하면 전송 슬롯을 반환하므로 Decode worker 3개가 동시에 생성할 수 있습니다. 비스트리밍에서는 응답 완료까지 슬롯을 잡을 수 있으므로 이 비교에는 기본 streaming workload를 사용합니다. 지표와 메모리 설정은 [공통 가이드](prefill-decode-KR.md#router-메모리-한도)를 참고합니다.
 
 4분할은 같은 물리 GPU에서 Decode worker의 수와 자원 배분을 바꾼 실험입니다. 2분할보다 빠르다는 가정 없이 동일 workload의 처리량, TTFT와 지연을 비교합니다.
 

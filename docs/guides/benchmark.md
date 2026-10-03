@@ -48,7 +48,15 @@ make benchmark VARIANT=transformers-enhanced-cache
 
 Each command downloads and validates the model, prepares the cluster, builds and loads images, deploys, and measures. On failure it does not proceed to the next step, and leaves completed results and diagnostics logs. The server and cluster are kept after completion.
 
-To run without make, use `./scripts/run-benchmark.py`. See `--help` for custom image, node, and timeout options.
+The runner selects the image, build target and Helm profiles from [inference.json](../../benchmarks/inference.json). `make` uses image names in `VARIANT`; the runner uses backend-specific variant IDs:
+
+```sh
+./scripts/run-benchmark.py --backend transformers --variant enhanced-batch
+./scripts/run-benchmark.py --backend transformers --variant enhanced-cache --cache-policy clear-before-sweep
+python3 scripts/run-benchmark-suite.py --backend transformers
+```
+
+`--image`, `--build-target`, `--manifests` and `--benchmark-manifests` override individual selections. See `--help` for node and timeout options. AIPerf image builds use `benchmarks/aiperf/`.
 
 ### Per-concurrency PVC cache reset
 
@@ -58,7 +66,7 @@ To run without make, use `./scripts/run-benchmark.py`. See `--help` for custom i
 | `clear-before-sweep` | Before warmup of the first concurrency |
 | `clear-per-concurrency` | Before warmup of each concurrency |
 
-The Transformers cache variant defaults to `clear-before-sweep`; other variants default to `preserve`.
+`make benchmark` defaults to `clear-before-sweep` for Transformers and Mamba cache variants, and `preserve` for other variants. Direct runner invocations default to `preserve`; pass `--cache-policy` explicitly when comparing cache conditions.
 
 ```sh
 make benchmark VARIANT=transformers-enhanced-cache CACHE_POLICY=clear-per-concurrency
@@ -93,9 +101,18 @@ python3 scripts/run-benchmark-suite.py --backend llamacpp
 
 The llama.cpp suite repeats four conditions: base, batch, cache reset, and cache preserved. Cache policies are `clear-per-concurrency` and `clear-before-sweep` respectively.
 
+### Selecting Mamba
+
+```sh
+make benchmark VARIANT=transformers-mamba-cache
+python3 scripts/run-benchmark-suite.py --backend mamba
+```
+
+The Mamba suite compares base, cache cleared per concurrency and cache cleared before each sweep. For model preparation and cache behavior, see [Mamba state cache](mamba-cache.md). Jamba uses the separate [hybrid engine benchmark](hybrid-cache.md#base-and-performance-comparison).
+
 ## Results and observation
 
-Single measurement results are stored in `docs/reports/<backend>/bench-<UTC time>-<image>/`. `<backend>` is `transformers` or `llamacpp`.
+Single measurement results are stored in `docs/reports/<backend>/bench-<UTC time>-<image>/`. `<backend>` is `transformers`, `llamacpp` or `mamba`.
 
 Repeated measurement aggregates are stored in `docs/reports/<backend>/benchmark-suite-<UTC time>/`. The p95 aggregate is the mean of per-run p95 values.
 

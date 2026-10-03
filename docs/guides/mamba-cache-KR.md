@@ -11,7 +11,7 @@
 
 ## GPU 실행
 
-[GPU 환경](benchmark.md#gpu-벤치마크)을 준비한 뒤 저장소 루트에서 실행합니다.
+[GPU 환경](benchmark-KR.md#gpu-벤치마크)을 준비한 뒤 저장소 루트에서 실행합니다.
 
 ```sh
 make download-model DEVICE=gpu VARIANT=transformers-mamba-cache
@@ -21,13 +21,12 @@ make benchmark DEVICE=gpu VARIANT=transformers-mamba-cache
 
 각 명령은 이미지 빌드, 로드, 배포와 AIPerf 측정을 포함합니다. Mamba의 기본 엔진과 캐시 엔진은 `Deployment/transformers-mamba-base`를 공유합니다. GPU 벤치마크 실행기는 다른 추론 엔진을 중지해 GPU를 확보합니다. 결과는 `docs/reports/gpu/mamba/`에 저장됩니다.
 
-검증 환경처럼 이미지가 이미 GPU worker와 control-plane에 로드되어 있으면 다음 명령으로 빌드를 생략할 수 있습니다. 기본 엔진은 `--image`, `--manifests`, `--cache-policy`를 생략합니다.
+이미지가 GPU worker와 control-plane에 로드되어 있으면 다음 명령으로 빌드를 생략할 수 있습니다. 기본 엔진은 `--variant base`를 사용하고 `--cache-policy`를 생략합니다.
 
 ```sh
-python scripts/run-benchmark.py --backend mamba --device gpu \
+python3 scripts/run-benchmark.py --backend mamba --device gpu --variant cache \
   --build-context '' --benchmark-build-context '' --concurrencies 1 \
-  --image local/transformers-mamba-cache-gpu:0.1.0 \
-  --manifests k8s/inference/profiles/transformers-mamba-cache-gpu.yaml --cache-policy clear-before-sweep
+  --cache-policy clear-before-sweep
 ```
 
 전체 반복은 기본 엔진, 동시성마다 캐시 초기화, sweep 시작 시에만 초기화하는 세 조건으로 구성됩니다. 각 조건은 동시성 `1,2,4,8`에서 warmup 2개와 측정 요청 100개를 사용합니다.

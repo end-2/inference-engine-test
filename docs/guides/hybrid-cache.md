@@ -72,7 +72,7 @@ The [HiCache](../../src/huggingface/jamba/hybrid/hicache.py) tiers are as follow
 
 Entries stay in one tier, and on hit move to an upper tier when budget allows. GPU and RAM budgets sum tensor payload plus 8 bytes per token. Disk counts file size. An entry larger than a tier's full budget moves to a lower tier; entries that fit no tier are not kept. On CUDA OOM during GPU cache copy, pass that entry to RAM or disk.
 
-`--cache-gpu-mib`, `--cache-ram-mib`, and `--cache-disk-mib` are per-tier budgets; 0 disables. `--cache-min-prefix` is the minimum token count stored and restored. See [EngineSettings](../../src/huggingface/jamba/hybrid/engine.py) for defaults, and `python -m huggingface.jamba.hybrid.server --help` for all CLI options.
+`--cache-gpu-mib`, `--cache-ram-mib`, and `--cache-disk-mib` are per-tier budgets; 0 disables. `--cache-min-prefix` is the minimum token count stored and restored. See [EngineSettings](../../src/huggingface/jamba/hybrid/engine.py) for defaults, and `PYTHONPATH=src python -m huggingface.jamba.hybrid.server --help` for all CLI options.
 
 Active batch buffers, model weights, prefill result copies, deserialization buffers, and Python objects are not included in cache budgets. There is no automatic retry on OOM during active inference. Prefix cache copies are separate from active buffers, so batch updates and eviction do not change stored state.
 
