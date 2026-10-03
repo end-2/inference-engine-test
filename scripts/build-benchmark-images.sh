@@ -33,7 +33,7 @@ case $AIPERF_IMAGE_TAG in
 esac
 
 image="local/aiperf:$AIPERF_IMAGE_TAG"
-context="$ROOT/src/aiperf"
+context="$ROOT/benchmarks/aiperf"
 [ -f "$context/Dockerfile" ] || die "Missing Dockerfile: $context/Dockerfile"
 printf 'Building %s from %s...\n' "$image" "$context"
 # --network=host is used for package downloads during the build.

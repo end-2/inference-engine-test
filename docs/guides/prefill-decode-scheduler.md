@@ -33,9 +33,9 @@ PD_SCHEDULER=token-budget PD_TOKEN_BUDGET=256 MPS_REPLICAS=4 \
   ./scripts/deploy-pd.sh disaggregated
 
 python3 scripts/benchmark-pd.py --mps-replicas 4 --scheduler token-budget \
-  --token-budget 32 --config config/benchmarks/pd-scheduled.json
+  --token-budget 32 --config benchmarks/pd-scheduled.json
 python3 scripts/benchmark-pd.py --mps-replicas 4 --scheduler token-budget \
-  --token-budget 256 --config config/benchmarks/pd-scheduled.json
+  --token-budget 256 --config benchmarks/pd-scheduled.json
 python3 scripts/report-pd.py <report-directory>
 python3 scripts/report-pd-goodput.py <report-directory> --tpot-ms 25,30,35,40,50,75
 ```

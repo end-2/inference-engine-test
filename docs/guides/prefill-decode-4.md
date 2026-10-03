@@ -65,12 +65,12 @@ make pd-deploy MPS_REPLICAS=4 PD_MODE=aggregated
 
 ## Workload comparison
 
-Both modes use the same [base workload](../../config/benchmarks/pd.json). Input and output lengths, mix distribution, concurrency, request count, and repetition count match the 2-way setup.
+Both modes use the same [base workload](../../benchmarks/pd.json). Input and output lengths, mix distribution, concurrency, request count, and repetition count match the 2-way setup.
 
 ```sh
 make pd-benchmark MPS_REPLICAS=4
 # Direct equivalent
-python3 scripts/benchmark-pd.py --mps-replicas 4 --config config/benchmarks/pd.json
+python3 scripts/benchmark-pd.py --mps-replicas 4 --config benchmarks/pd.json
 ```
 
 Stores results in `docs/reports/gpu/pd/pd4-<timestamp>/` and `reports/pd/pd4-<timestamp>/`. JSON records MPS slot count, per-role worker counts, namespace, and run configuration. Report generation shows 4 shares, the 25% limit, and 3 Decodes.

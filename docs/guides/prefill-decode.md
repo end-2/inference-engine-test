@@ -63,7 +63,7 @@ The default image tag is stated in the manifests. After changing `IMAGE_TAG`, al
 
 ## Automatic comparison over multiple workloads
 
-The [workload configuration](../../config/benchmarks/pd.json) defines the full input and output length combinations, mixed load, concurrency, request count, and repetition count. Defaults are 9 combinations of inputs `64,256,704` with outputs `16,64,256` plus mixed load, at concurrencies `1,2,4,8` with 3 repetitions. Chat template tokens are added, so verify actual input length in the response `usage`.
+The [workload configuration](../../benchmarks/pd.json) defines the full input and output length combinations, mixed load, concurrency, request count, and repetition count. Defaults are 9 combinations of inputs `64,256,704` with outputs `16,64,256` plus mixed load, at concurrencies `1,2,4,8` with 3 repetitions. Chat template tokens are added, so verify actual input length in the response `usage`.
 
 Prepare the MPS cluster and inference image first. The runner needs Python PyYAML, and figure generation needs matplotlib.
 
@@ -71,7 +71,7 @@ Prepare the MPS cluster and inference image first. The runner needs Python PyYAM
 make build-benchmark-image load-benchmark-image DEVICE=gpu GPU_SHARING=mps
 make pd-benchmark
 # Custom cluster or workload configuration
-python3 scripts/benchmark-pd.py --cluster local-k8s-gpu-mps --config config/benchmarks/pd.json
+python3 scripts/benchmark-pd.py --cluster local-k8s-gpu-mps --config benchmarks/pd.json
 ```
 
 The [runner](../../scripts/benchmark-pd.py) switches both modes sequentially and runs AIPerf sweeps. It alternates A-to-D and D-to-A order per repetition. It stops on inference Pod restarts, request errors, output length mismatch, or payload hash or actual input and output distribution mismatch between modes. Warmup is excluded from measurement statistics.

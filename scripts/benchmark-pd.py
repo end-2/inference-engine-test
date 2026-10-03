@@ -242,7 +242,7 @@ def save(report, metadata, rows):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, default=ROOT / "config/benchmarks/pd.json")
+    parser.add_argument("--config", type=Path, default=ROOT / "benchmarks/pd.json")
     parser.add_argument("--mps-replicas", type=int, choices=(2, 4), default=os.environ.get("MPS_REPLICAS", "2"))
     parser.add_argument("--cluster", default=os.environ.get("CLUSTER_NAME"))
     parser.add_argument("--scheduler", choices=("serial", "token-budget"), default="serial")

@@ -127,7 +127,7 @@ class SuiteTests(unittest.TestCase):
             for call, variant in zip(ensure.call_args_list[:3], ["base", "enhanced-batch", "enhanced-cache"], strict=True):
                 target = f"transformers-{variant}" if backend == "transformers" else f"{variant}-llamacpp"
                 self.assertEqual(call.args, (f"local/{target}:test", suite.ROOT / "src", target))
-            self.assertEqual(ensure.call_args_list[-1].args, ("local/aiperf:test", suite.ROOT / "src/aiperf", None))
+            self.assertEqual(ensure.call_args_list[-1].args, ("local/aiperf:test", suite.ROOT / "benchmarks/aiperf", None))
 
     def test_resume_reuses_recorded_images_and_rejects_changed_ids(self):
         image = "local/transformers-base:test"

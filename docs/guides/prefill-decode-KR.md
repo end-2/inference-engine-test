@@ -61,7 +61,7 @@ make pd-deploy PD_MODE=disaggregated
 
 ## 여러 workload 자동 비교
 
-[workload 설정](../../config/benchmarks/pd.json)은 입력과 출력 길이의 전체 조합, 혼합 부하, 동시성, 요청 수와 반복 횟수를 정의합니다. 기본값은 입력 `64,256,704`, 출력 `16,64,256`의 9개 조합과 혼합 부하이며, 동시성 `1,2,4,8`에서 3회 반복합니다. 채팅 템플릿 토큰이 추가되므로 실제 입력 길이는 응답의 `usage`로 검증합니다.
+[workload 설정](../../benchmarks/pd.json)은 입력과 출력 길이의 전체 조합, 혼합 부하, 동시성, 요청 수와 반복 횟수를 정의합니다. 기본값은 입력 `64,256,704`, 출력 `16,64,256`의 9개 조합과 혼합 부하이며, 동시성 `1,2,4,8`에서 3회 반복합니다. 채팅 템플릿 토큰이 추가되므로 실제 입력 길이는 응답의 `usage`로 검증합니다.
 
 MPS 클러스터와 추론 이미지를 준비한 뒤 실행합니다. 실행기에는 Python의 PyYAML이 필요하고, 그림 생성에는 matplotlib가 필요합니다.
 
@@ -69,7 +69,7 @@ MPS 클러스터와 추론 이미지를 준비한 뒤 실행합니다. 실행기
 make build-benchmark-image load-benchmark-image DEVICE=gpu GPU_SHARING=mps
 make pd-benchmark
 # 커스텀 클러스터 또는 workload 설정
-python3 scripts/benchmark-pd.py --cluster local-k8s-gpu-mps --config config/benchmarks/pd.json
+python3 scripts/benchmark-pd.py --cluster local-k8s-gpu-mps --config benchmarks/pd.json
 ```
 
 [실행기](../../scripts/benchmark-pd.py)는 두 mode의 배포를 순차 전환하고 AIPerf sweep을 실행합니다. 반복마다 A→D와 D→A 순서를 번갈아 사용합니다. 추론 Pod 재시작, 요청 오류, 출력 길이 불일치, 두 mode 간 payload 해시 또는 실제 입력, 출력 분포 불일치가 있으면 중단합니다. 워밍업은 측정 통계에서 제외합니다.

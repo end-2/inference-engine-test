@@ -583,7 +583,7 @@ def parse_args():
     parser.add_argument("--inference-node", help="Pin inference and cache cleanup to this Kubernetes node")
     parser.add_argument("--benchmark-node", help="Pin AIPerf to this Kubernetes node")
     parser.add_argument("--benchmark-image", default=f"local/aiperf:{os.environ.get('AIPERF_IMAGE_TAG', '0.12.0')}")
-    parser.add_argument("--benchmark-build-context", default=str(ROOT / "src/aiperf"),
+    parser.add_argument("--benchmark-build-context", default=str(ROOT / "benchmarks/aiperf"),
                         help="Empty string reuses the prebuilt AIPerf image without building")
     parser.add_argument("--job-timeout", type=int, default=3600)
     parser.add_argument("--ready-timeout", type=int, default=300)

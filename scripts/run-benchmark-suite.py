@@ -214,7 +214,7 @@ def prepare_images(metadata, build):
     images = [(inference_image(metadata, variant), ROOT / "src",
                benchmark.image_name(backend, variant, metadata.get("device", "cpu")))
               for variant in dict.fromkeys(variant for _, variant, _ in conditions_for(backend))]
-    images.append((metadata["benchmark_image"], ROOT / "src/aiperf", None))
+    images.append((metadata["benchmark_image"], ROOT / "benchmarks/aiperf", None))
     for image, context, target in images:
         # An interrupted suite must retain already recorded image IDs.
         rebuild = build and image not in metadata["images"]

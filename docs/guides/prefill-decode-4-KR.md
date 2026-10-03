@@ -63,12 +63,12 @@ make pd-deploy MPS_REPLICAS=4 PD_MODE=aggregated
 
 ## Workload 비교
 
-두 mode에 동일한 [기본 workload](../../config/benchmarks/pd.json)를 적용합니다. 입력과 출력 길이, 혼합 분포, 동시성, 요청 수와 반복 횟수는 2분할과 같습니다.
+두 mode에 동일한 [기본 workload](../../benchmarks/pd.json)를 적용합니다. 입력과 출력 길이, 혼합 분포, 동시성, 요청 수와 반복 횟수는 2분할과 같습니다.
 
 ```sh
 make pd-benchmark MPS_REPLICAS=4
 # 같은 작업의 직접 실행
-python3 scripts/benchmark-pd.py --mps-replicas 4 --config config/benchmarks/pd.json
+python3 scripts/benchmark-pd.py --mps-replicas 4 --config benchmarks/pd.json
 ```
 
 결과는 `docs/reports/gpu/pd/pd4-<시각>/`와 `reports/pd/pd4-<시각>/`에 저장합니다. JSON에는 MPS 슬롯 수, worker별 역할 수, namespace와 실행 설정이 기록됩니다. 보고서 생성 시 4개 share, 25% 한도와 Decode 3개를 표시합니다.

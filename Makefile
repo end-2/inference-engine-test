@@ -20,7 +20,7 @@ REPETITIONS ?= 3
 INFERENCE_NODE ?=
 BENCHMARK_NODE ?=
 PD_MODE ?= aggregated
-PD_BENCHMARK_CONFIG ?= config/benchmarks/pd.json
+PD_BENCHMARK_CONFIG ?= benchmarks/pd.json
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-24s %s\n", $$1, $$2}' $(MAKEFILE_LIST)

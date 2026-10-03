@@ -139,7 +139,7 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(args.api_url, "http://transformers-base:8000")
         self.assertEqual(args.model, "HuggingFaceTB/SmolLM2-135M-Instruct")
         self.assertEqual(args.concurrencies, [1, 2, 4, 8])
-        self.assertEqual(args.benchmark_build_context, benchmark.ROOT / "src/aiperf")
+        self.assertEqual(args.benchmark_build_context, benchmark.ROOT / "benchmarks/aiperf")
 
     def test_backend_selects_matching_names_and_report_directory(self):
         for backend in ("llamacpp", "llama", "transformers"):

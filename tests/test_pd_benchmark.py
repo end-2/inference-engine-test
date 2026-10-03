@@ -52,7 +52,7 @@ class BenchmarkTests(unittest.TestCase):
                 report.scheduler_diagnostics(raw, metadata)
 
     def test_scheduled_profile_has_separate_namespace_and_larger_admission_limit(self):
-        config = json.loads((ROOT / "config/benchmarks/pd-scheduled.json").read_text())
+        config = json.loads((ROOT / "benchmarks/pd-scheduled.json").read_text())
         benchmark.validate_config(config, "token-budget")
         with self.assertRaises(ValueError):
             benchmark.validate_config(config)
@@ -63,7 +63,7 @@ class BenchmarkTests(unittest.TestCase):
         self.assertTrue(all(path.is_file() for path in profile["values"].values()))
 
     def setUp(self):
-        self.config = json.loads((ROOT / "config/benchmarks/pd.json").read_text())
+        self.config = json.loads((ROOT / "benchmarks/pd.json").read_text())
         self.template = next(d for d in render(ROOT / "k8s/aiperf/profiles/pd.yaml") if d["kind"] == "Job")
 
     def test_grid_and_mixed_use_same_budget_seed_and_endpoint(self):
