@@ -178,6 +178,7 @@ class GPUClusterTests(unittest.TestCase):
         self.run_script('transformers-pd', script='load-inference-images.sh')
         self.run_script(script='load-benchmark-images.sh')
         self.assertTrue(all('local-k8s-gpu-mps4' in a for a in self.calls('kind') if a[0]=='load'))
+        self.assertTrue(all('local-k8s-gpu-mps4-worker' in a for a in self.calls('kind') if a[0]=='load'))
         self.run_script('down')
         self.assertEqual(set(json.loads(self.state.read_text())['clusters']), {'local-k8s-gpu-mps'})
 
@@ -250,7 +251,18 @@ class GPUClusterTests(unittest.TestCase):
         loads = [a for a in self.calls('kind') if a[0]=='load']
         self.assertTrue(loads)
         self.assertTrue(all('local-k8s-gpu-mps' in a for a in loads))
-        self.assertTrue(any('local-k8s-gpu-mps-control-plane' in a for a in loads))
+        self.assertTrue(all('local-k8s-gpu-mps-worker' in a for a in loads))
+
+    def test_exclusive_image_loaders_follow_inference_and_client_placement(self):
+        self.env.update(GPU_SHARING='none', DEVICE='gpu')
+        self.run_script('up')
+        self.trace.write_text('')
+        self.run_script('transformers-base', script='load-inference-images.sh')
+        self.run_script(script='load-benchmark-images.sh')
+        loads = [a for a in self.calls('kind') if a[0]=='load']
+        self.assertEqual(len(loads), 2)
+        self.assertIn('local-k8s-gpu-worker', loads[0])
+        self.assertIn('local-k8s-gpu-control-plane', loads[1])
 
     def test_invalid_mode_and_cluster_name_are_rejected(self):
         self.env['GPU_SHARING']='invalid'

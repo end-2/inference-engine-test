@@ -58,6 +58,13 @@ python3 scripts/run-benchmark-suite.py --backend transformers
 
 `--image`, `--build-target`, `--manifests` and `--benchmark-manifests` override individual selections. See `--help` for node and timeout options. AIPerf image builds use `benchmarks/aiperf/`.
 
+Pass runner options through `BENCHMARK_ARGS` or `BENCHMARK_SUITE_ARGS` when using Make. For a short check, select one concurrency and an AIPerf profile with fewer requests and shorter output lengths.
+
+```sh
+make benchmark BENCHMARK_ARGS='--concurrencies 1 --job-timeout 180'
+make benchmark-suite BENCHMARK_SUITE_ARGS='--prepare-only'
+```
+
 ### Per-concurrency PVC cache reset
 
 | `CACHE_POLICY` | Reset point |

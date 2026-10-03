@@ -67,6 +67,8 @@ The [workload configuration](../../benchmarks/pd.json) defines the full input an
 
 Prepare the MPS cluster and inference image first. The runner needs Python PyYAML, and figure generation needs matplotlib.
 
+With `GPU_SHARING=mps`, the image loaders place both inference and AIPerf images on the MPS worker. `PD_BENCHMARK_ARGS` passes additional runner options through Make, including `--report-dir` and `--raw-dir`.
+
 ```sh
 make build-benchmark-image load-benchmark-image DEVICE=gpu GPU_SHARING=mps
 make pd-benchmark

@@ -4,6 +4,8 @@ set -eu
 umask 022
 
 ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
+PATH="${LOCAL_K8S_BIN_DIR:-$ROOT/.bin}:$PATH"
+export PATH
 
 die() { printf 'Error: %s\n' "$*" >&2; exit 1; }
 [ "$#" -le 1 ] || die "Usage: $0 [base-llamacpp|base-metric-llamacpp|enhanced-batch-llamacpp|enhanced-cache-llamacpp|transformers-base|transformers-base-metric|transformers-enhanced-batch|transformers-enhanced-cache|transformers-mamba-base|transformers-mamba-cache|transformers-hybrid|transformers-pd]"
@@ -24,8 +26,16 @@ case ${DEVICE:-cpu} in
   *) die "DEVICE must be cpu or gpu" ;;
 esac
 # no-cache for load: remove stale image from nodes before kind load
-for node in $(kind get nodes --name "$cluster_name" 2>/dev/null); do
+if [ "${DEVICE:-cpu}" = gpu ]; then
+  nodes="$cluster_name-worker"
+else
+  nodes=$(kind get nodes --name "$cluster_name")
+fi
+for node in $nodes; do
   docker exec "$node" crictl rmi "$image" >/dev/null 2>&1 || true
   docker exec "$node" ctr -n k8s.io images rm "$image" >/dev/null 2>&1 || true
 done
+if [ "${DEVICE:-cpu}" = gpu ]; then
+  exec "$cluster_script" load-image-node "$nodes" "$image"
+fi
 "$cluster_script" load-image "$image"

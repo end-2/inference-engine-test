@@ -18,11 +18,14 @@ INFERENCE_MANIFESTS ?= k8s/inference/profiles/$(VARIANT)-$(DEVICE).yaml
 CACHE_POLICY ?= $(if $(filter transformers-enhanced-cache transformers-mamba-cache,$(VARIANT)),clear-before-sweep,preserve)
 REPETITIONS ?= 3
 BENCHMARK_CONFIG ?=
+BENCHMARK_ARGS ?=
+BENCHMARK_SUITE_ARGS ?=
 CUDA_GRAPH ?=
 INFERENCE_NODE ?=
 BENCHMARK_NODE ?=
 PD_MODE ?= aggregated
 PD_BENCHMARK_CONFIG ?= benchmarks/pd.json
+PD_BENCHMARK_ARGS ?=
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-24s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -58,7 +61,7 @@ pd-deploy: ## Deploy aggregated or disaggregated inference on the MPS cluster
 	GPU_SHARING=mps ./scripts/deploy-pd.sh "$(PD_MODE)"
 
 pd-benchmark: ## Compare PD topologies across input, output, and concurrency sweeps
-	python3 scripts/benchmark-pd.py --config "$(PD_BENCHMARK_CONFIG)"
+	python3 scripts/benchmark-pd.py --config "$(PD_BENCHMARK_CONFIG)" $(PD_BENCHMARK_ARGS)
 
 build-benchmark-image: ## Build the AIPerf image
 	AIPERF_IMAGE_TAG=$(AIPERF_IMAGE_TAG) ./scripts/build-benchmark-images.sh
@@ -72,10 +75,11 @@ benchmark: ## Measure the selected VARIANT
 	INFERENCE_TARGET="$(INFERENCE_TARGET)" \
 	INFERENCE_MANIFESTS="$(INFERENCE_MANIFESTS)" AIPERF_IMAGE_TAG="$(AIPERF_IMAGE_TAG)" \
 	BENCHMARK_CACHE_POLICY="$(CACHE_POLICY)" \
-	./scripts/run-benchmark.py $(if $(CUDA_GRAPH),--cuda-graph "$(CUDA_GRAPH)")
+	./scripts/run-benchmark.py $(if $(CUDA_GRAPH),--cuda-graph "$(CUDA_GRAPH)") $(BENCHMARK_ARGS)
 
 benchmark-suite: ## Measure all variants, REPETITIONS=3
 	python3 scripts/run-benchmark-suite.py --backend "$(INFERENCE_BACKEND)" --device "$(DEVICE)" --repetitions "$(REPETITIONS)" \
 	  --image-tag "$(IMAGE_TAG)" --benchmark-image "local/aiperf:$(AIPERF_IMAGE_TAG)" \
 	  $(if $(BENCHMARK_CONFIG),--config "$(BENCHMARK_CONFIG)") \
-	  $(if $(INFERENCE_NODE),--inference-node "$(INFERENCE_NODE)") $(if $(BENCHMARK_NODE),--benchmark-node "$(BENCHMARK_NODE)")
+	  $(if $(INFERENCE_NODE),--inference-node "$(INFERENCE_NODE)") $(if $(BENCHMARK_NODE),--benchmark-node "$(BENCHMARK_NODE)") \
+	  $(BENCHMARK_SUITE_ARGS)

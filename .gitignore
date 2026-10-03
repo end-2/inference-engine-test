@@ -11,3 +11,6 @@ __pycache__/
 !/reports/**/summary*.json
 !/reports/**/summary*.md
 !/reports/*/README.md
+
+# Short operational checks are local artifacts.
+/reports/smoke-*/

@@ -65,6 +65,8 @@ make pd-deploy PD_MODE=disaggregated
 
 MPS 클러스터와 추론 이미지를 준비한 뒤 실행합니다. 실행기에는 Python의 PyYAML이 필요하고, 그림 생성에는 matplotlib가 필요합니다.
 
+`GPU_SHARING=mps`이면 이미지 로더가 추론 이미지와 AIPerf 이미지를 모두 MPS worker에 로드합니다. Make의 `PD_BENCHMARK_ARGS`로 `--report-dir`, `--raw-dir` 등의 실행 옵션을 전달할 수 있습니다.
+
 ```sh
 make build-benchmark-image load-benchmark-image DEVICE=gpu GPU_SHARING=mps
 make pd-benchmark

@@ -3,6 +3,8 @@ set -eu
 umask 077
 
 ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
+PATH="${LOCAL_K8S_BIN_DIR:-$ROOT/.bin}:$PATH"
+export PATH
 
 die() { printf 'Error: %s\n' "$*" >&2; exit 1; }
 
@@ -48,7 +50,11 @@ docker image inspect "$image" >/dev/null 2>&1 || \
 
 # no-cache for load: remove stale image from nodes before kind load
 if [ "${DEVICE:-cpu}" = gpu ]; then
-  nodes="$cluster_name-control-plane"
+  if [ "$GPU_SHARING" = mps ]; then
+    nodes="$cluster_name-worker"
+  else
+    nodes="$cluster_name-control-plane"
+  fi
 else
   nodes=$(kind get nodes --name "$cluster_name" 2>/dev/null)
 fi
@@ -66,6 +72,6 @@ esac
 export TMPDIR
 
 if [ "${DEVICE:-cpu}" = gpu ]; then
-  exec "$cluster_script" load-image-node "$cluster_name-control-plane" "$image"
+  exec "$cluster_script" load-image-node "$nodes" "$image"
 fi
 exec "$cluster_script" load-image "$image"

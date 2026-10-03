@@ -56,6 +56,13 @@ python3 scripts/run-benchmark-suite.py --backend transformers
 
 `--image`, `--build-target`, `--manifests`, `--benchmark-manifests`로 개별 선택을 덮어쓸 수 있습니다. 노드와 제한 시간 옵션은 `--help`에서 확인합니다. AIPerf 이미지는 `benchmarks/aiperf/`에서 빌드합니다.
 
+Make에서도 `BENCHMARK_ARGS`와 `BENCHMARK_SUITE_ARGS`로 실행 옵션을 전달할 수 있습니다. 짧은 동작 확인에는 동시성 하나와 요청 수, 출력 길이를 줄인 AIPerf 프로필을 선택합니다.
+
+```sh
+make benchmark BENCHMARK_ARGS='--concurrencies 1 --job-timeout 180'
+make benchmark-suite BENCHMARK_SUITE_ARGS='--prepare-only'
+```
+
 ### 동시성별 PVC cache 초기화
 
 | `CACHE_POLICY` | 초기화 시점 |
