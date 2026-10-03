@@ -15,6 +15,7 @@ from huggingface.llama.base.engine import EngineSettings, TorchEngine
 from huggingface.llama.batch import engine as batching
 from huggingface.llama.batch.backend import BatchBackend
 from huggingface.llama.batch.gpu.backend import GPUBatchBackend
+from huggingface.llama.batch.gpu.engine import EngineSettings as GPUSettings
 from huggingface.llama.batch.gpu.server import TorchEngine as GPUBatchEngine
 from huggingface.llama.cache import engine as caching
 
@@ -124,9 +125,9 @@ class EngineTests(unittest.TestCase):
 
     @unittest.skipIf(torch is None or not torch.cuda.is_available(), "CUDA required")
     def test_gpu_decode_graph_matches_dynamic_batch(self):
-        settings = replace(self.settings, device="cuda", dtype="float16")
+        settings = GPUSettings(**vars(replace(self.settings, device="cuda", dtype="float16")), cuda_graph="required")
         graph_backend = GPUBatchBackend(settings)
-        dynamic_backend = BatchBackend(settings)
+        dynamic_backend = GPUBatchBackend(replace(settings, cuda_graph="off"))
         self.addCleanup(graph_backend.close)
         self.addCleanup(dynamic_backend.close)
         for _ in range(2):
@@ -141,6 +142,8 @@ class EngineTests(unittest.TestCase):
             self.assertEqual(actual, expected)
             self.assertEqual(["".join(pieces) for pieces in chunks],
                              [result["text"] for result in actual])
+        self.assertEqual(graph_backend.runtime_info()["completed_requests"], {"eager": 0, "cuda_graph": 6})
+        self.assertEqual(dynamic_backend.runtime_info()["completed_requests"], {"eager": 6, "cuda_graph": 0})
 
     def test_stream_matches_complete_and_preserves_usage(self):
         pieces = []

@@ -16,6 +16,7 @@ import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
+CATALOG = json.loads((ROOT / "benchmarks/inference.json").read_text())
 SOURCE_LABEL = "io.local.inference.source-sha256"
 CACHE_POLICIES = ("preserve", "clear-before-sweep", "clear-per-concurrency")
 CONTROL_PLANE_TOLERATION = {"key": "node-role.kubernetes.io/control-plane",
@@ -530,6 +531,14 @@ def save_summary(report, metadata, rows):
                   "latency_avg_ms")]
         lines.append("| " + " | ".join(f"{value:.2f}" if isinstance(value, float) else str(value)
                                       for value in values) + " |")
+    if metadata.get("cuda_graph") is not None:
+        lines += ["", f"CUDA Graph mode: `{metadata['cuda_graph']}`. Completed request counts include warmup.",
+                  "", "| Concurrency | Eager requests | Graph requests |",
+                  "| --- | ---: | ---: |"]
+        for condition in metadata["conditions"]:
+            if "runtime" in condition:
+                counts = condition["runtime"]["completed_requests"]
+                lines.append(f"| {condition['concurrency']} | {counts['eager']} | {counts['cuda_graph']} |")
     if device == "gpu":
         lines += ["", "| Concurrency | GPU UUID | Samples | GPU avg (%) | GPU max (%) | Memory avg (MiB) | Memory max (MiB) |",
                   "| --- | --- | ---: | ---: | ---: | ---: | ---: |"]
@@ -546,19 +555,46 @@ def normalize_backend(backend):
     return "llamacpp" if backend == "llama" else backend
 
 
-def variant_name(backend, variant="base"):
-    if backend == "mamba":
-        return f"transformers-mamba-{variant}"
-    return f"transformers-{variant}" if backend == "transformers" else f"{variant}-llamacpp"
+def variant_name(backend, variant="base", config=None):
+    return (config or CATALOG[normalize_backend(backend)])["variants"][variant]["image"]
 
 
-def image_name(backend, variant, device):
-    name = variant_name(backend, variant)
+def image_name(backend, variant, device, config=None):
+    name = variant_name(backend, variant, config)
     return f"{name}-gpu" if device == "gpu" else name
 
 
-def manifests_path(backend, variant, device):
-    return ROOT / "k8s/inference/profiles" / f"{variant_name(backend, variant)}-{device}.yaml"
+def manifests_path(backend, variant, device, config=None):
+    return ROOT / (config or CATALOG[normalize_backend(backend)])["variants"][variant]["profiles"][device]
+
+
+def configure_cuda_graph(container, mode):
+    arguments = container.setdefault("args", [])
+    if "--cuda-graph" in arguments:
+        arguments[arguments.index("--cuda-graph") + 1] = mode
+    else:
+        arguments.extend(["--cuda-graph", mode])
+
+
+def collect_runtime(pod, container, mode):
+    script = ("import urllib.request; "
+              "print(urllib.request.urlopen('http://127.0.0.1:8000/runtime', timeout=10).read().decode())")
+    info = json.loads(kube("exec", pod, "-c", container, "--", "python", "-c", script, capture=True).stdout)
+    validate_runtime(info, mode)
+    return info
+
+
+def validate_runtime(info, mode):
+    if info.get("cuda_graph") != mode:
+        raise RuntimeError("CUDA Graph mode differs from the experiment")
+    for field in ("completed_batches", "completed_requests"):
+        counts = info.get(field, {})
+        if set(counts) != {"eager", "cuda_graph"} or any(type(n) is not int or n < 0 for n in counts.values()):
+            raise RuntimeError("Missing or invalid execution path counters")
+        if not sum(counts.values()):
+            raise RuntimeError("No completed inference recorded")
+        if (mode == "off" and counts["cuda_graph"]) or (mode == "required" and counts["eager"]):
+            raise RuntimeError("Inference used an unexpected execution path")
 
 
 def parse_args():
@@ -566,6 +602,9 @@ def parse_args():
     parser.add_argument("--backend", choices=("llamacpp", "transformers", "mamba"), type=normalize_backend,
                         default=os.environ.get("INFERENCE_BACKEND", "transformers"))
     parser.add_argument("--device", choices=("cpu", "gpu"), default=os.environ.get("BENCHMARK_DEVICE", "cpu"))
+    parser.add_argument("--variant", help="Feature implementation from benchmarks/inference.json")
+    parser.add_argument("--cuda-graph", choices=("auto", "off", "required"),
+                        help="Select and verify the Transformers GPU batch execution path")
     parser.add_argument("--image", default=os.environ.get("INFERENCE_IMAGE"))
     parser.add_argument("--build-context", default=os.environ.get("INFERENCE_CONTEXT", str(ROOT / "src")),
                         help="Empty string reuses a prebuilt local image without building")
@@ -583,6 +622,7 @@ def parse_args():
     parser.add_argument("--inference-node", help="Pin inference and cache cleanup to this Kubernetes node")
     parser.add_argument("--benchmark-node", help="Pin AIPerf to this Kubernetes node")
     parser.add_argument("--benchmark-image", default=f"local/aiperf:{os.environ.get('AIPERF_IMAGE_TAG', '0.12.0')}")
+    parser.add_argument("--benchmark-manifests", type=Path, help="AIPerf Helm profile or manifest directory")
     parser.add_argument("--benchmark-build-context", default=str(ROOT / "benchmarks/aiperf"),
                         help="Empty string reuses the prebuilt AIPerf image without building")
     parser.add_argument("--job-timeout", type=int, default=3600)
@@ -597,14 +637,22 @@ def parse_args():
     if args.backend not in {"llamacpp", "transformers", "mamba"}:
         parser.error("backend must be llamacpp, transformers or mamba")
     args.reports_dir = args.reports_dir or ROOT / "docs/reports" / ("gpu" if args.device == "gpu" else "") / args.backend
-    name = variant_name(args.backend)
-    args.image = args.image or f"local/{image_name(args.backend, 'base', args.device)}:0.1.0"
-    args.manifests = args.manifests or str(manifests_path(args.backend, "base", args.device))
+    config = CATALOG[args.backend]
+    args.variant = args.variant or next((variant for variant in config["variants"]
+                                        if args.build_target == image_name(args.backend, variant, args.device)), "base")
+    if args.variant not in config["variants"] or args.device not in config["variants"][args.variant]["profiles"]:
+        parser.error("variant is not available for this backend and device")
+    if args.cuda_graph is not None and (args.backend, args.device, args.variant) != ("transformers", "gpu", "enhanced-batch"):
+        parser.error("--cuda-graph requires --backend transformers --device gpu --variant enhanced-batch")
+    name = config["deployment"]
+    args.image = args.image or f"local/{image_name(args.backend, args.variant, args.device)}:0.1.0"
+    args.manifests = args.manifests or str(manifests_path(args.backend, args.variant, args.device))
     args.deployment = args.deployment or name
     args.api_url = args.api_url or f"http://{name}:8000"
-    args.model = args.model or {"transformers": "HuggingFaceTB/SmolLM2-135M-Instruct",
-                               "mamba": "state-spaces/mamba-130m-hf",
-                               "llamacpp": "Qwen/Qwen2.5-0.5B-Instruct"}[args.backend]
+    args.model = args.model or config["model"]
+    args.benchmark_manifests = (args.benchmark_manifests or ROOT / config["benchmark_profile"]).resolve()
+    if not args.benchmark_manifests.exists():
+        parser.error("benchmark manifests do not exist")
     if args.cache_policy not in CACHE_POLICIES:
         parser.error(f"cache policy must be one of {', '.join(CACHE_POLICIES)}")
     try:
@@ -620,7 +668,7 @@ def parse_args():
     args.build_context = Path(args.build_context).resolve() if args.build_context else None
     args.benchmark_build_context = Path(args.benchmark_build_context).resolve() if args.benchmark_build_context else None
     if args.build_target is None and args.build_context == ROOT / "src":
-        args.build_target = image_name(args.backend, "base", args.device)
+        args.build_target = image_name(args.backend, args.variant, args.device)
     if args.build_context and not (args.build_context / "Dockerfile").is_file():
         parser.error("build context must contain a Dockerfile")
     if args.benchmark_build_context and not (args.benchmark_build_context / "Dockerfile").is_file():
@@ -632,8 +680,7 @@ def parse_args():
 
 
 def benchmark_manifests(backend):
-    profile = {"transformers": "default", "mamba": "mamba", "llamacpp": "qwen2.5"}[backend]
-    return render(ROOT / "k8s/aiperf/profiles" / f"{profile}.yaml")
+    return render(ROOT / CATALOG[normalize_backend(backend)]["benchmark_profile"])
 
 
 def benchmark_template(backend):
@@ -713,6 +760,9 @@ def main():
     report.mkdir(parents=True)
     metadata = {"run_id": run_id, "started_at": started.isoformat(), "status": "running",
                 "backend": args.backend, "device": args.device,
+                "variant": args.variant, "cuda_graph": args.cuda_graph,
+                "measurement_scope": "http_chat_completions",
+                "inference_profile": str(args.manifests), "benchmark_profile": str(args.benchmark_manifests),
                 "concurrencies": args.concurrencies, "sample_interval_seconds": args.sample_interval,
                 "cache_policy": args.cache_policy,
                 "inference_node": args.inference_node, "benchmark_node": args.benchmark_node,
@@ -750,6 +800,8 @@ def main():
         container = next(item for item in deployment["spec"]["template"]["spec"]["containers"]
                          if item["name"] == args.container)
         container["image"] = args.image
+        if args.cuda_graph is not None:
+            configure_cuda_graph(container, args.cuda_graph)
         arguments = container.get("args", [])
         if args.backend in {"transformers", "mamba"}:
             metadata["compute_setting"] = "dtype=" + arguments[arguments.index("--dtype") + 1]
@@ -776,7 +828,7 @@ def main():
             stop_other_gpu_engine(args.deployment, args.ready_timeout)
         kube("apply", "-f", path)
         kube("rollout", "status", f"deployment/{args.deployment}", f"--timeout={args.ready_timeout}s")
-        profile = benchmark_manifests(args.backend)
+        profile = render(args.benchmark_manifests)
         template = next(item for item in profile["items"] if item["kind"] == "Job")
         resources = {"apiVersion": "v1", "kind": "List", "items": [
             item for item in profile["items"] if item["kind"] != "Job"]}
@@ -866,6 +918,12 @@ def main():
             condition["output_length_check"] = validate_output_lengths(result.parent / "profile_export.jsonl")
             if condition["output_length_check"]["checked_requests"] != expected:
                 raise RuntimeError("Per-request output records are incomplete")
+            if args.cuda_graph is not None:
+                condition["runtime"] = collect_runtime(condition["pod_name"], args.container, args.cuda_graph)
+                condition["runtime_scope"] = "pod_lifetime_including_warmup"
+                if sum(condition["runtime"]["completed_requests"].values()) < expected:
+                    raise RuntimeError("Execution path counters do not cover the measured requests")
+                write_json(case_dir / "runtime.json", condition["runtime"])
             rows.append(row)
             condition["status"] = "complete"
             condition["completed_at"] = datetime.now(timezone.utc).isoformat()

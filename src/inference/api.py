@@ -141,6 +141,11 @@ def create_app(settings: ServerSettings, engine_factory: Callable[[Any], Engine]
             ],
         }
 
+    @app.get("/runtime", include_in_schema=False)
+    async def runtime():
+        info = getattr(app.state.engine, "runtime_info", None)
+        return await run_engine(info) if info else {}
+
     async def events(prompt, body, output_tokens):
         loop = asyncio.get_running_loop()
         queue: asyncio.Queue = asyncio.Queue()

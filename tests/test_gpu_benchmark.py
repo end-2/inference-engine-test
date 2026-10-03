@@ -1,6 +1,7 @@
 """GPU benchmark routing, manifests, and collection checks."""
 
 import importlib.util
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -26,6 +27,52 @@ suite_spec.loader.exec_module(suite)
 
 
 class GPUSettingsTests(unittest.TestCase):
+    def test_graph_cli_selects_matching_variant_and_rejects_other_engines(self):
+        command = ["benchmark", "--device", "gpu", "--variant", "enhanced-batch", "--cuda-graph", "off"]
+        with patch.dict(os.environ, {}, clear=True), patch("sys.argv", command):
+            args = benchmark.parse_args()
+        self.assertEqual(args.build_target, "transformers-enhanced-batch-gpu")
+        self.assertEqual(args.image, "local/transformers-enhanced-batch-gpu:0.1.0")
+        for extra in (["--backend", "llamacpp"], ["--device", "cpu"], ["--variant", "base"]):
+            with patch.dict(os.environ, {}, clear=True), patch("sys.argv", command + extra), \
+                    patch("sys.stderr"), self.assertRaises(SystemExit):
+                benchmark.parse_args()
+
+    def test_graph_override_replaces_profile_option(self):
+        container = {"args": ["--device", "cuda"]}
+        benchmark.configure_cuda_graph(container, "off")
+        benchmark.configure_cuda_graph(container, "required")
+        self.assertEqual(container["args"], ["--device", "cuda", "--cuda-graph", "required"])
+
+    def test_runtime_collection_verifies_actual_execution(self):
+        info = {"cuda_graph": "required", "completed_batches": {"eager": 0, "cuda_graph": 12},
+                "completed_requests": {"eager": 0, "cuda_graph": 102}}
+        with patch.object(benchmark, "kube", return_value=subprocess.CompletedProcess([], 0, json.dumps(info))) as kube:
+            self.assertEqual(benchmark.collect_runtime("pod", "api", "required"), info)
+        self.assertEqual(kube.call_args.args[:6], ("exec", "pod", "-c", "api", "--", "python"))
+        for invalid in ({}, info | {"cuda_graph": "auto"},
+                        info | {"completed_requests": {"eager": 1, "cuda_graph": 101}},
+                        info | {"completed_batches": {"eager": 0, "cuda_graph": 0}}):
+            with self.subTest(info=invalid), self.assertRaises(RuntimeError):
+                benchmark.validate_runtime(invalid, "required")
+
+    @unittest.skipIf(yaml is None, "PyYAML is needed to inspect manifests")
+    def test_catalog_matches_helm_profiles_and_image_targets(self):
+        for backend, config in benchmark.CATALOG.items():
+            for variant, definition in config["variants"].items():
+                for device, path in definition["profiles"].items():
+                    with self.subTest(backend=backend, variant=variant, device=device):
+                        resources = render(ROOT / path)
+                        deployment = next(d for d in resources if d["kind"] == "Deployment")
+                        self.assertEqual(deployment["metadata"]["name"], config["deployment"])
+                        container = deployment["spec"]["template"]["spec"]["containers"][0]
+                        target = benchmark.image_name(backend, variant, device)
+                        self.assertEqual(container["image"], f"local/{target}:0.1.0")
+                        arguments = container["args"]
+                        self.assertEqual(arguments[arguments.index("--served-model-name") + 1], config["model"])
+                        dockerfile = ROOT / "src" / ("Dockerfile.gpu" if device == "gpu" else "Dockerfile")
+                        self.assertIn(f" AS {target}\n", dockerfile.read_text())
+
     def test_exclusive_benchmarks_reject_mps_before_cluster_changes(self):
         for module in (benchmark, suite):
             with self.subTest(module=module.__name__), patch.dict(os.environ, {"GPU_SHARING": "mps"}), \

@@ -19,6 +19,22 @@ from huggingface.jamba.base import server as hybrid_base
 
 
 class ServerTests(unittest.IsolatedAsyncioTestCase):
+    async def test_runtime_reports_engine_details_without_changing_completion_response(self):
+        class RuntimeEngine(FakeEngine):
+            def runtime_info(self):
+                return {"completed_requests": self.calls}
+
+        settings = base.Settings()
+        app = base.create_app(settings, RuntimeEngine)
+        async with app.router.lifespan_context(app):
+            async with httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url="http://test") as client:
+                self.assertEqual((await client.get("/runtime")).json(), {"completed_requests": 0})
+                response = await client.post("/v1/chat/completions", json={
+                    "model": settings.served_model_name, "messages": [{"role": "user", "content": "hello"}]})
+                self.assertEqual(response.status_code, 200)
+                self.assertNotIn("runtime", response.json())
+                self.assertEqual((await client.get("/runtime")).json(), {"completed_requests": 1})
+
     async def test_api_contract_for_all_variants(self):
         for server in (base, batch, cache, mamba, mamba_cache, hybrid, hybrid_base):
             with self.subTest(server=server.__name__):

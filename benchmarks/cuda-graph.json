@@ -1,0 +1,23 @@
+{
+  "backend": "transformers",
+  "device": "gpu",
+  "conditions": [
+    {
+      "name": "base",
+      "variant": "base",
+      "cache_policy": "preserve"
+    },
+    {
+      "name": "batch",
+      "variant": "enhanced-batch",
+      "cache_policy": "preserve",
+      "cuda_graph": "off"
+    },
+    {
+      "name": "batch-graph",
+      "variant": "enhanced-batch",
+      "cache_policy": "preserve",
+      "cuda_graph": "required"
+    }
+  ]
+}

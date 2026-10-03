@@ -15,6 +15,61 @@ spec.loader.exec_module(suite)
 
 
 class SuiteTests(unittest.TestCase):
+    def test_graph_experiment_routes_shared_image_and_separate_modes(self):
+        config = suite.load_experiment(suite.ROOT / "benchmarks/cuda-graph.json")
+        cases = suite.plan(2, config["backend"], config["conditions"])
+        self.assertEqual([c["condition"] for c in cases],
+                         ["base", "batch", "batch-graph", "batch", "batch-graph", "base"])
+        metadata = {"backend": config["backend"], "device": config["device"], "cases": cases,
+                    "image_tag": "test", "benchmark_image": "local/aiperf:test", "images": {},
+                    "inference_node": "worker", "benchmark_node": "control"}
+        for case, mode in zip(cases[1:3], ("off", "required")):
+            command = suite.case_command(case, metadata, Path("reports"))
+            args = dict(zip(command[2::2], command[3::2], strict=True))
+            self.assertEqual(args["--cuda-graph"], mode)
+            self.assertEqual(args["--variant"], "enhanced-batch")
+            self.assertEqual(args["--image"], "local/transformers-enhanced-batch-gpu:test")
+        with patch.object(suite.benchmark, "ensure_image", return_value={"id": "same"}) as ensure:
+            suite.prepare_images(metadata, build=True)
+        self.assertEqual(len(ensure.call_args_list), 3)
+
+    def test_config_selects_gpu_before_environment_validation(self):
+        config = str(suite.ROOT / "benchmarks/cuda-graph.json")
+        with patch.dict(os.environ, {}, clear=True), patch("sys.argv", ["suite", "--config", config]):
+            args = suite.parse_args()
+        self.assertEqual((args.backend, args.device), ("transformers", "gpu"))
+        with patch.dict(os.environ, {"GPU_SHARING": "mps"}), patch(
+                "sys.argv", ["suite", "--config", config]), patch("sys.stderr"), self.assertRaises(SystemExit):
+            suite.parse_args()
+
+    def test_invalid_experiment_fails_before_deployment(self):
+        valid = {"backend": "transformers", "device": "gpu", "conditions": [
+            {"name": "graph", "variant": "enhanced-batch", "cache_policy": "preserve", "cuda_graph": "required"}]}
+        invalid = [valid | {"device": "cpu"}, valid | {"conditions": []},
+                   valid | {"conditions": valid["conditions"] * 2}]
+        for changes in ({"name": "../escape"}, {"variant": "unknown"}, {"cuda_graph": "yes"},
+                        {"cache_policy": "unknown"}, {"unexpected": True}):
+            invalid.append(valid | {"conditions": [valid["conditions"][0] | changes]})
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "experiment.json"
+            for config in invalid:
+                path.write_text(json.dumps(config))
+                with self.subTest(config=config), self.assertRaises(ValueError):
+                    suite.load_experiment(path)
+
+    def test_resume_command_uses_recorded_catalog(self):
+        config = json.loads(json.dumps(suite.benchmark.CATALOG["transformers"]))
+        config["variants"]["base"]["image"] = "recorded-base"
+        config["variants"]["base"]["profiles"]["cpu"] = "recorded-profile.yaml"
+        config["benchmark_profile"] = "recorded-workload.yaml"
+        metadata = {"backend": "transformers", "backend_config": config, "image_tag": "old",
+                    "benchmark_image": "local/aiperf:test", "inference_node": "cp", "benchmark_node": "cp"}
+        command = suite.case_command(suite.plan(1)[0], metadata, Path("reports"))
+        args = dict(zip(command[2::2], command[3::2], strict=True))
+        self.assertEqual(args["--image"], "local/recorded-base:old")
+        self.assertEqual(args["--manifests"], str(suite.ROOT / "recorded-profile.yaml"))
+        self.assertEqual(args["--benchmark-manifests"], str(suite.ROOT / "recorded-workload.yaml"))
+
     def test_transformers_runs_each_variant_three_times_with_independent_cache(self):
         cases = suite.plan(3)
         self.assertEqual(len(cases), 9)

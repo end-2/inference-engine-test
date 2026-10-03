@@ -235,6 +235,7 @@ def main():
                 "max_parallel": max(args.concurrencies), "n_ctx": settings.n_ctx, "n_threads": settings.n_threads,
                 "cache_budgets_mib": {"gpu": 64 if args.device == "cuda" else 0, "ram": 256, "disk": 1024},
                 "disk_page_cache": "not dropped; warm checkpoint files",
+                "measurement_scope": "engine_generation_first_token",
                 "command": sys.argv, "source_sha256": {}, "model_sha256": {}}
     for category, paths in (("source_sha256", [Path(__file__), *sorted((ROOT / "src/huggingface").rglob("*.py")),
                                               *sorted((ROOT / "src/inference").glob("*.py"))]),

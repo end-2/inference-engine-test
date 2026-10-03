@@ -17,6 +17,8 @@ INFERENCE_TARGET ?= $(VARIANT)$(if $(filter gpu,$(DEVICE)),-gpu)
 INFERENCE_MANIFESTS ?= k8s/inference/profiles/$(VARIANT)-$(DEVICE).yaml
 CACHE_POLICY ?= $(if $(filter transformers-enhanced-cache transformers-mamba-cache,$(VARIANT)),clear-before-sweep,preserve)
 REPETITIONS ?= 3
+BENCHMARK_CONFIG ?=
+CUDA_GRAPH ?=
 INFERENCE_NODE ?=
 BENCHMARK_NODE ?=
 PD_MODE ?= aggregated
@@ -70,9 +72,10 @@ benchmark: ## Measure the selected VARIANT
 	INFERENCE_TARGET="$(INFERENCE_TARGET)" \
 	INFERENCE_MANIFESTS="$(INFERENCE_MANIFESTS)" AIPERF_IMAGE_TAG="$(AIPERF_IMAGE_TAG)" \
 	BENCHMARK_CACHE_POLICY="$(CACHE_POLICY)" \
-	./scripts/run-benchmark.py
+	./scripts/run-benchmark.py $(if $(CUDA_GRAPH),--cuda-graph "$(CUDA_GRAPH)")
 
 benchmark-suite: ## Measure all variants, REPETITIONS=3
 	python3 scripts/run-benchmark-suite.py --backend "$(INFERENCE_BACKEND)" --device "$(DEVICE)" --repetitions "$(REPETITIONS)" \
 	  --image-tag "$(IMAGE_TAG)" --benchmark-image "local/aiperf:$(AIPERF_IMAGE_TAG)" \
+	  $(if $(BENCHMARK_CONFIG),--config "$(BENCHMARK_CONFIG)") \
 	  $(if $(INFERENCE_NODE),--inference-node "$(INFERENCE_NODE)") $(if $(BENCHMARK_NODE),--benchmark-node "$(BENCHMARK_NODE)")

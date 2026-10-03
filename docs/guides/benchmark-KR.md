@@ -4,6 +4,8 @@ AIPerf로 base, batch, prefix KV cache 구현의 처리량과 지연을 비교�
 
 추론 구현과 API는 [추론 엔진 가이드](inference-engine.md)를 참고합니다.
 
+소스 구조, 비교 조건 추가와 CUDA Graph 성능 분리 측정은 [기능별 실험 가이드](feature-experiments-KR.md)를 참고합니다.
+
 ## 구성
 
 | 항목 | 설정 |

@@ -6,6 +6,8 @@ Compare throughput and latency of base, batch, and prefix KV cache implementatio
 
 For inference implementation and API, see the [inference engine guide](inference-engine.md).
 
+For source boundaries, adding comparison conditions and isolating CUDA Graph performance, see [feature experiments](feature-experiments.md).
+
 ## Configuration
 
 | Item | Setting |

@@ -11,15 +11,17 @@ from .engine import EngineSettings, TorchEngine
 @dataclass(frozen=True)
 class Settings(BatchSettings):
     device: str = "cuda"
+    cuda_graph: str = "auto"
 
     def engine_settings(self):
-        return EngineSettings(**vars(super().engine_settings()))
+        return EngineSettings(**vars(super().engine_settings()), cuda_graph=self.cuda_graph)
 
 
 def create_parser():
     parser = server.create_parser(__doc__)
     parser.add_argument("--max-parallel", type=server.api.positive_int, default=4)
     parser.add_argument("--batch-wait-ms", type=float, default=5)
+    parser.add_argument("--cuda-graph", choices=("auto", "off", "required"), default="auto")
     parser.set_defaults(device="cuda")
     return parser
 

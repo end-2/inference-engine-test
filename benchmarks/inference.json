@@ -1,0 +1,135 @@
+{
+  "transformers": {
+    "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+    "deployment": "transformers-base",
+    "benchmark_profile": "k8s/aiperf/profiles/default.yaml",
+    "variants": {
+      "base": {
+        "image": "transformers-base",
+        "profiles": {
+          "cpu": "k8s/inference/profiles/transformers-base-cpu.yaml",
+          "gpu": "k8s/inference/profiles/transformers-base-gpu.yaml"
+        }
+      },
+      "enhanced-batch": {
+        "image": "transformers-enhanced-batch",
+        "profiles": {
+          "cpu": "k8s/inference/profiles/transformers-enhanced-batch-cpu.yaml",
+          "gpu": "k8s/inference/profiles/transformers-enhanced-batch-gpu.yaml"
+        }
+      },
+      "enhanced-cache": {
+        "image": "transformers-enhanced-cache",
+        "profiles": {
+          "cpu": "k8s/inference/profiles/transformers-enhanced-cache-cpu.yaml",
+          "gpu": "k8s/inference/profiles/transformers-enhanced-cache-gpu.yaml"
+        }
+      }
+    },
+    "conditions": [
+      {
+        "name": "base",
+        "variant": "base",
+        "cache_policy": "preserve"
+      },
+      {
+        "name": "enhanced-batch",
+        "variant": "enhanced-batch",
+        "cache_policy": "preserve"
+      },
+      {
+        "name": "enhanced-cache",
+        "variant": "enhanced-cache",
+        "cache_policy": "clear-before-sweep"
+      }
+    ]
+  },
+  "llamacpp": {
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "deployment": "base-llamacpp",
+    "benchmark_profile": "k8s/aiperf/profiles/qwen2.5.yaml",
+    "variants": {
+      "base": {
+        "image": "base-llamacpp",
+        "profiles": {
+          "cpu": "k8s/inference/profiles/base-llamacpp-cpu.yaml",
+          "gpu": "k8s/inference/profiles/base-llamacpp-gpu.yaml"
+        }
+      },
+      "enhanced-batch": {
+        "image": "enhanced-batch-llamacpp",
+        "profiles": {
+          "cpu": "k8s/inference/profiles/enhanced-batch-llamacpp-cpu.yaml",
+          "gpu": "k8s/inference/profiles/enhanced-batch-llamacpp-gpu.yaml"
+        }
+      },
+      "enhanced-cache": {
+        "image": "enhanced-cache-llamacpp",
+        "profiles": {
+          "cpu": "k8s/inference/profiles/enhanced-cache-llamacpp-cpu.yaml",
+          "gpu": "k8s/inference/profiles/enhanced-cache-llamacpp-gpu.yaml"
+        }
+      }
+    },
+    "conditions": [
+      {
+        "name": "base",
+        "variant": "base",
+        "cache_policy": "preserve"
+      },
+      {
+        "name": "enhanced-batch",
+        "variant": "enhanced-batch",
+        "cache_policy": "preserve"
+      },
+      {
+        "name": "enhanced-cache-clear",
+        "variant": "enhanced-cache",
+        "cache_policy": "clear-per-concurrency"
+      },
+      {
+        "name": "enhanced-cache-preserve",
+        "variant": "enhanced-cache",
+        "cache_policy": "clear-before-sweep"
+      }
+    ]
+  },
+  "mamba": {
+    "model": "state-spaces/mamba-130m-hf",
+    "deployment": "transformers-mamba-base",
+    "benchmark_profile": "k8s/aiperf/profiles/mamba.yaml",
+    "variants": {
+      "base": {
+        "image": "transformers-mamba-base",
+        "profiles": {
+          "cpu": "k8s/inference/profiles/transformers-mamba-base-cpu.yaml",
+          "gpu": "k8s/inference/profiles/transformers-mamba-base-gpu.yaml"
+        }
+      },
+      "cache": {
+        "image": "transformers-mamba-cache",
+        "profiles": {
+          "cpu": "k8s/inference/profiles/transformers-mamba-cache-cpu.yaml",
+          "gpu": "k8s/inference/profiles/transformers-mamba-cache-gpu.yaml"
+        }
+      }
+    },
+    "conditions": [
+      {
+        "name": "base",
+        "variant": "base",
+        "cache_policy": "preserve"
+      },
+      {
+        "name": "cache-clear",
+        "variant": "cache",
+        "cache_policy": "clear-per-concurrency"
+      },
+      {
+        "name": "cache-preserve",
+        "variant": "cache",
+        "cache_policy": "clear-before-sweep"
+      }
+    ]
+  }
+}

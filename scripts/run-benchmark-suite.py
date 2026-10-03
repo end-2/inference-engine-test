@@ -17,28 +17,53 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("benchmark", ROOT / "scripts/run-benchmark.py")
 benchmark = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(benchmark)
-CONDITIONS = (
-    ("base", "base", "preserve"),
-    ("enhanced-batch", "enhanced-batch", "preserve"),
-    ("enhanced-cache-clear", "enhanced-cache", "clear-per-concurrency"),
-    ("enhanced-cache-preserve", "enhanced-cache", "clear-before-sweep"),
-)
-TRANSFORMERS_CONDITIONS = (
-    ("base", "base", "preserve"),
-    ("enhanced-batch", "enhanced-batch", "preserve"),
-    ("enhanced-cache", "enhanced-cache", "clear-before-sweep"),
-)
-MAMBA_CONDITIONS = (
-    ("base", "base", "preserve"),
-    ("cache-clear", "cache", "clear-per-concurrency"),
-    ("cache-preserve", "cache", "clear-before-sweep"),
-)
 
 
 def conditions_for(backend):
-    if backend == "mamba":
-        return MAMBA_CONDITIONS
-    return TRANSFORMERS_CONDITIONS if backend == "transformers" else CONDITIONS
+    return tuple((case["name"], case["variant"], case["cache_policy"])
+                 for case in benchmark.CATALOG[benchmark.normalize_backend(backend)]["conditions"])
+
+
+CONDITIONS = conditions_for("llamacpp")
+TRANSFORMERS_CONDITIONS = conditions_for("transformers")
+MAMBA_CONDITIONS = conditions_for("mamba")
+
+
+def load_experiment(path):
+    config = json.loads(path.read_text())
+    if set(config) != {"backend", "device", "conditions"}:
+        raise ValueError("Experiment requires backend, device and conditions")
+    backend, device = config["backend"], config["device"]
+    if backend not in benchmark.CATALOG or device not in {"cpu", "gpu"}:
+        raise ValueError("Unknown experiment backend or device")
+    cases = config["conditions"]
+    if not isinstance(cases, list) or not cases:
+        raise ValueError("Experiment conditions must be a nonempty list")
+    names = set()
+    for case in cases:
+        if (not isinstance(case, dict) or not {"name", "variant", "cache_policy"} <= set(case)
+                or set(case) - {"name", "variant", "cache_policy", "cuda_graph"}):
+            raise ValueError("Condition requires name, variant, cache_policy and optional cuda_graph")
+        name = case["name"]
+        if (not isinstance(name, str) or not name or name in {".", ".."}
+                or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-" for c in name)
+                or name in names):
+            raise ValueError("Condition names must be distinct filename-safe labels")
+        names.add(name)
+        variant = benchmark.CATALOG[backend]["variants"].get(case["variant"])
+        if variant is None or device not in variant["profiles"]:
+            raise ValueError("Variant is not available for this backend and device")
+        if case["cache_policy"] not in benchmark.CACHE_POLICIES:
+            raise ValueError("Unknown cache policy")
+        if "cuda_graph" in case and (
+                (backend, device, case["variant"]) != ("transformers", "gpu", "enhanced-batch")
+                or case["cuda_graph"] not in {"auto", "off", "required"}):
+            raise ValueError("cuda_graph requires a Transformers GPU batch condition and auto, off or required")
+    return config
+
+
+def backend_config(metadata):
+    return metadata.get("backend_config", benchmark.CATALOG[backend_for(metadata)])
 
 
 def backend_for(metadata):
@@ -47,21 +72,25 @@ def backend_for(metadata):
 
 def inference_image(metadata, variant):
     backend = backend_for(metadata)
-    image = f"local/{benchmark.image_name(backend, variant, metadata.get('device', 'cpu'))}:{metadata['image_tag']}"
+    image = f"local/{benchmark.image_name(backend, variant, metadata.get('device', 'cpu'), backend_config(metadata))}:{metadata['image_tag']}"
     legacy = f"local/llama-{variant}:{metadata['image_tag']}"
     # Archived suites retain their measured image references when resumed.
     return legacy if backend == "llamacpp" and legacy in metadata.get("images", {}) else image
 
 
-def plan(repetitions, backend="transformers"):
+def plan(repetitions, backend="transformers", conditions=None):
     cases = []
-    conditions = conditions_for(backend)
+    conditions = conditions if conditions is not None else benchmark.CATALOG[benchmark.normalize_backend(backend)]["conditions"]
     for repetition in range(1, repetitions + 1):
         offset = (repetition - 1) % len(conditions)
-        for label, variant, policy in conditions[offset:] + conditions[:offset]:
-            cases.append({"repetition": repetition, "condition": label, "variant": variant,
-                          "cache_policy": policy, "status": "pending",
-                          "directory": f"r{repetition}/{label}"})
+        for condition in conditions[offset:] + conditions[:offset]:
+            label = condition["name"]
+            case = {"repetition": repetition, "condition": label, "variant": condition["variant"],
+                    "cache_policy": condition["cache_policy"], "status": "pending",
+                    "directory": f"r{repetition}/{label}"}
+            if "cuda_graph" in condition:
+                case["cuda_graph"] = condition["cuda_graph"]
+            cases.append(case)
     return cases
 
 
@@ -87,18 +116,23 @@ def aggregate(rows):
 
 def case_command(case, metadata, destination):
     backend = backend_for(metadata)
-    name = benchmark.variant_name(backend)
+    config = backend_config(metadata)
+    name = config["deployment"]
     device = metadata.get("device", "cpu")
-    return [sys.executable, str(ROOT / "scripts/run-benchmark.py"),
-            "--backend", backend, "--device", device,
+    command = [sys.executable, str(ROOT / "scripts/run-benchmark.py"),
+            "--backend", backend, "--device", device, "--variant", case["variant"],
+            "--model", config["model"], "--benchmark-manifests", str(ROOT / config["benchmark_profile"]),
             "--image", inference_image(metadata, case["variant"]),
-            "--build-context", "", "--manifests", str(benchmark.manifests_path(backend, case["variant"], device)),
+            "--build-context", "", "--manifests", str(benchmark.manifests_path(backend, case["variant"], device, config)),
             "--deployment", name, "--container", "api", "--api-url", f"http://{name}:8000",
             "--concurrencies", "1,2,4,8", "--cache-policy", case["cache_policy"],
             "--benchmark-image", metadata["benchmark_image"],
             "--benchmark-build-context", "",
             "--inference-node", metadata["inference_node"], "--benchmark-node", metadata["benchmark_node"],
             "--reports-dir", str(destination)]
+    if "cuda_graph" in case:
+        command.extend(["--cuda-graph", case["cuda_graph"]])
+    return command
 
 
 def read_case(report, case, metadata):
@@ -107,6 +141,8 @@ def read_case(report, case, metadata):
         raise RuntimeError(f"Incomplete sweep: {report}")
     if run["cache_policy"] != case["cache_policy"]:
         raise RuntimeError(f"Unexpected cache policy: {report}")
+    if "cuda_graph" in case and run.get("cuda_graph") != case["cuda_graph"]:
+        raise RuntimeError(f"Unexpected CUDA Graph mode: {report}")
     backend = backend_for(metadata)
     if backend_for(run) != backend:
         raise RuntimeError(f"Unexpected backend: {report}")
@@ -119,6 +155,8 @@ def read_case(report, case, metadata):
     if len(run["conditions"]) != 4 or len({c["pod_uid"] for c in run["conditions"]}) != 4:
         raise RuntimeError(f"Expected four distinct inference Pods: {report}")
     for index, condition in enumerate(run["conditions"]):
+        if "cuda_graph" in case:
+            benchmark.validate_runtime(condition.get("runtime", {}), case["cuda_graph"])
         if condition["status"] != "complete" or condition["output_length_check"]["shortfalls"]:
             raise RuntimeError(f"Invalid condition: {report}")
         if metadata.get("device") == "gpu" and condition.get("gpu_collection", {}).get("gpu_samples", 0) < 1:
@@ -174,9 +212,7 @@ def save_suite(directory, metadata, rows):
              f"- Inference node: `{metadata['inference_node']}`; AIPerf node: `{metadata['benchmark_node']}`",
              "- Each sweep uses concurrency 1, 2, 4, 8; each step has 2 warmup and 100 profiling requests.",
              "- Each step starts with a fresh inference Pod. Image IDs and node placement are fixed across repetitions.",
-             ("- Cache: empty PVC before each sweep, then retain it between steps."
-              if metadata.get("backend") == "transformers" else
-              "- Cache clear: empty PVC before every step. Cache preserve: empty PVC before the sweep, then retain it between steps."),
+             "- Cache policy is recorded per condition in `run.json`.",
              "- Cache clearing precedes warmup; cache can fill and be reused within each step.",
              ("- All sweeps run sequentially." if metadata["repetitions"] == 1 else
               "- Execution order rotates by one condition each repetition. All sweeps run sequentially."),
@@ -211,9 +247,11 @@ def save_suite(directory, metadata, rows):
 
 def prepare_images(metadata, build):
     backend = backend_for(metadata)
+    variants = (case["variant"] for case in metadata["cases"]) if "cases" in metadata else (
+        variant for _, variant, _ in conditions_for(backend))
     images = [(inference_image(metadata, variant), ROOT / "src",
-               benchmark.image_name(backend, variant, metadata.get("device", "cpu")))
-              for variant in dict.fromkeys(variant for _, variant, _ in conditions_for(backend))]
+               benchmark.image_name(backend, variant, metadata.get("device", "cpu"), backend_config(metadata)))
+              for variant in dict.fromkeys(variants)]
     images.append((metadata["benchmark_image"], ROOT / "benchmarks/aiperf", None))
     for image, context, target in images:
         # An interrupted suite must retain already recorded image IDs.
@@ -234,6 +272,7 @@ def parse_args():
     parser.add_argument("--backend", choices=("llamacpp", "transformers", "mamba"), type=benchmark.normalize_backend,
                         default=os.environ.get("INFERENCE_BACKEND", "transformers"))
     parser.add_argument("--device", choices=("cpu", "gpu"), default=os.environ.get("BENCHMARK_DEVICE", "cpu"))
+    parser.add_argument("--config", type=Path, help="Experiment conditions, backend and device as JSON")
     parser.add_argument("--repetitions", type=int, default=3)
     parser.add_argument("--inference-node", help="Default: the single control-plane node")
     parser.add_argument("--benchmark-node", help="Default: the same single control-plane node")
@@ -244,6 +283,15 @@ def parse_args():
     parser.add_argument("--skip-build", action="store_true", help="Load existing local images without rebuilding")
     parser.add_argument("--prepare-only", action="store_true", help="Prepare cluster, model and images without running measurements")
     args = parser.parse_args()
+    args.experiment = None
+    if args.config:
+        if args.resume:
+            parser.error("--resume uses its recorded experiment; omit --config")
+        try:
+            args.experiment = load_experiment(args.config)
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            parser.error(str(exc))
+        args.backend, args.device = args.experiment["backend"], args.experiment["device"]
     if args.device == "gpu" and os.environ.get("GPU_SHARING", "none") != "none":
         parser.error("This benchmark requires GPU_SHARING=none; use docs/guides/gpu-mps.md for MPS workloads")
     if args.repetitions < 1:
@@ -272,7 +320,12 @@ def main():
                         "device": args.device,
                         "repetitions": args.repetitions, "image_tag": args.image_tag,
                         "benchmark_image": args.benchmark_image, "inference_node": args.inference_node,
-                        "benchmark_node": args.benchmark_node, "images": {}, "cases": plan(args.repetitions, args.backend)}
+                        "benchmark_node": args.benchmark_node, "images": {},
+                        "backend_config": benchmark.CATALOG[args.backend],
+                        "experiment": args.experiment,
+                        "measurement_scope": "http_chat_completions",
+                        "cases": plan(args.repetitions, args.backend,
+                                      args.experiment["conditions"] if args.experiment else None)}
         rows = []
         print(f"Suite: {directory}", flush=True)
         try:
