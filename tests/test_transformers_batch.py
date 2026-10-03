@@ -6,7 +6,7 @@ import threading
 import unittest
 
 from enhanced_support import ROOT
-from transformer.enhanced.batch.engine import EngineSettings, TorchEngine
+from huggingface.llama.batch.engine import EngineSettings, TorchEngine
 
 
 class BlockingBackend:

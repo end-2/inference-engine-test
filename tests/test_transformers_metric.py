@@ -9,7 +9,7 @@ from unittest.mock import patch
 import test_server_llamacpp as base_tests
 
 spec = importlib.util.spec_from_file_location(
-    "transformers_metric_server", Path(__file__).resolve().parents[1] / "src/transformer/base_metric/server.py",
+    "transformers_metric_server", Path(__file__).resolve().parents[1] / "src/huggingface/llama/metrics/server.py",
 )
 metric_server = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(metric_server)

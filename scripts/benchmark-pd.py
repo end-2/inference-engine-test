@@ -293,8 +293,10 @@ def main():
     job_name = None
     reader_name = run_id + "-results"
     reader_created = False
-    sources = [*sorted((ROOT / "src/transformer/pd").glob("*.py")),
-               ROOT / "src/transformer/base/engine.py", ROOT / "src/Dockerfile.gpu"]
+    sources = [*sorted((ROOT / "src/huggingface/llama/inference_distributed").glob("*.py")),
+               *sorted((ROOT / "src/inference").glob("*.py")),
+               *sorted((ROOT / "src/huggingface/runtime").glob("*.py")),
+               *sorted((ROOT / "src/huggingface/llama").glob("*.py")), ROOT / "src/Dockerfile.gpu"]
     metadata["source_sha256"] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}
     save(report, metadata, rows)
     print(f"REPORT {report}", flush=True)

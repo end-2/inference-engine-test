@@ -8,7 +8,7 @@ Adding `--scheduler token-budget` to the existing PD workers handles multiple re
 
 ## Scheduling rules
 
-Based on the [schedule in vLLM V1 v0.30.0](https://github.com/vllm-project/vllm/blob/ced6857afa0ea7b2e3f0846a62e1394e90f15607/vllm/v1/core/sched/scheduler.py#L561-L865). The implementation is in [scheduler.py](../../src/transformer/pd/scheduler.py) and [packed.py](../../src/transformer/pd/packed.py).
+Based on the [schedule in vLLM V1 v0.30.0](https://github.com/vllm-project/vllm/blob/ced6857afa0ea7b2e3f0846a62e1394e90f15607/vllm/v1/core/sched/scheduler.py#L561-L865). The implementation is in [scheduler.py](../../src/huggingface/llama/inference_distributed/scheduler.py) and [packed.py](../../src/huggingface/llama/inference_distributed/packed.py).
 
 1. Each step selects RUNNING requests in arrival order. An in-progress decode usually uses 1 token, and a partial prefill uses part of the remaining prompt.
 2. While remaining token budget, running request count, and KV reservation allow, admits WAITING requests in FIFO order.

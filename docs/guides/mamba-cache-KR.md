@@ -4,8 +4,8 @@
 
 | 구성 | Python 진입점 | VARIANT |
 | --- | --- | --- |
-| 요청마다 prompt 계산 | `transformer.mamba.server` | `transformers-mamba-base` |
-| prefix 상태 재사용 | `transformer.mamba.cache.server` | `transformers-mamba-cache` |
+| 요청마다 prompt 계산 | `huggingface.mamba.base.server` | `transformers-mamba-base` |
+| prefix 상태 재사용 | `huggingface.mamba.cache.server` | `transformers-mamba-cache` |
 
 두 구성 모두 생성 중에는 Mamba의 recurrent cache를 사용합니다. 비교 대상은 요청 간 prefix 상태 재사용 여부입니다. 서버는 요청을 직렬 처리하며 동시성 증가는 대기열에 반영됩니다. Mamba 배칭과 CUDA Graph는 지원하지 않습니다.
 
@@ -45,10 +45,10 @@ LOCAL_K8S_SCRIPT=./scripts/local-k8s-gpu.sh ./scripts/k8s.sh apply k8s/inference
 ./scripts/local-k8s-gpu.sh kubectl port-forward service/transformers-mamba-base 8000:8000
 ```
 
-CPU는 `DEVICE=cpu`와 `k8s/inference/profiles/transformers-mamba-cache-cpu.yaml`를 사용합니다. 로컬 실행 의존성은 [Transformers requirements](../../src/transformer/requirements.txt)를 따릅니다.
+CPU는 `DEVICE=cpu`와 `k8s/inference/profiles/transformers-mamba-cache-cpu.yaml`를 사용합니다. 로컬 실행 의존성은 [Transformers requirements](../../src/huggingface/requirements.txt)를 따릅니다.
 
 ```sh
-PYTHONPATH=src python -m transformer.mamba.cache.server \
+PYTHONPATH=src python -m huggingface.mamba.cache.server \
   --model .models/mamba-130m --device cuda --dtype float16 \
   --cache-dir /tmp/mamba-cache
 ```
@@ -72,7 +72,7 @@ PYTHONPATH=src python -m transformer.mamba.cache.server \
 
 ## 테스트
 
-Transformers 의존성과 HTTP 테스트용 `httpx`, metric 테스트용 [requirements](../../src/transformer/base_metric/requirements.txt)가 필요합니다.
+Transformers 의존성과 HTTP 테스트용 `httpx`, metric 테스트용 [requirements](../../src/huggingface/llama/metrics/requirements.txt)가 필요합니다.
 
 ```sh
 python -m unittest discover -s tests -p 'test_transformers_*.py' -v

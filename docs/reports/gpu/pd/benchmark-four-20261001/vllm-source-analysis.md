@@ -55,7 +55,7 @@ If a different proxy forwards P's first token first, the TTFT boundary changes. 
 
 ## What Changes from the Existing Benchmark
 
-The current [server](../../../../../src/transformer/pd/server.py) runs GPU work with `ThreadPoolExecutor(max_workers=1)`, and the [decode loop](../../../../../src/transformer/pd/engine.py) keeps running until one request's generation finishes. It uses per-request batch 1 and does not mix multiple requests per step like vLLM. Existing TTFT gaps therefore include request-level serial wait, worker count, and HTTP state-transfer path effects; they do not measure vLLM chunked-prefill token-budget contention.
+The current [server](../../../../../src/huggingface/llama/inference_distributed/server.py) runs GPU work with `ThreadPoolExecutor(max_workers=1)`, and the [decode loop](../../../../../src/huggingface/llama/inference_distributed/engine.py) keeps running until one request's generation finishes. It uses per-request batch 1 and does not mix multiple requests per step like vLLM. Existing TTFT gaps therefore include request-level serial wait, worker count, and HTTP state-transfer path effects; they do not measure vLLM chunked-prefill token-budget contention.
 
 Switching to vLLM lets both A and D batch requests continuously, so existing numbers cannot be carried over. In particular, a new prefill does not wait for a decode request's full output completion merely because decode requests exist.
 

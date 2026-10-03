@@ -1,13 +1,13 @@
 # Jamba hybrid 배치와 HiCache
 
-`transformer.hybrid.server`는 Jamba의 Attention KV, Mamba convolution 상태와 SSM 상태를 함께 관리합니다. 기존 Transformers 및 Mamba 엔진과 별도 모듈이며 같은 HTTP와 SSE API를 제공합니다. `model_type=jamba`이고 Attention과 Mamba 레이어를 모두 포함하는 로컬 체크포인트가 필요합니다. 기존 SmolLM2 또는 Mamba-130m 가중치는 사용할 수 없습니다.
+`huggingface.jamba.hybrid.server`는 Jamba의 Attention KV, Mamba convolution 상태와 SSM 상태를 함께 관리합니다. 기존 Transformers 및 Mamba 엔진과 별도 모듈이며 같은 HTTP와 SSE API를 제공합니다. `model_type=jamba`이고 Attention과 Mamba 레이어를 모두 포함하는 로컬 체크포인트가 필요합니다. 기존 SmolLM2 또는 Mamba-130m 가중치는 사용할 수 없습니다.
 
 ## 실행
 
-의존성은 [Transformers requirements](../../src/transformer/requirements.txt)를 사용합니다. 모델 디렉터리에는 설정, safetensors 가중치와 토크나이저가 있어야 합니다.
+의존성은 [Transformers requirements](../../src/huggingface/requirements.txt)를 사용합니다. 모델 디렉터리에는 설정, safetensors 가중치와 토크나이저가 있어야 합니다.
 
 ```sh
-PYTHONPATH=src python -m transformer.hybrid.server \
+PYTHONPATH=src python -m huggingface.jamba.hybrid.server \
   --model /path/to/jamba --served-model-name jamba-hybrid \
   --device cuda --dtype float16 \
   --max-parallel 4 --batch-wait-ms 5 \
@@ -38,9 +38,9 @@ docker run --rm --gpus all -p 8000:8000 \
 
 ## 상태 버퍼와 배치
 
-[HybridBuffer](../../src/transformer/hybrid/state.py)는 `max_parallel`과 `n_ctx`에 맞춰 Attention KV 및 Mamba 상태 공간을 미리 확보합니다. KV는 기존 버퍼에 추가하므로 decode마다 전체 KV를 `torch.cat()`으로 다시 만들지 않습니다. Jamba의 PyTorch 경로가 교체한 Mamba 상태는 같은 버퍼에 복사하며, SSM의 float32 누적 정밀도를 유지합니다. 커널 내부의 임시 텐서 할당은 남아 있습니다.
+[HybridBuffer](../../src/huggingface/jamba/hybrid/state.py)는 `max_parallel`과 `n_ctx`에 맞춰 Attention KV 및 Mamba 상태 공간을 미리 확보합니다. KV는 기존 버퍼에 추가하므로 decode마다 전체 KV를 `torch.cat()`으로 다시 만들지 않습니다. Jamba의 PyTorch 경로가 교체한 Mamba 상태는 같은 버퍼에 복사하며, SSM의 float32 누적 정밀도를 유지합니다. 커널 내부의 임시 텐서 할당은 남아 있습니다.
 
-[배치 백엔드](../../src/transformer/hybrid/backend.py)는 다음과 같이 처리합니다.
+[배치 백엔드](../../src/huggingface/jamba/hybrid/backend.py)는 다음과 같이 처리합니다.
 
 - prefix 길이와 복원 길이가 같은 요청을 묶어 prefill합니다. 캐시 miss는 prefix 전체를 한 번에 계산합니다.
 - checkpoint가 prefix 전체와 일치하면 중간 prefill 버퍼 복사를 생략하고 decode 버퍼에 바로 복원합니다.
@@ -60,7 +60,7 @@ checkpoint는 **입력의 마지막 토큰 직전**에서 KV, convolution 상태
 
 Mamba 상태는 과거 위치로 잘라낼 수 없습니다. 따라서 저장된 토큰 전체가 요청 prefix와 일치하는 checkpoint 중 가장 긴 항목만 복원합니다. 예를 들어 `[1, 2, 3]` checkpoint는 `[1, 2, 3, 4]` 입력에 사용할 수 있지만 `[1, 2, 9, 4]` 입력에는 사용할 수 없습니다. 중간 경계 checkpoint는 자동 생성하지 않습니다.
 
-[HiCache](../../src/transformer/hybrid/hicache.py)의 계층은 다음과 같습니다.
+[HiCache](../../src/huggingface/jamba/hybrid/hicache.py)의 계층은 다음과 같습니다.
 
 | 계층 | 저장 형태 | 한도 초과 시 |
 | --- | --- | --- |
@@ -70,7 +70,7 @@ Mamba 상태는 과거 위치로 잘라낼 수 없습니다. 따라서 저장된
 
 항목은 한 계층에 보관하며, hit 시 예산이 허용하는 상위 계층으로 이동합니다. GPU와 RAM 예산은 텐서 payload 및 토큰당 8바이트를 합산합니다. 디스크는 파일 크기를 계산합니다. 한 계층의 전체 예산보다 큰 항목은 하위 계층으로 넘기고, 모든 계층에 들어갈 수 없으면 보관하지 않습니다. GPU 캐시 복사 중 CUDA OOM이 발생하면 해당 항목을 RAM 또는 디스크로 넘깁니다.
 
-`--cache-gpu-mib`, `--cache-ram-mib`, `--cache-disk-mib`는 각 계층의 예산이며 0이면 비활성화합니다. `--cache-min-prefix`는 저장 및 복원할 최소 토큰 수입니다. 기본값은 [EngineSettings](../../src/transformer/hybrid/engine.py)를 참고하고, 전체 CLI 옵션은 `python -m transformer.hybrid.server --help`로 확인합니다.
+`--cache-gpu-mib`, `--cache-ram-mib`, `--cache-disk-mib`는 각 계층의 예산이며 0이면 비활성화합니다. `--cache-min-prefix`는 저장 및 복원할 최소 토큰 수입니다. 기본값은 [EngineSettings](../../src/huggingface/jamba/hybrid/engine.py)를 참고하고, 전체 CLI 옵션은 `python -m huggingface.jamba.hybrid.server --help`로 확인합니다.
 
 활성 배치 버퍼, 모델 가중치, prefill 결과 복사본, 역직렬화 버퍼 및 Python 객체는 캐시 예산에 포함되지 않습니다. 활성 추론 중 OOM에 대한 자동 재시도는 하지 않습니다. prefix 캐시의 복사본은 활성 버퍼와 분리되어 있어 배치 갱신과 eviction이 저장된 상태를 변경하지 않습니다.
 
@@ -90,7 +90,7 @@ PYTHONPATH=src:tests python -m unittest \
 
 ## Base와 성능 비교
 
-[직렬 base](../../src/transformer/hybrid/base.py)는 같은 Jamba 모델을 Transformers `generate()`로 실행합니다. 요청 내부의 dynamic KV와 Mamba 상태는 사용하며 요청 간 prefix 캐시와 배치는 사용하지 않습니다. HTTP로 실행하려면 모듈을 `transformer.hybrid.base_server`로 지정합니다.
+[직렬 base](../../src/huggingface/jamba/base/engine.py)는 같은 Jamba 모델을 Transformers `generate()`로 실행합니다. 요청 내부의 dynamic KV와 Mamba 상태는 사용하며 요청 간 prefix 캐시와 배치는 사용하지 않습니다. HTTP로 실행하려면 모듈을 `huggingface.jamba.base.server`로 지정합니다.
 
 벤치마크에는 AI21의 학습된 개발용 [Jamba-tiny-dev](https://huggingface.co/ai21labs/Jamba-tiny-dev)를 사용합니다. 모델 revision과 파일 체크섬은 [모델 설정](../../config/models/jamba-tiny-dev-transformers.env)에 고정되어 있습니다.
 

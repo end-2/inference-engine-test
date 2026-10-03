@@ -8,10 +8,10 @@ import unittest
 from unittest.mock import patch
 
 from enhanced_support import ROOT
-from transformer.base.engine import Generation
-from transformer.mamba.engine import EngineSettings, TorchEngine
-from transformer.mamba.cache import engine as caching
-from llamacpp.enhanced.cache.cache import Snapshot
+from inference.contracts import Generation
+from huggingface.mamba.base.engine import EngineSettings, TorchEngine
+from huggingface.mamba.cache import engine as caching
+from inference.cache import Snapshot
 
 try:
     import torch
@@ -24,7 +24,7 @@ except ImportError:
     torch = None
 
 
-@unittest.skipIf(torch is None, "Install transformer/requirements.txt")
+@unittest.skipIf(torch is None, "Install huggingface/requirements.txt")
 class MambaTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

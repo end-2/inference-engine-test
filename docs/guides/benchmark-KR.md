@@ -10,7 +10,7 @@ AIPerf로 base, batch, prefix KV cache 구현의 처리량과 지연을 비교�
 | --- | --- |
 | 클러스터 | 기본 단일 노드 kind, 추론 서버와 AIPerf Job 배치 |
 | 모델 | SmolLM2 Transformers CPU, 서버와 AIPerf가 같은 revision의 토크나이저 사용 |
-| 추론 구현 | base, enhanced/batch, enhanced/cache 중 선택 |
+| 추론 구현 | base, batch, cache 중 선택 |
 | 단일 측정 | 동시성별 추론 Pod 재시작 후 워밍업과 본 요청 실행 |
 | 반복 측정 | 구현별 반복 실행, 회차마다 실행 순서 순환 |
 | 관측 | AIPerf 요청별 결과와 Kubernetes 노드, Pod, 컨테이너 자원 표본 |

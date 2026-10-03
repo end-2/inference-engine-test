@@ -112,7 +112,7 @@ router:
     command:
     - python
     - -m
-    - transformer.pd.router
+    - huggingface.llama.inference_distributed.router
     args:
     - --mode
     - $(PD_MODE)

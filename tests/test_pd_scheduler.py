@@ -9,11 +9,11 @@ import test_pd
 from test_pd import TinyModel, torch
 
 if torch is not None:
-    from transformer.base.engine import EngineSettings
-    from transformer.pd.engine import State
-    from transformer.pd.packed import PackedEngine
-    from transformer.pd.scheduler import Job, TokenScheduler, Work, select_running
-    from transformer.pd import server
+    from huggingface.llama.base.engine import EngineSettings
+    from huggingface.llama.inference_distributed.engine import State
+    from huggingface.llama.inference_distributed.packed import PackedEngine
+    from huggingface.llama.inference_distributed.scheduler import Job, TokenScheduler, Work, select_running
+    from huggingface.llama.inference_distributed import server
 
 
 @unittest.skipIf(torch is None, "Install Transformers and PD requirements")

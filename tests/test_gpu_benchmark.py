@@ -33,7 +33,7 @@ class GPUSettingsTests(unittest.TestCase):
                 module.parse_args()
 
     def test_transformers_device_defaults_and_cpu_validation(self):
-        from transformer.base.engine import EngineSettings
+        from huggingface.llama.base.engine import EngineSettings
         self.assertEqual(EngineSettings(Path("model")).dtype, "float32")
         self.assertEqual(EngineSettings(Path("model"), device="cuda").dtype, "float16")
         with self.assertRaises(ValueError):

@@ -2,14 +2,14 @@
 
 # Jamba hybrid batching and HiCache
 
-`transformer.hybrid.server` manages Jamba Attention KV together with Mamba convolution and SSM states. It is a separate module from the existing Transformers and Mamba engines and provides the same HTTP and SSE API. It needs a local checkpoint with `model_type=jamba` that includes both Attention and Mamba layers. Existing SmolLM2 or Mamba-130m weights cannot be used.
+`huggingface.jamba.hybrid.server` manages Jamba Attention KV together with Mamba convolution and SSM states. It is a separate module from the existing Transformers and Mamba engines and provides the same HTTP and SSE API. It needs a local checkpoint with `model_type=jamba` that includes both Attention and Mamba layers. Existing SmolLM2 or Mamba-130m weights cannot be used.
 
 ## Run
 
-Dependencies use the [Transformers requirements](../../src/transformer/requirements.txt). The model directory must contain config, safetensors weights, and tokenizer.
+Dependencies use the [Transformers requirements](../../src/huggingface/requirements.txt). The model directory must contain config, safetensors weights, and tokenizer.
 
 ```sh
-PYTHONPATH=src python -m transformer.hybrid.server \
+PYTHONPATH=src python -m huggingface.jamba.hybrid.server \
   --model /path/to/jamba --served-model-name jamba-hybrid \
   --device cuda --dtype float16 \
   --max-parallel 4 --batch-wait-ms 5 \
@@ -40,9 +40,9 @@ To keep disk cache across container restarts, mount a directory writable by UID 
 
 ## State buffers and batching
 
-[HybridBuffer](../../src/transformer/hybrid/state.py) pre-allocates Attention KV and Mamba state space for `max_parallel` and `n_ctx`. KV is appended to the existing buffer, so decode does not rebuild the full KV with `torch.cat()` each time. Mamba state replaced by the Jamba PyTorch path is copied into the same buffer, keeping SSM float32 accumulation precision. Temporary tensor allocation inside kernels remains.
+[HybridBuffer](../../src/huggingface/jamba/hybrid/state.py) pre-allocates Attention KV and Mamba state space for `max_parallel` and `n_ctx`. KV is appended to the existing buffer, so decode does not rebuild the full KV with `torch.cat()` each time. Mamba state replaced by the Jamba PyTorch path is copied into the same buffer, keeping SSM float32 accumulation precision. Temporary tensor allocation inside kernels remains.
 
-The [batch backend](../../src/transformer/hybrid/backend.py) processes as follows.
+The [batch backend](../../src/huggingface/jamba/hybrid/backend.py) processes as follows.
 
 - Prefill together requests with the same prefix length and restore length. A cache miss computes the full prefix at once.
 - When a checkpoint matches the full prefix, skip intermediate prefill buffer copies and restore directly into the decode buffer.
@@ -62,7 +62,7 @@ A checkpoint stores KV, convolution state, and SSM state together **just before 
 
 Mamba state cannot be truncated to an earlier position. So restore only the longest checkpoint whose full stored tokens match the request prefix. For example, a `[1, 2, 3]` checkpoint can serve a `[1, 2, 3, 4]` input but not a `[1, 2, 9, 4]` input. Intermediate boundary checkpoints are not auto-generated.
 
-The [HiCache](../../src/transformer/hybrid/hicache.py) tiers are as follows.
+The [HiCache](../../src/huggingface/jamba/hybrid/hicache.py) tiers are as follows.
 
 | Tier | Stored form | When over limit |
 | --- | --- | --- |
@@ -72,7 +72,7 @@ The [HiCache](../../src/transformer/hybrid/hicache.py) tiers are as follows.
 
 Entries stay in one tier, and on hit move to an upper tier when budget allows. GPU and RAM budgets sum tensor payload plus 8 bytes per token. Disk counts file size. An entry larger than a tier's full budget moves to a lower tier; entries that fit no tier are not kept. On CUDA OOM during GPU cache copy, pass that entry to RAM or disk.
 
-`--cache-gpu-mib`, `--cache-ram-mib`, and `--cache-disk-mib` are per-tier budgets; 0 disables. `--cache-min-prefix` is the minimum token count stored and restored. See [EngineSettings](../../src/transformer/hybrid/engine.py) for defaults, and `python -m transformer.hybrid.server --help` for all CLI options.
+`--cache-gpu-mib`, `--cache-ram-mib`, and `--cache-disk-mib` are per-tier budgets; 0 disables. `--cache-min-prefix` is the minimum token count stored and restored. See [EngineSettings](../../src/huggingface/jamba/hybrid/engine.py) for defaults, and `python -m huggingface.jamba.hybrid.server --help` for all CLI options.
 
 Active batch buffers, model weights, prefill result copies, deserialization buffers, and Python objects are not included in cache budgets. There is no automatic retry on OOM during active inference. Prefix cache copies are separate from active buffers, so batch updates and eviction do not change stored state.
 
@@ -92,7 +92,7 @@ Tests build a small random Jamba model and check that cold and warm cache plus b
 
 ## Base and performance comparison
 
-The [serial base](../../src/transformer/hybrid/base.py) runs the same Jamba model with Transformers `generate()`. It uses dynamic KV and Mamba state inside a request, without cross-request prefix cache or batching. To run over HTTP, set the module to `transformer.hybrid.base_server`.
+The [serial base](../../src/huggingface/jamba/base/engine.py) runs the same Jamba model with Transformers `generate()`. It uses dynamic KV and Mamba state inside a request, without cross-request prefix cache or batching. To run over HTTP, set the module to `huggingface.jamba.base.server`.
 
 Benchmarks use AI21's trained development model [Jamba-tiny-dev](https://huggingface.co/ai21labs/Jamba-tiny-dev). Model revision and file checksums are pinned in [model settings](../../config/models/jamba-tiny-dev-transformers.env).
 

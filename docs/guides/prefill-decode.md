@@ -2,7 +2,7 @@
 
 # Prefill and Decode Placement Comparison
 
-Runs SmolLM2 on 2 MPS slots and compares aggregation with disaggregation. Both modes use the [same engine](../../src/transformer/pd/engine.py), model, FP16, greedy decoding, and batch 1 per Pod. Prefix cache and continuous batching are not used.
+Runs SmolLM2 on 2 MPS slots and compares aggregation with disaggregation. Both modes use the [same engine](../../src/huggingface/llama/inference_distributed/engine.py), model, FP16, greedy decoding, and batch 1 per Pod. Prefix cache and continuous batching are not used.
 
 The [experiment index](../reports/gpu/pd/README.md) covers 2-way, 4-way, and scheduler results. The [2-way measured report](../reports/gpu/pd/benchmark-20260930/summary.md) is 1 completed workload comparison from an interrupted run.
 
@@ -131,13 +131,13 @@ This implementation measures HTTP KV transfer through CPU memory. Do not directl
 
 - Common token and queue limits: [inference-distributed/values.yaml](../../k8s/inference-distributed/values.yaml)
 - GPU resources, model mounts, and roles: [workers](../../k8s/inference-distributed/templates/workers.yaml)
-- Engine, internal API, and router: [src/transformer/pd](../../src/transformer/pd)
+- Engine, internal API, and router: [src/huggingface/llama/inference_distributed](../../src/huggingface/llama/inference_distributed)
 
 A small Llama model in a CPU environment can also verify state transfer and output equivalence.
 
 ```sh
 python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
-python -m pip install -r src/transformer/requirements.txt -r src/transformer/pd/requirements.txt pyyaml
+python -m pip install -r src/huggingface/requirements.txt -r src/huggingface/llama/inference_distributed/requirements.txt pyyaml
 python -m unittest discover -s tests -p 'test_pd*.py' -v
 ./scripts/render-k8s.sh k8s/inference-distributed/profiles/mps-2-aggregated.yaml
 ./scripts/render-k8s.sh k8s/inference-distributed/profiles/mps-2-disaggregated.yaml

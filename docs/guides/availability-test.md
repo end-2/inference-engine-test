@@ -115,7 +115,7 @@ sh tests/test-hpa-manifests-transformers.sh
 ./scripts/k8s.sh delete k8s/experiment/profiles/availability-transformers.yaml
 ```
 
-The metric unit tests need the Transformers runtime and dependencies in `src/transformer/base_metric/requirements.txt`. To delete the cluster, run `./scripts/local-k8s.sh down` with the same `CLUSTER_NAME`. Host-collected results and models are kept.
+The metric unit tests need the Transformers runtime and dependencies in `src/huggingface/llama/metrics/requirements.txt`. To delete the cluster, run `./scripts/local-k8s.sh down` with the same `CLUSTER_NAME`. Host-collected results and models are kept.
 
 ## llama.cpp
 
@@ -147,6 +147,6 @@ python3 scripts/run-availability-test-llamacpp.py --scenario pause-60s
 Use the following commands for llama.cpp metric validation.
 
 ```sh
-python -m pip install -r src/llamacpp/base_metric/requirements.txt fastapi httpx
+python -m pip install -r src/llamacpp/metrics/requirements.txt fastapi httpx
 python -m unittest discover -s tests -p 'test_base_metric_llamacpp.py'
 ```

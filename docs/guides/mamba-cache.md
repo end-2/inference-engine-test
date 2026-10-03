@@ -6,8 +6,8 @@ Measures prefix state reuse across requests with `state-spaces/mamba-130m-hf`. T
 
 | Configuration | Python entry point | VARIANT |
 | --- | --- | --- |
-| Compute prompt per request | `transformer.mamba.server` | `transformers-mamba-base` |
-| Reuse prefix state | `transformer.mamba.cache.server` | `transformers-mamba-cache` |
+| Compute prompt per request | `huggingface.mamba.base.server` | `transformers-mamba-base` |
+| Reuse prefix state | `huggingface.mamba.cache.server` | `transformers-mamba-cache` |
 
 Both configurations use Mamba's recurrent cache during generation. The comparison is whether prefix state is reused across requests. The server processes requests serially, and increased concurrency appears as queueing. Mamba batching and CUDA graphs are not supported.
 
@@ -47,10 +47,10 @@ LOCAL_K8S_SCRIPT=./scripts/local-k8s-gpu.sh ./scripts/k8s.sh apply k8s/inference
 ./scripts/local-k8s-gpu.sh kubectl port-forward service/transformers-mamba-base 8000:8000
 ```
 
-For CPU, use `DEVICE=cpu` and `k8s/inference/profiles/transformers-mamba-cache-cpu.yaml`. Local run dependencies follow [Transformers requirements](../../src/transformer/requirements.txt).
+For CPU, use `DEVICE=cpu` and `k8s/inference/profiles/transformers-mamba-cache-cpu.yaml`. Local run dependencies follow [Transformers requirements](../../src/huggingface/requirements.txt).
 
 ```sh
-PYTHONPATH=src python -m transformer.mamba.cache.server \
+PYTHONPATH=src python -m huggingface.mamba.cache.server \
   --model .models/mamba-130m --device cuda --dtype float16 \
   --cache-dir /tmp/mamba-cache
 ```
@@ -74,7 +74,7 @@ The Mamba execution path in the provided image is PyTorch. It does not install t
 
 ## Tests
 
-Requires the Transformers dependencies plus `httpx` for HTTP tests and [requirements](../../src/transformer/base_metric/requirements.txt) for metric tests.
+Requires the Transformers dependencies plus `httpx` for HTTP tests and [requirements](../../src/huggingface/llama/metrics/requirements.txt) for metric tests.
 
 ```sh
 python -m unittest discover -s tests -p 'test_transformers_*.py' -v

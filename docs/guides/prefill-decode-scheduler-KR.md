@@ -6,7 +6,7 @@
 
 ## 스케줄링 규칙
 
-[vLLM V1 v0.30.0의 schedule](https://github.com/vllm-project/vllm/blob/ced6857afa0ea7b2e3f0846a62e1394e90f15607/vllm/v1/core/sched/scheduler.py#L561-L865)을 참고했습니다. 구현은 [scheduler.py](../../src/transformer/pd/scheduler.py)와 [packed.py](../../src/transformer/pd/packed.py)에 있습니다.
+[vLLM V1 v0.30.0의 schedule](https://github.com/vllm-project/vllm/blob/ced6857afa0ea7b2e3f0846a62e1394e90f15607/vllm/v1/core/sched/scheduler.py#L561-L865)을 참고했습니다. 구현은 [scheduler.py](../../src/huggingface/llama/inference_distributed/scheduler.py)와 [packed.py](../../src/huggingface/llama/inference_distributed/packed.py)에 있습니다.
 
 1. 매 step에서 RUNNING 요청을 들어온 순서대로 선택합니다. 진행 중인 decode는 보통 1토큰을, 부분 prefill은 남은 prompt의 일부를 사용합니다.
 2. 남은 token budget, 실행 요청 수와 KV 예약량이 허용하면 WAITING의 요청을 FIFO로 받습니다.

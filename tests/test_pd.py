@@ -27,9 +27,10 @@ try:
     from tokenizers.models import WordLevel
     from tokenizers.pre_tokenizers import Whitespace
     from transformers import LlamaConfig, LlamaForCausalLM, PreTrainedTokenizerFast
-    from transformer.base.engine import EngineSettings, Generation, TorchEngine
-    from transformer.pd.engine import PDEngine
-    from transformer.pd import protocol, router, server
+    from inference.contracts import Generation
+    from huggingface.llama.base.engine import EngineSettings, TorchEngine
+    from huggingface.llama.inference_distributed.engine import PDEngine
+    from huggingface.llama.inference_distributed import protocol, router, server
 except ImportError:
     torch = None
 

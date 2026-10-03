@@ -53,7 +53,7 @@ Disaggregation TTFT ≈ P 대기와 prefill + KV 전달 경로의 노출 지연
 
 ## 기존 벤치마크와 달라지는 점
 
-현재 [서버](../../../../../src/transformer/pd/server.py)는 `ThreadPoolExecutor(max_workers=1)`로 GPU 작업을 실행하고, [decode loop](../../../../../src/transformer/pd/engine.py)는 한 요청의 생성이 끝날 때까지 계속 실행합니다. 요청별 batch 1이며 vLLM처럼 여러 요청을 매 step에 섞지 않습니다. 따라서 기존 TTFT 차이는 요청 단위 직렬 대기, worker 수와 HTTP 상태 전달 경로의 영향을 포함하며, vLLM의 chunked prefill token budget 경쟁을 측정한 결과가 아닙니다.
+현재 [서버](../../../../../src/huggingface/llama/inference_distributed/server.py)는 `ThreadPoolExecutor(max_workers=1)`로 GPU 작업을 실행하고, [decode loop](../../../../../src/huggingface/llama/inference_distributed/engine.py)는 한 요청의 생성이 끝날 때까지 계속 실행합니다. 요청별 batch 1이며 vLLM처럼 여러 요청을 매 step에 섞지 않습니다. 따라서 기존 TTFT 차이는 요청 단위 직렬 대기, worker 수와 HTTP 상태 전달 경로의 영향을 포함하며, vLLM의 chunked prefill token budget 경쟁을 측정한 결과가 아닙니다.
 
 vLLM으로 바꾸면 A와 D 양쪽 모두 요청을 연속 배치할 수 있으므로 기존 수치를 그대로 적용할 수 없습니다. 특히 decode 요청이 있다는 이유만으로 새 prefill이 그 요청의 전체 출력 완료까지 기다리는 것은 아닙니다.
 

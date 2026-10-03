@@ -113,7 +113,7 @@ sh tests/test-hpa-manifests-transformers.sh
 ./scripts/k8s.sh delete k8s/experiment/profiles/availability-transformers.yaml
 ```
 
-metric 단위 테스트에는 Transformers 런타임과 `src/transformer/base_metric/requirements.txt`의 의존성이 필요합니다. 클러스터를 삭제하려면 같은 `CLUSTER_NAME`으로 `./scripts/local-k8s.sh down`을 실행합니다. 호스트에 수집된 결과와 모델은 유지됩니다.
+metric 단위 테스트에는 Transformers 런타임과 `src/huggingface/llama/metrics/requirements.txt`의 의존성이 필요합니다. 클러스터를 삭제하려면 같은 `CLUSTER_NAME`으로 `./scripts/local-k8s.sh down`을 실행합니다. 호스트에 수집된 결과와 모델은 유지됩니다.
 
 ## llama.cpp
 
@@ -145,6 +145,6 @@ python3 scripts/run-availability-test-llamacpp.py --scenario pause-60s
 llama.cpp metric 검증은 다음 명령을 사용합니다.
 
 ```sh
-python -m pip install -r src/llamacpp/base_metric/requirements.txt fastapi httpx
+python -m pip install -r src/llamacpp/metrics/requirements.txt fastapi httpx
 python -m unittest discover -s tests -p 'test_base_metric_llamacpp.py'
 ```

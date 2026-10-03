@@ -3,9 +3,9 @@
 import tempfile
 import unittest
 
-from enhanced_support import load_variant
+from enhanced_support import ROOT
 
-module = load_variant("enhanced-cache-llamacpp", "cache")
+from inference import cache as module
 
 
 class CacheTests(unittest.TestCase):

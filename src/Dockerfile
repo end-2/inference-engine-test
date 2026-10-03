@@ -37,6 +37,7 @@ RUN apt-get update \
 COPY --from=builder-llamacpp /opt/venv /opt/venv
 
 WORKDIR /app
+COPY inference/*.py /app/inference/
 COPY llamacpp/__init__.py /app/llamacpp/
 COPY llamacpp/base/*.py /app/llamacpp/base/
 USER 1000:1000
@@ -44,23 +45,20 @@ EXPOSE 8000
 ENTRYPOINT ["python", "-m", "llamacpp.base.server"]
 
 FROM runtime-llamacpp AS enhanced-batch-llamacpp
-COPY llamacpp/enhanced/__init__.py /app/llamacpp/enhanced/
-COPY llamacpp/enhanced/batch/*.py /app/llamacpp/enhanced/batch/
-ENTRYPOINT ["python", "-m", "llamacpp.enhanced.batch.server"]
+COPY llamacpp/batch/*.py /app/llamacpp/batch/
+ENTRYPOINT ["python", "-m", "llamacpp.batch.server"]
 
 FROM runtime-llamacpp AS enhanced-cache-llamacpp
-COPY llamacpp/enhanced/__init__.py /app/llamacpp/enhanced/
-COPY llamacpp/enhanced/cache/*.py /app/llamacpp/enhanced/cache/
-ENTRYPOINT ["python", "-m", "llamacpp.enhanced.cache.server"]
+COPY llamacpp/cache/*.py /app/llamacpp/cache/
+ENTRYPOINT ["python", "-m", "llamacpp.cache.server"]
 
 FROM runtime-llamacpp AS base-metric-llamacpp
 USER 0
-COPY llamacpp/base_metric/requirements.txt /tmp/metric-requirements.txt
+COPY llamacpp/metrics/requirements.txt /tmp/metric-requirements.txt
 RUN pip install --no-cache-dir -r /tmp/metric-requirements.txt && pip check
-COPY llamacpp/base_metric/*.py /app/llamacpp/base_metric/
-COPY inference_metrics.py /app/
+COPY llamacpp/metrics/*.py /app/llamacpp/metrics/
 USER 1000:1000
-ENTRYPOINT ["python", "-m", "llamacpp.base_metric.server"]
+ENTRYPOINT ["python", "-m", "llamacpp.metrics.server"]
 
 FROM ${BASE_IMAGE} AS transformers-runtime
 
@@ -76,69 +74,65 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY transformer/requirements.txt /tmp/requirements.txt
+COPY huggingface/requirements.txt /tmp/requirements.txt
 # The CPU index avoids CUDA runtime dependencies on Linux x86_64.
 RUN pip install --no-cache-dir torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu \
     && pip install --no-cache-dir -r /tmp/requirements.txt \
     && pip check \
     && python -c "import torch, transformers; assert torch.version.cuda is None"
-COPY llamacpp/__init__.py /app/llamacpp/
-COPY llamacpp/base/*.py /app/llamacpp/base/
-COPY transformer/__init__.py /app/transformer/
-COPY transformer/base/*.py /app/transformer/base/
+COPY inference/*.py /app/inference/
+COPY huggingface/__init__.py /app/huggingface/
+COPY huggingface/runtime/*.py /app/huggingface/runtime/
 RUN groupadd --gid 1000 inference \
     && useradd --uid 1000 --gid 1000 --no-create-home --home-dir /tmp inference
 ENV TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor
 USER 1000:1000
 EXPOSE 8000
-ENTRYPOINT ["python", "-m", "transformer.base.server"]
+
+FROM transformers-runtime AS transformers-llama-runtime
+COPY huggingface/llama/*.py /app/huggingface/llama/
+COPY huggingface/llama/base/*.py /app/huggingface/llama/base/
+ENTRYPOINT ["python", "-m", "huggingface.llama.base.server"]
 
 FROM runtime-llamacpp AS base-llamacpp
 
-FROM transformers-runtime AS transformers-enhanced-batch
-COPY transformer/enhanced/__init__.py /app/transformer/enhanced/
-COPY transformer/enhanced/batch/*.py /app/transformer/enhanced/batch/
-ENTRYPOINT ["python", "-m", "transformer.enhanced.batch.server"]
+FROM transformers-llama-runtime AS transformers-enhanced-batch
+COPY huggingface/llama/batch/*.py /app/huggingface/llama/batch/
+ENTRYPOINT ["python", "-m", "huggingface.llama.batch.server"]
 
-FROM transformers-runtime AS transformers-enhanced-cache
-COPY llamacpp/enhanced/__init__.py /app/llamacpp/enhanced/
-COPY llamacpp/enhanced/cache/__init__.py llamacpp/enhanced/cache/cache.py /app/llamacpp/enhanced/cache/
-COPY transformer/enhanced/__init__.py /app/transformer/enhanced/
-COPY transformer/enhanced/cache/*.py /app/transformer/enhanced/cache/
-ENTRYPOINT ["python", "-m", "transformer.enhanced.cache.server"]
+FROM transformers-llama-runtime AS transformers-enhanced-cache
+COPY huggingface/llama/cache/*.py /app/huggingface/llama/cache/
+ENTRYPOINT ["python", "-m", "huggingface.llama.cache.server"]
 
-FROM transformers-runtime AS transformers-base-metric
+FROM transformers-llama-runtime AS transformers-base-metric
 USER 0
-COPY transformer/base_metric/requirements.txt /tmp/metric-requirements.txt
+COPY huggingface/llama/metrics/requirements.txt /tmp/metric-requirements.txt
 RUN pip install --no-cache-dir -r /tmp/metric-requirements.txt && pip check
-COPY inference_metrics.py /app/
-COPY transformer/base_metric/*.py /app/transformer/base_metric/
+COPY huggingface/llama/metrics/*.py /app/huggingface/llama/metrics/
 USER 1000:1000
-ENTRYPOINT ["python", "-m", "transformer.base_metric.server"]
+ENTRYPOINT ["python", "-m", "huggingface.llama.metrics.server"]
 
 FROM transformers-runtime AS transformers-mamba-base
-COPY transformer/mamba/*.py /app/transformer/mamba/
-ENTRYPOINT ["python", "-m", "transformer.mamba.server"]
+COPY huggingface/mamba/*.py /app/huggingface/mamba/
+COPY huggingface/mamba/base/*.py /app/huggingface/mamba/base/
+ENTRYPOINT ["python", "-m", "huggingface.mamba.base.server"]
 
 FROM transformers-mamba-base AS transformers-mamba-cache
-COPY llamacpp/enhanced/__init__.py /app/llamacpp/enhanced/
-COPY llamacpp/enhanced/cache/__init__.py llamacpp/enhanced/cache/cache.py /app/llamacpp/enhanced/cache/
-COPY transformer/mamba/cache/*.py /app/transformer/mamba/cache/
-ENTRYPOINT ["python", "-m", "transformer.mamba.cache.server"]
+COPY huggingface/mamba/cache/*.py /app/huggingface/mamba/cache/
+ENTRYPOINT ["python", "-m", "huggingface.mamba.cache.server"]
 
-FROM transformers-mamba-cache AS transformers-hybrid
-COPY transformer/enhanced/__init__.py /app/transformer/enhanced/
-COPY transformer/enhanced/batch/*.py /app/transformer/enhanced/batch/
-COPY transformer/enhanced/batch_gpu/*.py /app/transformer/enhanced/batch_gpu/
-COPY transformer/hybrid/*.py /app/transformer/hybrid/
-ENTRYPOINT ["python", "-m", "transformer.hybrid.server"]
+FROM transformers-runtime AS transformers-hybrid
+COPY huggingface/jamba/*.py /app/huggingface/jamba/
+COPY huggingface/jamba/base/*.py /app/huggingface/jamba/base/
+COPY huggingface/jamba/hybrid/*.py /app/huggingface/jamba/hybrid/
+ENTRYPOINT ["python", "-m", "huggingface.jamba.hybrid.server"]
 
-FROM transformers-runtime AS transformers-pd
+FROM transformers-llama-runtime AS transformers-pd
 USER 0
-COPY transformer/pd/requirements.txt /tmp/pd-requirements.txt
+COPY huggingface/llama/inference_distributed/requirements.txt /tmp/pd-requirements.txt
 RUN pip install --no-cache-dir -r /tmp/pd-requirements.txt && pip check
-COPY transformer/pd/*.py /app/transformer/pd/
+COPY huggingface/llama/inference_distributed/*.py /app/huggingface/llama/inference_distributed/
 USER 1000:1000
-ENTRYPOINT ["python", "-m", "transformer.pd.server"]
+ENTRYPOINT ["python", "-m", "huggingface.llama.inference_distributed.server"]
 
-FROM transformers-runtime AS transformers-base
+FROM transformers-llama-runtime AS transformers-base

@@ -78,7 +78,7 @@ def clear_cache(cache):
 
 
 def arrange_tier(backend, prompts, condition, budgets):
-    from transformer.base.engine import Generation
+    from inference.contracts import Generation
 
     cache = backend.cache
     if condition == "batch":
@@ -218,8 +218,8 @@ def main():
 
     import torch
     import transformers
-    from transformer.hybrid.base import EngineSettings as BaseSettings, TorchEngine as BaseEngine
-    from transformer.hybrid.engine import EngineSettings, TorchEngine
+    from huggingface.jamba.base.engine import EngineSettings as BaseSettings, TorchEngine as BaseEngine
+    from huggingface.jamba.hybrid.engine import EngineSettings, TorchEngine
 
     def sync():
         if args.device == "cuda":
@@ -236,8 +236,8 @@ def main():
                 "cache_budgets_mib": {"gpu": 64 if args.device == "cuda" else 0, "ram": 256, "disk": 1024},
                 "disk_page_cache": "not dropped; warm checkpoint files",
                 "command": sys.argv, "source_sha256": {}, "model_sha256": {}}
-    for category, paths in (("source_sha256", [Path(__file__), *sorted((ROOT / "src/transformer").rglob("*.py")),
-                                              ROOT / "src/llamacpp/enhanced/cache/cache.py"]),
+    for category, paths in (("source_sha256", [Path(__file__), *sorted((ROOT / "src/huggingface").rglob("*.py")),
+                                              *sorted((ROOT / "src/inference").glob("*.py"))]),
                             ("model_sha256", sorted(args.model.glob("*")))):
         for path in paths:
             if path.is_file():

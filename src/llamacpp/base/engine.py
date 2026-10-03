@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from inference.contracts import CompletionResult, GenerationResult
+
 
 @dataclass(frozen=True)
 class EngineSettings:
@@ -93,7 +95,7 @@ class LlamaEngine:
             stream=stream,
         )
 
-    def complete(self, prompt, max_tokens, temperature, top_p, ignore_eos, cancel) -> dict:
+    def complete(self, prompt, max_tokens, temperature, top_p, ignore_eos, cancel) -> CompletionResult:
         response = self._completion(
             prompt, max_tokens, temperature, top_p, ignore_eos, cancel, stream=False
         )
@@ -104,7 +106,7 @@ class LlamaEngine:
             **response["usage"],
         }
 
-    def stream(self, prompt, max_tokens, temperature, top_p, ignore_eos, cancel, emit) -> dict:
+    def stream(self, prompt, max_tokens, temperature, top_p, ignore_eos, cancel, emit) -> GenerationResult:
         finish_reason = "stop"
         for chunk in self._completion(
             prompt, max_tokens, temperature, top_p, ignore_eos, cancel, stream=True

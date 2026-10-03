@@ -36,8 +36,8 @@ def main():
 
     import torch
     import transformers
-    from transformer.mamba.engine import EngineSettings, TorchEngine
-    from transformer.mamba.cache.engine import EngineSettings as CacheSettings, TorchEngine as CacheEngine
+    from huggingface.mamba.base.engine import EngineSettings, TorchEngine
+    from huggingface.mamba.cache.engine import EngineSettings as CacheSettings, TorchEngine as CacheEngine
 
     settings = EngineSettings(args.model, n_ctx=max(lengths) + args.max_tokens,
                               device=args.device, dtype=args.dtype)

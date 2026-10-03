@@ -39,7 +39,7 @@ Base throughput (tok/s) was flat at 43.44, 43.99, 44.33, 44.29 tok/s, while mean
 For constraints of this experiment environment see [requirements.md](../docs/guides/requirements.md).
 Kubernetes Pod resources for Benchmark are CPU 8 and memory 16Gi for both requests and limits for inference Pods (Guaranteed QoS), and CPU 1 and memory 1Gi for the AIPerf Pod.
 
-Model revision and checksums are in [model settings](../config/models/smollm2-135m-transformers.env), and runtime dependencies are in [requirements.txt](../src/transformer/requirements.txt).
+Model revision and checksums are in [model settings](../config/models/smollm2-135m-transformers.env), and runtime dependencies are in [requirements.txt](../src/huggingface/requirements.txt).
 
 ### Rationale
 
@@ -63,7 +63,7 @@ Implements OpenAI-compatible `/v1/chat/completions` and measures performance thr
 | enhanced-batch | Collects up to 4 requests and processes them as a batch. When the running batch finishes, runs the next batch from waiting requests. |
 | enhanced-cache | Adds prefix KV lookup, load, and save to the base inference path. Uses RAM and disk layers. |
 
-Implementation is in [Source code](../src/transformer), and images are defined in [Dockerfile](../src/Dockerfile).
+Implementation is in [Source code](../src/huggingface/llama), and images are defined in [Dockerfile](../src/Dockerfile).
 
 ### Deployment and measurement verification
 

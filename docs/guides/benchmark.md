@@ -12,7 +12,7 @@ For inference implementation and API, see the [inference engine guide](inference
 | --- | --- |
 | Cluster | Default single-node kind, with inference server and AIPerf Jobs placed |
 | Model | SmolLM2 Transformers CPU; server and AIPerf use the same revision tokenizer |
-| Inference implementation | One of base, enhanced/batch, enhanced/cache |
+| Inference implementation | One of base, batch, cache |
 | Single measurement | Restart inference Pod per concurrency, then run warmup and main requests |
 | Repeated measurement | Run each implementation repeatedly, rotating execution order each round |
 | Observation | Per-request AIPerf results and Kubernetes node, Pod, and container resource samples |

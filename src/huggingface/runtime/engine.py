@@ -1,0 +1,145 @@
+"""Model-independent serial generation and tokenizer lifecycle."""
+
+from dataclasses import dataclass
+from pathlib import Path
+import threading
+from inference.contracts import CompletionResult, Generation
+
+
+@dataclass(frozen=True)
+class EngineSettings:
+    model_path: Path
+    n_ctx: int = 1024
+    n_threads: int = 4
+    dtype: str | None = None
+    device: str = "cpu"
+
+    def __post_init__(self):
+        if min(self.n_ctx, self.n_threads) < 1:
+            raise ValueError("n_ctx and n_threads must be positive")
+        if self.device not in {"cpu", "cuda"}:
+            raise ValueError("device must be cpu or cuda")
+        if self.dtype is None:
+            object.__setattr__(self, "dtype", "float16" if self.device == "cuda" else "float32")
+        supported = {"float32", "bfloat16"} if self.device == "cpu" else {"float32", "bfloat16", "float16"}
+        if self.dtype not in supported:
+            raise ValueError(f"dtype {self.dtype} is unsupported on {self.device}")
+
+
+class SerialEngine:
+    def __init__(self, settings: EngineSettings):
+        import torch
+        from transformers import AutoConfig, AutoTokenizer
+
+        if not settings.model_path.is_dir():
+            raise ValueError(f"Model directory does not exist: {settings.model_path}")
+        self.settings = settings
+        self.torch = torch
+        if settings.device == "cuda" and not torch.cuda.is_available():
+            raise RuntimeError("CUDA device is unavailable")
+        torch.set_num_threads(settings.n_threads)
+        config = AutoConfig.from_pretrained(
+            settings.model_path, local_files_only=True, trust_remote_code=False,
+        )
+        self.model = self._load_model(config)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            settings.model_path, local_files_only=True, trust_remote_code=False,
+        )
+        eos = self.model.generation_config.eos_token_id
+        self.eos_tokens = set(eos if isinstance(eos, list) else [eos]) - {None}
+        if self.tokenizer.eos_token_id is not None:
+            self.eos_tokens.add(self.tokenizer.eos_token_id)
+        self.pad_token = self.tokenizer.pad_token_id
+        if self.pad_token is None:
+            self.pad_token = next(iter(self.eos_tokens))
+        self.tokenizer.pad_token_id = self.pad_token
+        self.tokenizer.padding_side = "left"
+        self.tokenizer_lock = threading.Lock()
+
+    def _load_model(self, config):
+        raise NotImplementedError("A model family must implement _load_model")
+
+    def prepare_prompt(self, messages):
+        with self.tokenizer_lock:
+            return self.tokenizer.apply_chat_template(
+                messages, tokenize=True, add_generation_prompt=True,
+            )
+
+    def _validate(self, request):
+        if not request.prompt or request.max_tokens < 1:
+            raise ValueError("Prompt and output token limit must be positive")
+        if len(request.prompt) + request.max_tokens > self.settings.n_ctx:
+            raise ValueError("Input and output tokens exceed n_ctx")
+
+    def _result(self, request, tokens, reason) -> CompletionResult:
+        return {
+            "text": self.tokenizer.decode(tokens, skip_special_tokens=True,
+                                          clean_up_tokenization_spaces=False),
+            "finish_reason": reason, "prompt_tokens": len(request.prompt),
+            "completion_tokens": len(tokens),
+        }
+
+    def _streamer(self, emit, skip_prompt=False):
+        from transformers import TextStreamer
+
+        class CallbackStreamer(TextStreamer):
+            def on_finalized_text(self, text, stream_end=False):
+                if text:
+                    emit(text)
+
+        return CallbackStreamer(self.tokenizer, skip_prompt=skip_prompt,
+                                skip_special_tokens=True, clean_up_tokenization_spaces=False)
+
+    def _generate_model(self, request, inputs, options):
+        return self.model.generate(**inputs, **options)
+
+    def generate(self, request):
+        from transformers import GenerationConfig, StoppingCriteria, StoppingCriteriaList
+
+        self._validate(request)
+        if request.cancel.is_set():
+            return self._result(request, [], "stop")
+
+        class Cancelled(StoppingCriteria):
+            def __call__(self, input_ids, scores, **kwargs):
+                return request.cancel.is_set()
+
+        # An explicit config avoids model defaults such as top_k=50 changing sampling.
+        config = GenerationConfig(
+            max_new_tokens=request.max_tokens, do_sample=request.temperature > 0,
+            temperature=request.temperature if request.temperature > 0 else 1.0,
+            top_p=request.top_p if request.temperature > 0 else 1.0,
+            top_k=0 if request.temperature > 0 else None,
+            eos_token_id=sorted(self.eos_tokens), pad_token_id=self.pad_token,
+            suppress_tokens=sorted(self.eos_tokens) if request.ignore_eos else None,
+            use_cache=True,
+        )
+        ids = self.torch.tensor([request.prompt], dtype=self.torch.long, device=self.settings.device)
+        inputs = {"input_ids": ids, "attention_mask": self.torch.ones_like(ids)}
+        options = {
+            "generation_config": config, "use_model_defaults": False,
+            "stopping_criteria": StoppingCriteriaList([Cancelled()]),
+            "streamer": self._streamer(request.emit, skip_prompt=True) if request.emit else None,
+        }
+        with self.torch.inference_mode():
+            output = self._generate_model(request, inputs, options)
+        tokens = output[0, len(request.prompt):].tolist()
+        # API usage excludes the prompt and terminal EOS, including at the length limit.
+        eos = bool(tokens and tokens[-1] in self.eos_tokens)
+        if eos:
+            tokens.pop()
+        reason = "length" if not eos and len(tokens) == request.max_tokens else "stop"
+        return self._result(request, tokens, reason)
+
+    def complete(self, prompt, max_tokens, temperature, top_p, ignore_eos, cancel):
+        return self.generate(Generation(
+            prompt, max_tokens, temperature, top_p, ignore_eos, cancel,
+        ))
+
+    def stream(self, prompt, max_tokens, temperature, top_p, ignore_eos, cancel, emit):
+        return self.generate(Generation(
+            prompt, max_tokens, temperature, top_p, ignore_eos, cancel, emit,
+        ))
+
+    def close(self):
+        self.model = None

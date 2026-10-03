@@ -10,12 +10,13 @@ import unittest
 from unittest.mock import patch
 
 from enhanced_support import ROOT
-from transformer.base.engine import EngineSettings, Generation, TorchEngine
-from transformer.enhanced.batch import engine as batching
-from transformer.enhanced.batch.backend import BatchBackend
-from transformer.enhanced.batch_gpu.backend import GPUBatchBackend
-from transformer.enhanced.batch_gpu.server import TorchEngine as GPUBatchEngine
-from transformer.enhanced.cache import engine as caching
+from inference.contracts import Generation
+from huggingface.llama.base.engine import EngineSettings, TorchEngine
+from huggingface.llama.batch import engine as batching
+from huggingface.llama.batch.backend import BatchBackend
+from huggingface.llama.batch.gpu.backend import GPUBatchBackend
+from huggingface.llama.batch.gpu.server import TorchEngine as GPUBatchEngine
+from huggingface.llama.cache import engine as caching
 
 try:
     import torch
@@ -27,7 +28,7 @@ except ImportError:
     torch = None
 
 
-@unittest.skipIf(torch is None, "Install transformer/requirements.txt")
+@unittest.skipIf(torch is None, "Install huggingface/requirements.txt")
 class EngineTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

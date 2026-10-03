@@ -1,6 +1,6 @@
 # Prefill과 Decode 배치 방식 비교
 
-SmolLM2를 MPS 슬롯 2개에서 실행하며 aggregation과 disaggregation을 비교합니다. 두 모드는 [같은 엔진](../../src/transformer/pd/engine.py), 모델, FP16, greedy decoding, Pod별 batch 1을 사용합니다. Prefix cache와 continuous batching은 사용하지 않습니다.
+SmolLM2를 MPS 슬롯 2개에서 실행하며 aggregation과 disaggregation을 비교합니다. 두 모드는 [같은 엔진](../../src/huggingface/llama/inference_distributed/engine.py), 모델, FP16, greedy decoding, Pod별 batch 1을 사용합니다. Prefix cache와 continuous batching은 사용하지 않습니다.
 
 [실험 종합](../reports/gpu/pd/README.md)에 2분할, 4분할과 스케줄러 결과가 있습니다. [2분할 실측 보고서](../reports/gpu/pd/benchmark-20260930/summary.md)는 중단된 실행 중 완료한 1회의 workload 비교입니다.
 
@@ -129,13 +129,13 @@ JSON 응답의 `metrics`, SSE 종료 chunk의 `metrics`와 worker의 `pd_request
 
 - 공통 토큰과 대기열 한도: [inference-distributed/values.yaml](../../k8s/inference-distributed/values.yaml)
 - GPU 자원, 모델 mount와 역할: [workers](../../k8s/inference-distributed/templates/workers.yaml)
-- 엔진, 내부 API와 router: [src/transformer/pd](../../src/transformer/pd)
+- 엔진, 내부 API와 router: [src/huggingface/llama/inference_distributed](../../src/huggingface/llama/inference_distributed)
 
 CPU 환경에서도 작은 Llama 모델로 상태 전달과 출력 동등성을 검증할 수 있습니다.
 
 ```sh
 python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
-python -m pip install -r src/transformer/requirements.txt -r src/transformer/pd/requirements.txt pyyaml
+python -m pip install -r src/huggingface/requirements.txt -r src/huggingface/llama/inference_distributed/requirements.txt pyyaml
 python -m unittest discover -s tests -p 'test_pd*.py' -v
 ./scripts/render-k8s.sh k8s/inference-distributed/profiles/mps-2-aggregated.yaml
 ./scripts/render-k8s.sh k8s/inference-distributed/profiles/mps-2-disaggregated.yaml

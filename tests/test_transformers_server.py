@@ -8,14 +8,14 @@ import httpx
 
 from enhanced_support import ROOT
 from test_server_llamacpp import FakeEngine
-from transformer.base import server as base
-from transformer.enhanced.batch import server as batch
-from transformer.enhanced.batch_gpu import server as batch_gpu
-from transformer.enhanced.cache import server as cache
-from transformer.mamba import server as mamba
-from transformer.mamba.cache import server as mamba_cache
-from transformer.hybrid import server as hybrid
-from transformer.hybrid import base_server as hybrid_base
+from huggingface.llama.base import server as base
+from huggingface.llama.batch import server as batch
+from huggingface.llama.batch.gpu import server as batch_gpu
+from huggingface.llama.cache import server as cache
+from huggingface.mamba.base import server as mamba
+from huggingface.mamba.cache import server as mamba_cache
+from huggingface.jamba.hybrid import server as hybrid
+from huggingface.jamba.base import server as hybrid_base
 
 
 class ServerTests(unittest.IsolatedAsyncioTestCase):
@@ -77,7 +77,7 @@ class ServerTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaisesRegex(ValueError, "requires device=cuda"):
             batch_gpu.Settings(device="cpu")
         with self.assertRaisesRegex(ValueError, "requires device=cuda"):
-            batch_gpu.TorchEngine(batch.EngineSettings(Path("weights"), device="cpu"))
+            batch_gpu.TorchEngine(batch.Settings(model=Path("weights"), device="cpu").engine_settings())
 
     def test_cache_settings_preserved(self):
         settings = cache.Settings(model=Path("weights"), cache_dir=Path("cache"),

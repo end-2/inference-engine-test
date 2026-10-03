@@ -2,13 +2,13 @@
 
 # Inference engine
 
-Run and configure base, enhanced/batch, and enhanced/cache inference servers. The default device is CPU; [GPU benchmarks](benchmark.md#gpu-benchmarks) are also supported. The default engine is Transformers with PyTorch; llama.cpp is also available. Batching and caching are independent implementations for both engines.
+Run and configure base, batch, and cache inference servers. The default device is CPU; [GPU benchmarks](benchmark.md#gpu-benchmarks) are also supported. The default engine is Transformers with PyTorch; llama.cpp is also available. Batching and caching are independent implementations for both engines. See [source boundaries](feature-experiments.md#source-boundaries) for the model and runtime structure.
 
 Follow the Transformers procedure below; for llama.cpp follow [that engine's procedure](#llamacpp). For manifest and ConfigMap handling, see [manifest management](manifests.md).
 
 ## Transformers
 
-`src/transformer/` runs local `HuggingFaceTB/SmolLM2-135M-Instruct` with PyTorch. Base is serial inference, enhanced/batch is request batching, and enhanced/cache is cross-request prefix KV reuse.
+`src/huggingface/llama/` runs local `HuggingFaceTB/SmolLM2-135M-Instruct` with PyTorch. Base is serial inference, batch is request batching, and cache is cross-request prefix KV reuse.
 
 ### Model and local run
 
@@ -22,11 +22,11 @@ python3.12 -m venv /tmp/transformer-venv
 . /tmp/transformer-venv/bin/activate
 # On Linux, install CPU-only PyTorch first.
 python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
-python -m pip install -r src/transformer/requirements.txt
-PYTHONPATH=src python -m transformer.base.server --model .models/smollm2-135m
+python -m pip install -r src/huggingface/requirements.txt
+PYTHONPATH=src python -m huggingface.llama.base.server --model .models/smollm2-135m
 ```
 
-On macOS skip the CPU index install and install requirements only. This local run uses CPU and default dtype `float32`. `--device cuda` uses CUDA-enabled PyTorch and default dtype `float16`. CPU `--dtype bfloat16` performance varies by kernel. Dependency versions follow [requirements](../../src/transformer/requirements.txt).
+On macOS skip the CPU index install and install requirements only. This local run uses CPU and default dtype `float32`. `--device cuda` uses CUDA-enabled PyTorch and default dtype `float16`. CPU `--dtype bfloat16` performance varies by kernel. Dependency versions follow [requirements](../../src/huggingface/requirements.txt).
 
 Downloads preserve validated files and resume interrupted files. After all files validate, they move to the final directory `.models/smollm2-135m/`. `LOCAL_K8S_MODELS_DIR` can change the model root; use the same value for cluster creation.
 
@@ -48,14 +48,14 @@ curl http://127.0.0.1:8000/v1/chat/completions \
 
 | Implementation | Python module | Docker target, image name |
 | --- | --- | --- |
-| Base | `transformer.base.server` | `transformers-base` |
-| Batch | `transformer.enhanced.batch.server` | `transformers-enhanced-batch` |
-| GPU Batch | `transformer.enhanced.batch_gpu.server` | `transformers-enhanced-batch-gpu` |
-| Cache | `transformer.enhanced.cache.server` | `transformers-enhanced-cache` |
-| Base + Prometheus | `transformer.base_metric.server` | `transformers-base-metric` |
-| Mamba | `transformer.mamba.server` | `transformers-mamba-base` |
-| Mamba prefix cache | `transformer.mamba.cache.server` | `transformers-mamba-cache` |
-| Jamba hybrid batch + HiCache | `transformer.hybrid.server` | `transformers-hybrid` |
+| Base | `huggingface.llama.base.server` | `transformers-base` |
+| Batch | `huggingface.llama.batch.server` | `transformers-enhanced-batch` |
+| GPU Batch | `huggingface.llama.batch.gpu.server` | `transformers-enhanced-batch-gpu` |
+| Cache | `huggingface.llama.cache.server` | `transformers-enhanced-cache` |
+| Base + Prometheus | `huggingface.llama.metrics.server` | `transformers-base-metric` |
+| Mamba | `huggingface.mamba.base.server` | `transformers-mamba-base` |
+| Mamba prefix cache | `huggingface.mamba.cache.server` | `transformers-mamba-cache` |
+| Jamba hybrid batch + HiCache | `huggingface.jamba.hybrid.server` | `transformers-hybrid` |
 
 Mamba uses a separate model and state checkpoints. For run method and cache rules, see [Mamba state cache](mamba-cache.md).
 
@@ -71,15 +71,15 @@ Streaming decodes with `TextStreamer`; base and cache exclude input text with `s
 
 Requests cancelled before generation do not call the model. Cancellation during generation is checked by `StoppingCriteria` after token generation, so it does not immediately stop the in-flight operation and its token output.
 
-Base + Prometheus adds `transformers_*` request, token count, and TTFT metrics at `/metrics` to the same serial engine. For local runs also install `src/transformer/base_metric/requirements.txt`. [Multi-node availability](availability-test.md) and [HPA](hpa-test.md) use this image.
+Base + Prometheus adds `transformers_*` request, token count, and TTFT metrics at `/metrics` to the same serial engine. For local runs also install `src/huggingface/llama/metrics/requirements.txt`. [Multi-node availability](availability-test.md) and [HPA](hpa-test.md) use this image.
 
 ### Request batching
 
-To reduce serial inference waits, run operations of multiple requests as one batch. The [batching worker](../../src/transformer/enhanced/batch/engine.py) collects requests for `--batch-wait-ms` and processes up to `--max-parallel` together.
+To reduce serial inference waits, run operations of multiple requests as one batch. The shared [batching worker](../../src/huggingface/runtime/batching.py) collects requests for `--batch-wait-ms` and processes up to `--max-parallel` together.
 
 Different-length inputs use tokenizer left padding and `prepare_inputs_for_generation()` position ID setup. Sampling uses Transformers `TemperatureLogitsWarper`, `TopPLogitsWarper`, and `SuppressTokensLogitsProcessor`. Each request keeps separate sampling options, output limits, and cancellation state; finished rows are removed from KV and batch before the next decode.
 
-Per-request generation settings, stream distribution, and finished-row removal not provided by plain `generate()` are handled in the [batch backend](../../src/transformer/enhanced/batch/backend.py) loop.
+Per-request generation settings, stream distribution, and finished-row removal not provided by plain `generate()` are handled in the [batch backend](../../src/huggingface/llama/batch/backend.py) loop.
 
 New requests are not added to a batch in progress. New requests wait for the next batch, so long outputs can increase queueing delay. Cross-request prefix cache is not kept.
 
@@ -91,7 +91,7 @@ GPU batch uses the same worker. Requests with `temperature=0` and `ignore_eos=tr
 
 All implementations use KV inside one request's decode; the cache implementation also reuses prefix KV across requests to reduce prefill.
 
-The [cache engine](../../src/transformer/enhanced/cache/engine.py) keeps only input length with `DynamicCache.crop()` after `generate()` returns, and stores it as safetensors. Generated token KV is not stored; on generation exceptions or process exit, the new snapshot for that request is not stored either.
+The [cache engine](../../src/huggingface/llama/cache/engine.py) keeps only input length with `DynamicCache.crop()` after `generate()` returns, and stores it as safetensors. Generated token KV is not stored; on generation exceptions or process exit, the new snapshot for that request is not stored either.
 
 On cache lookup, restore the longest common token ID prefix as `past_key_values` and compute the remaining input. When the full input matches, recompute the last token to obtain logits.
 
@@ -146,7 +146,7 @@ Measurement Pods set CPU and memory requests equal to limits. Actual resource va
 Tests run in the Python environment above plus `httpx` and metric dependencies. They create small Llama-structure weights in a temp directory to verify CPU compute, batch padding and finished-row removal, cancellation, cache restore, and corruption recovery.
 
 ```sh
-python -m pip install -r src/transformer/base_metric/requirements.txt httpx
+python -m pip install -r src/huggingface/llama/metrics/requirements.txt httpx
 python -m unittest discover -s tests -p 'test_transformers_*.py' -v
 sh tests/test-download-transformers-model.sh
 # Uses API discovery of the running local cluster.
@@ -161,7 +161,7 @@ Real-model tests verify `generate` results, SSE content, and disk cache restore.
 
 ## llama.cpp
 
-llama.cpp runs GGUF models on CPU. Base is serial inference, enhanced/batch is continuous batching, and enhanced/cache is a RAM and disk prefix KV cache. Batching and caching run independently. Dependencies and CPU build options are managed in the [Dockerfile](../../src/Dockerfile).
+llama.cpp runs GGUF models on CPU. Base is serial inference, batch is continuous batching, and cache is a RAM and disk prefix KV cache. Batching and caching run independently. Dependencies and CPU build options are managed in the [Dockerfile](../../src/Dockerfile).
 
 ### Switching engines
 
@@ -246,9 +246,9 @@ Use `API_SERVER_URL` for another address and `SERVED_MODEL_NAME` for another mod
 | Implementation | Python module | Image target |
 | --- | --- | --- |
 | Base | `llamacpp.base.server` | `base-llamacpp` |
-| Batch | `llamacpp.enhanced.batch.server` | `enhanced-batch-llamacpp` |
-| Cache | `llamacpp.enhanced.cache.server` | `enhanced-cache-llamacpp` |
-| Base + Prometheus | `llamacpp.base_metric.server` | `base-metric-llamacpp` |
+| Batch | `llamacpp.batch.server` | `enhanced-batch-llamacpp` |
+| Cache | `llamacpp.cache.server` | `enhanced-cache-llamacpp` |
+| Base + Prometheus | `llamacpp.metrics.server` | `base-metric-llamacpp` |
 
 After preparing model and cluster in the base deployment, build and apply the selected image.
 
@@ -266,7 +266,7 @@ For load settings, see [AIPerf](aiperf.md); for performance comparison, see [ben
 
 ### Continuous batching
 
-The [batching worker](../../src/llamacpp/enhanced/batch/batching.py) owns one native context. Each request keeps separate sequence IDs, samplers, generated tokens, and UTF-8 stream decoders.
+The [batching worker](../../src/llamacpp/batch/batching.py) owns one native context. Each request keeps separate sequence IDs, samplers, generated tokens, and UTF-8 stream decoders.
 
 Tokens of decoding requests go into the batch first; remaining space takes new prompt pieces. Remove KV of finished or cancelled requests and assign slots to waiting requests.
 
@@ -283,11 +283,11 @@ HTTP worker threads wait for scheduler results. Only the batching worker accesse
 
 Native KV space is allocated for `n_ctx x max_parallel`; actual size can grow from library alignment. The batching version does not keep cross-request prefix cache.
 
-See `PYTHONPATH=src python -m llamacpp.enhanced.batch.server --help` for defaults, and the [Deployment](../../k8s/inference/profiles/enhanced-batch-llamacpp-cpu.yaml) for deployed values.
+See `PYTHONPATH=src python -m llamacpp.batch.server --help` for defaults, and the [Deployment](../../k8s/inference/profiles/enhanced-batch-llamacpp-cpu.yaml) for deployed values.
 
 ### RAM and disk tiered cache
 
-The [cache engine](../../src/llamacpp/enhanced/cache/engine.py) adds prefix lookup and restore to the base serial generation path. After input prefill, at the point the first token is sampled, it stores only the input native sequence KV. Python scores arrays and generated responses are not stored.
+The [cache engine](../../src/llamacpp/cache/engine.py) adds prefix lookup and restore to the base serial generation path. After input prefill, at the point the first token is sampled, it stores only the input native sequence KV. Python scores arrays and generated responses are not stored.
 
 Lookup finds the longest common token ID prefix. It restores when a longer prefix than the current native context can be reused. After state restore it computes the new suffix; when the full input matches, it recomputes the last input token to refresh logits.
 
@@ -309,7 +309,7 @@ Namespaces are separated by model file, native library, package versions, contex
 
 The RAM budget excludes Python indexes, containers, and temp buffers during restore. The disk budget is per namespace; old model namespaces are not auto-deleted. Indexes use in-memory linear search.
 
-See `PYTHONPATH=src python -m llamacpp.enhanced.cache.server --help` for defaults.
+See `PYTHONPATH=src python -m llamacpp.cache.server --help` for defaults.
 
 The [cache Deployment](../../k8s/inference/profiles/enhanced-cache-llamacpp-cpu.yaml) mounts a [PVC](../../k8s/inference/profiles/enhanced-cache-llamacpp-cpu.yaml) at `/cache`. The PVC is kept when switching implementations or restarting inference Pods. The cluster default StorageClass is required.
 

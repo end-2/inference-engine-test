@@ -11,6 +11,7 @@ ENV DEBIAN_FRONTEND=noninteractive PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 
 RUN apt-get update && apt-get install -y --no-install-recommends python3 libgomp1 ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=gpu-builder /opt/venv /opt/venv
 WORKDIR /app
+COPY inference/*.py /app/inference/
 COPY llamacpp/__init__.py /app/llamacpp/
 COPY llamacpp/base/*.py /app/llamacpp/base/
 RUN getent group 1000 >/dev/null || groupadd --gid 1000 inference; \
@@ -22,71 +23,63 @@ ENTRYPOINT ["python", "-m", "llamacpp.base.server"]
 FROM gpu-runtime-llamacpp AS base-llamacpp-gpu
 
 FROM gpu-runtime-llamacpp AS enhanced-batch-llamacpp-gpu
-COPY llamacpp/enhanced/__init__.py /app/llamacpp/enhanced/
-COPY llamacpp/enhanced/batch/*.py /app/llamacpp/enhanced/batch/
-ENTRYPOINT ["python", "-m", "llamacpp.enhanced.batch.server"]
+COPY llamacpp/batch/*.py /app/llamacpp/batch/
+ENTRYPOINT ["python", "-m", "llamacpp.batch.server"]
 
 FROM gpu-runtime-llamacpp AS enhanced-cache-llamacpp-gpu
-COPY llamacpp/enhanced/__init__.py /app/llamacpp/enhanced/
-COPY llamacpp/enhanced/cache/*.py /app/llamacpp/enhanced/cache/
-ENTRYPOINT ["python", "-m", "llamacpp.enhanced.cache.server"]
+COPY llamacpp/cache/*.py /app/llamacpp/cache/
+ENTRYPOINT ["python", "-m", "llamacpp.cache.server"]
 
 FROM python:3.12-slim-bookworm AS gpu-runtime-transformers
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 HF_HUB_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1 HF_HOME=/tmp/huggingface OMP_NUM_THREADS=4 TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY transformer/requirements.txt /tmp/requirements.txt
+COPY huggingface/requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir torch==2.10.0 --index-url https://download.pytorch.org/whl/cu128 \
     && pip install --no-cache-dir -r /tmp/requirements.txt && pip check \
     && python -c "import torch; assert torch.version.cuda is not None"
-COPY llamacpp/__init__.py /app/llamacpp/
-COPY llamacpp/base/*.py /app/llamacpp/base/
-COPY transformer/__init__.py /app/transformer/
-COPY transformer/base/*.py /app/transformer/base/
+COPY inference/*.py /app/inference/
+COPY huggingface/__init__.py /app/huggingface/
+COPY huggingface/runtime/*.py /app/huggingface/runtime/
 RUN groupadd --gid 1000 inference && useradd --uid 1000 --gid 1000 --no-create-home --home-dir /tmp inference
 USER 1000:1000
 EXPOSE 8000
-ENTRYPOINT ["python", "-m", "transformer.base.server"]
 
-FROM gpu-runtime-transformers AS transformers-base-gpu
+FROM gpu-runtime-transformers AS gpu-runtime-llama
+COPY huggingface/llama/*.py /app/huggingface/llama/
+COPY huggingface/llama/base/*.py /app/huggingface/llama/base/
+ENTRYPOINT ["python", "-m", "huggingface.llama.base.server"]
 
-FROM gpu-runtime-transformers AS transformers-pd-gpu
+FROM gpu-runtime-llama AS transformers-base-gpu
+
+FROM gpu-runtime-llama AS transformers-pd-gpu
 USER 0
-COPY transformer/pd/requirements.txt /tmp/pd-requirements.txt
+COPY huggingface/llama/inference_distributed/requirements.txt /tmp/pd-requirements.txt
 RUN pip install --no-cache-dir -r /tmp/pd-requirements.txt && pip check
-COPY llamacpp/base/*.py /app/llamacpp/base/
-COPY transformer/base/*.py /app/transformer/base/
-COPY transformer/pd/*.py /app/transformer/pd/
+COPY huggingface/llama/inference_distributed/*.py /app/huggingface/llama/inference_distributed/
 USER 1000:1000
-ENTRYPOINT ["python", "-m", "transformer.pd.server"]
+ENTRYPOINT ["python", "-m", "huggingface.llama.inference_distributed.server"]
 
-FROM gpu-runtime-transformers AS transformers-enhanced-batch-gpu
-COPY transformer/enhanced/__init__.py /app/transformer/enhanced/
-COPY transformer/enhanced/batch/*.py /app/transformer/enhanced/batch/
-COPY transformer/enhanced/batch_gpu/*.py /app/transformer/enhanced/batch_gpu/
-ENTRYPOINT ["python", "-m", "transformer.enhanced.batch_gpu.server"]
+FROM gpu-runtime-llama AS transformers-enhanced-batch-gpu
+COPY huggingface/llama/batch/*.py /app/huggingface/llama/batch/
+COPY huggingface/llama/batch/gpu/*.py /app/huggingface/llama/batch/gpu/
+ENTRYPOINT ["python", "-m", "huggingface.llama.batch.gpu.server"]
 
-FROM gpu-runtime-transformers AS transformers-enhanced-cache-gpu
-COPY llamacpp/enhanced/__init__.py /app/llamacpp/enhanced/
-COPY llamacpp/enhanced/cache/__init__.py llamacpp/enhanced/cache/cache.py /app/llamacpp/enhanced/cache/
-COPY transformer/enhanced/__init__.py /app/transformer/enhanced/
-COPY transformer/enhanced/cache/*.py /app/transformer/enhanced/cache/
-ENTRYPOINT ["python", "-m", "transformer.enhanced.cache.server"]
+FROM gpu-runtime-llama AS transformers-enhanced-cache-gpu
+COPY huggingface/llama/cache/*.py /app/huggingface/llama/cache/
+ENTRYPOINT ["python", "-m", "huggingface.llama.cache.server"]
 
 FROM gpu-runtime-transformers AS transformers-mamba-base-gpu
-COPY transformer/base/*.py /app/transformer/base/
-COPY transformer/mamba/*.py /app/transformer/mamba/
-ENTRYPOINT ["python", "-m", "transformer.mamba.server"]
+COPY huggingface/mamba/*.py /app/huggingface/mamba/
+COPY huggingface/mamba/base/*.py /app/huggingface/mamba/base/
+ENTRYPOINT ["python", "-m", "huggingface.mamba.base.server"]
 
 FROM transformers-mamba-base-gpu AS transformers-mamba-cache-gpu
-COPY llamacpp/enhanced/__init__.py /app/llamacpp/enhanced/
-COPY llamacpp/enhanced/cache/__init__.py llamacpp/enhanced/cache/cache.py /app/llamacpp/enhanced/cache/
-COPY transformer/mamba/cache/*.py /app/transformer/mamba/cache/
-ENTRYPOINT ["python", "-m", "transformer.mamba.cache.server"]
+COPY huggingface/mamba/cache/*.py /app/huggingface/mamba/cache/
+ENTRYPOINT ["python", "-m", "huggingface.mamba.cache.server"]
 
-FROM transformers-mamba-cache-gpu AS transformers-hybrid-gpu
-COPY transformer/enhanced/__init__.py /app/transformer/enhanced/
-COPY transformer/enhanced/batch/*.py /app/transformer/enhanced/batch/
-COPY transformer/enhanced/batch_gpu/*.py /app/transformer/enhanced/batch_gpu/
-COPY transformer/hybrid/*.py /app/transformer/hybrid/
-ENTRYPOINT ["python", "-m", "transformer.hybrid.server"]
+FROM gpu-runtime-transformers AS transformers-hybrid-gpu
+COPY huggingface/jamba/*.py /app/huggingface/jamba/
+COPY huggingface/jamba/base/*.py /app/huggingface/jamba/base/
+COPY huggingface/jamba/hybrid/*.py /app/huggingface/jamba/hybrid/
+ENTRYPOINT ["python", "-m", "huggingface.jamba.hybrid.server"]

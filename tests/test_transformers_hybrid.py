@@ -9,8 +9,8 @@ import unittest
 from unittest.mock import patch
 
 from enhanced_support import ROOT
-from transformer.base.engine import Generation
-from transformer.hybrid.engine import EngineSettings, TorchEngine
+from inference.contracts import Generation
+from huggingface.jamba.hybrid.engine import EngineSettings, TorchEngine
 
 try:
     import torch
@@ -19,14 +19,14 @@ try:
     from tokenizers.models import WordLevel
     from tokenizers.pre_tokenizers import Whitespace
     from transformers import JambaConfig, JambaForCausalLM, PreTrainedTokenizerFast
-    from transformer.hybrid.backend import HybridBackend
-    from transformer.hybrid.state import HybridState
-    from llamacpp.enhanced.cache.cache import Snapshot
+    from huggingface.jamba.hybrid.backend import HybridBackend
+    from huggingface.jamba.hybrid.state import HybridState
+    from inference.cache import Snapshot
 except ImportError:
     torch = None
 
 
-@unittest.skipIf(torch is None, "Install transformer/requirements.txt")
+@unittest.skipIf(torch is None, "Install huggingface/requirements.txt")
 class HybridTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -96,7 +96,7 @@ class HybridTests(unittest.TestCase):
                 self.assertEqual(backend.restored_tokens - before, restored)
 
     def test_serial_base_uses_dynamic_state_and_matches_hybrid(self):
-        from transformer.hybrid.base import EngineSettings as BaseSettings, TorchEngine as BaseEngine
+        from huggingface.jamba.base.engine import EngineSettings as BaseSettings, TorchEngine as BaseEngine
 
         base = BaseEngine(BaseSettings(self.model_path, n_ctx=48, n_threads=1))
         self.addCleanup(base.close)

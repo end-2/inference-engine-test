@@ -1,12 +1,12 @@
 # 추론 엔진
 
-base, enhanced/batch, enhanced/cache 추론 서버를 실행하고 설정합니다. 기본 장치는 CPU이며 [GPU 벤치마크](benchmark.md#gpu-벤치마크)도 지원합니다. 기본 엔진은 Transformers와 PyTorch이며 llama.cpp도 선택할 수 있습니다. 배칭과 캐시는 두 엔진 모두 독립적인 구현으로 제공합니다.
+base, batch, cache 추론 서버를 실행하고 설정합니다. 기본 장치는 CPU이며 [GPU 벤치마크](benchmark.md#gpu-벤치마크)도 지원합니다. 기본 엔진은 Transformers와 PyTorch이며 llama.cpp도 선택할 수 있습니다. 배칭과 캐시는 두 엔진 모두 독립적인 구현으로 제공합니다. 모델과 공통 실행 코드의 구조는 [소스 경계](feature-experiments-KR.md#소스-경계)를 참고합니다.
 
 Transformers의 실행과 설정은 아래 절차를, llama.cpp는 [해당 엔진의 절차](#llamacpp)를 따릅니다. 매니페스트 적용과 ConfigMap 변경 방법은 [매니페스트 관리](manifests.md)를 참고합니다.
 
 ## Transformers
 
-`src/transformer/`는 로컬 `HuggingFaceTB/SmolLM2-135M-Instruct`를 PyTorch로 실행합니다. base는 직렬 추론, enhanced/batch는 요청 배칭, enhanced/cache는 요청 간 prefix KV 재사용을 제공합니다.
+`src/huggingface/llama/`는 로컬 `HuggingFaceTB/SmolLM2-135M-Instruct`를 PyTorch로 실행합니다. base는 직렬 추론, batch는 요청 배칭, cache는 요청 간 prefix KV 재사용을 제공합니다.
 
 ### 모델과 로컬 실행
 
@@ -20,11 +20,11 @@ python3.12 -m venv /tmp/transformer-venv
 . /tmp/transformer-venv/bin/activate
 # Linux에서는 CPU 전용 PyTorch를 먼저 설치합니다.
 python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
-python -m pip install -r src/transformer/requirements.txt
-PYTHONPATH=src python -m transformer.base.server --model .models/smollm2-135m
+python -m pip install -r src/huggingface/requirements.txt
+PYTHONPATH=src python -m huggingface.llama.base.server --model .models/smollm2-135m
 ```
 
-macOS에서는 CPU 인덱스 설치 명령을 생략하고 requirements만 설치합니다. 이 로컬 실행은 CPU와 기본 dtype `float32`를 사용합니다. `--device cuda`는 CUDA 지원 PyTorch와 기본 dtype `float16`을 사용합니다. CPU의 `--dtype bfloat16` 성능은 커널에 따라 달라집니다. 의존성 버전은 [requirements](../../src/transformer/requirements.txt)를 따릅니다.
+macOS에서는 CPU 인덱스 설치 명령을 생략하고 requirements만 설치합니다. 이 로컬 실행은 CPU와 기본 dtype `float32`를 사용합니다. `--device cuda`는 CUDA 지원 PyTorch와 기본 dtype `float16`을 사용합니다. CPU의 `--dtype bfloat16` 성능은 커널에 따라 달라집니다. 의존성 버전은 [requirements](../../src/huggingface/requirements.txt)를 따릅니다.
 
 다운로드는 검증된 파일을 보존하며 중단된 파일을 이어받습니다. 전체 파일의 검증이 끝난 뒤 최종 디렉터리인 `.models/smollm2-135m/`로 이동합니다. `LOCAL_K8S_MODELS_DIR`로 모델 루트를 변경할 수 있으며 클러스터 생성에도 같은 값을 사용합니다.
 
@@ -46,14 +46,14 @@ curl http://127.0.0.1:8000/v1/chat/completions \
 
 | 구현 | Python 모듈 | Docker 타깃, 이미지 이름 |
 | --- | --- | --- |
-| Base | `transformer.base.server` | `transformers-base` |
-| Batch | `transformer.enhanced.batch.server` | `transformers-enhanced-batch` |
-| GPU Batch | `transformer.enhanced.batch_gpu.server` | `transformers-enhanced-batch-gpu` |
-| Cache | `transformer.enhanced.cache.server` | `transformers-enhanced-cache` |
-| Base + Prometheus | `transformer.base_metric.server` | `transformers-base-metric` |
-| Mamba | `transformer.mamba.server` | `transformers-mamba-base` |
-| Mamba prefix cache | `transformer.mamba.cache.server` | `transformers-mamba-cache` |
-| Jamba hybrid batch + HiCache | `transformer.hybrid.server` | `transformers-hybrid` |
+| Base | `huggingface.llama.base.server` | `transformers-base` |
+| Batch | `huggingface.llama.batch.server` | `transformers-enhanced-batch` |
+| GPU Batch | `huggingface.llama.batch.gpu.server` | `transformers-enhanced-batch-gpu` |
+| Cache | `huggingface.llama.cache.server` | `transformers-enhanced-cache` |
+| Base + Prometheus | `huggingface.llama.metrics.server` | `transformers-base-metric` |
+| Mamba | `huggingface.mamba.base.server` | `transformers-mamba-base` |
+| Mamba prefix cache | `huggingface.mamba.cache.server` | `transformers-mamba-cache` |
+| Jamba hybrid batch + HiCache | `huggingface.jamba.hybrid.server` | `transformers-hybrid` |
 
 Mamba는 별도 모델과 상태 checkpoint를 사용합니다. 실행 방법과 캐시 규칙은 [Mamba 상태 캐시](mamba-cache.md)를 참고하세요.
 
@@ -69,15 +69,15 @@ Base와 cache는 Transformers의 `generate()`로 생성하며 KV 갱신과 종�
 
 생성 전 취소된 요청은 모델을 호출하지 않습니다. 생성 중 취소는 `StoppingCriteria`가 토큰 생성 후 확인하므로 진행 중인 연산과 해당 토큰 출력을 즉시 중단하지 않습니다.
 
-Base + Prometheus는 같은 직렬 엔진에 `/metrics`의 `transformers_*` 요청, 토큰 수, TTFT 지표를 추가합니다. 로컬 실행에는 `src/transformer/base_metric/requirements.txt`도 설치합니다. [멀티 노드 availability](availability-test.md)와 [HPA](hpa-test.md)는 이 이미지를 사용합니다.
+Base + Prometheus는 같은 직렬 엔진에 `/metrics`의 `transformers_*` 요청, 토큰 수, TTFT 지표를 추가합니다. 로컬 실행에는 `src/huggingface/llama/metrics/requirements.txt`도 설치합니다. [멀티 노드 availability](availability-test.md)와 [HPA](hpa-test.md)는 이 이미지를 사용합니다.
 
 ### 요청 배칭
 
-직렬 추론의 대기를 줄이기 위해 여러 요청의 연산을 하나의 배치로 실행합니다. [배칭 작업자](../../src/transformer/enhanced/batch/engine.py)는 `--batch-wait-ms` 동안 요청을 모아 최대 `--max-parallel`개를 함께 처리합니다.
+직렬 추론의 대기를 줄이기 위해 여러 요청의 연산을 하나의 배치로 실행합니다. [배칭 작업자](../../src/huggingface/runtime/batching.py)는 `--batch-wait-ms` 동안 요청을 모아 최대 `--max-parallel`개를 함께 처리합니다.
 
 길이가 다른 입력에는 토크나이저의 왼쪽 패딩과 `prepare_inputs_for_generation()`의 position ID 준비를 사용합니다. 샘플링에는 Transformers의 `TemperatureLogitsWarper`, `TopPLogitsWarper`, `SuppressTokensLogitsProcessor`를 사용합니다. 각 요청의 샘플링 옵션과 출력 제한, 취소 상태를 분리하고, 종료된 행은 다음 decode 전에 KV와 배치에서 제거합니다.
 
-일반 `generate()`가 제공하지 않는 요청별 생성 설정, 스트림 분배와 완료 행 제거는 [배치 백엔드](../../src/transformer/enhanced/batch/backend.py)의 루프에서 처리합니다.
+일반 `generate()`가 제공하지 않는 요청별 생성 설정, 스트림 분배와 완료 행 제거는 [배치 백엔드](../../src/huggingface/llama/batch/backend.py)의 루프에서 처리합니다.
 
 진행 중인 배치에는 새 요청을 추가하지 않습니다. 새 요청은 다음 배치를 기다리므로 긴 출력이 대기 시간을 늘릴 수 있습니다. 요청 간 prefix 캐시는 유지하지 않습니다.
 
@@ -89,7 +89,7 @@ GPU batch는 같은 작업자를 사용합니다. `temperature=0`, `ignore_eos=t
 
 모든 구현은 한 요청의 decode 안에서 KV를 사용하며, cache 구현은 반복 입력의 prefill을 줄이기 위해 prefix KV를 요청 사이에도 재사용합니다.
 
-[캐시 엔진](../../src/transformer/enhanced/cache/engine.py)은 `generate()`가 반환된 뒤 `DynamicCache.crop()`으로 입력 길이만 남겨 safetensors로 저장합니다. 생성 토큰의 KV는 저장하지 않으며, 생성 중 예외나 프로세스 종료가 발생하면 해당 요청의 새 snapshot도 저장하지 않습니다.
+[캐시 엔진](../../src/huggingface/llama/cache/engine.py)은 `generate()`가 반환된 뒤 `DynamicCache.crop()`으로 입력 길이만 남겨 safetensors로 저장합니다. 생성 토큰의 KV는 저장하지 않으며, 생성 중 예외나 프로세스 종료가 발생하면 해당 요청의 새 snapshot도 저장하지 않습니다.
 
 캐시 조회 시 토큰 ID의 최장 공통 prefix를 복원하여 `past_key_values`로 전달하고 나머지 입력을 계산합니다. 입력 전체가 일치하면 마지막 토큰을 다시 계산해 logits를 얻습니다.
 
@@ -144,7 +144,7 @@ CPU, 메모리와 `--n-threads`는 각 Deployment에서 설정합니다.
 테스트는 위 Python 환경에 `httpx`와 메트릭 의존성을 추가해 실행합니다. SmolLM2와 같은 Llama 구조의 작은 가중치를 임시 생성하여 CPU 연산, 배치 패딩과 완료 행 제거, 취소, 캐시 복원과 손상 복구를 검증합니다.
 
 ```sh
-python -m pip install -r src/transformer/base_metric/requirements.txt httpx
+python -m pip install -r src/huggingface/llama/metrics/requirements.txt httpx
 python -m unittest discover -s tests -p 'test_transformers_*.py' -v
 sh tests/test-download-transformers-model.sh
 # 실행 중인 로컬 클러스터의 API discovery를 사용합니다.
@@ -159,7 +159,7 @@ SERVED_MODEL_NAME=HuggingFaceTB/SmolLM2-135M-Instruct python tests/test-api-llam
 
 ## llama.cpp
 
-llama.cpp는 GGUF 모델을 CPU에서 실행합니다. base는 직렬 추론, enhanced/batch는 continuous batching, enhanced/cache는 RAM과 디스크 prefix KV 캐시를 제공합니다. 배칭과 캐시는 독립적으로 실행합니다. 의존성과 CPU 빌드 옵션은 [Dockerfile](../../src/Dockerfile)에서 관리합니다.
+llama.cpp는 GGUF 모델을 CPU에서 실행합니다. base는 직렬 추론, batch는 continuous batching, cache는 RAM과 디스크 prefix KV 캐시를 제공합니다. 배칭과 캐시는 독립적으로 실행합니다. 의존성과 CPU 빌드 옵션은 [Dockerfile](../../src/Dockerfile)에서 관리합니다.
 
 ### 엔진 전환
 
@@ -244,9 +244,9 @@ python tests/test-api-llamacpp.py
 | 구현 | Python 모듈 | 이미지 타깃 |
 | --- | --- | --- |
 | Base | `llamacpp.base.server` | `base-llamacpp` |
-| Batch | `llamacpp.enhanced.batch.server` | `enhanced-batch-llamacpp` |
-| Cache | `llamacpp.enhanced.cache.server` | `enhanced-cache-llamacpp` |
-| Base + Prometheus | `llamacpp.base_metric.server` | `base-metric-llamacpp` |
+| Batch | `llamacpp.batch.server` | `enhanced-batch-llamacpp` |
+| Cache | `llamacpp.cache.server` | `enhanced-cache-llamacpp` |
+| Base + Prometheus | `llamacpp.metrics.server` | `base-metric-llamacpp` |
 
 base 배포에서 모델과 클러스터를 준비한 뒤 선택한 이미지를 빌드하고 적용합니다.
 
@@ -264,7 +264,7 @@ Base + Prometheus는 [가용성 테스트](availability-test.md#llamacpp)와 [HP
 
 ### Continuous batching
 
-[배칭 작업자](../../src/llamacpp/enhanced/batch/batching.py)는 하나의 native context를 소유합니다. 요청마다 sequence ID, sampler, 생성 토큰, UTF-8 스트림 디코더를 분리합니다.
+[배칭 작업자](../../src/llamacpp/batch/batching.py)는 하나의 native context를 소유합니다. 요청마다 sequence ID, sampler, 생성 토큰, UTF-8 스트림 디코더를 분리합니다.
 
 디코딩 중인 요청의 토큰을 먼저 배치에 넣고, 남는 공간에 새 프롬프트 조각을 배치합니다. 완료되거나 취소된 요청의 KV를 제거하고 대기 요청에 슬롯을 할당합니다.
 
@@ -281,11 +281,11 @@ HTTP 작업자 스레드는 스케줄러의 결과를 기다립니다. 모델과
 
 native KV 공간은 `n_ctx × max_parallel`을 기준으로 할당하며, 라이브러리의 정렬 때문에 실제 크기는 늘어날 수 있습니다. 배칭 버전은 요청 간 prefix 캐시를 유지하지 않습니다.
 
-기본값은 `PYTHONPATH=src python -m llamacpp.enhanced.batch.server --help`, 배포 값은 [Deployment](../../k8s/inference/profiles/enhanced-batch-llamacpp-cpu.yaml)에서 확인할 수 있습니다.
+기본값은 `PYTHONPATH=src python -m llamacpp.batch.server --help`, 배포 값은 [Deployment](../../k8s/inference/profiles/enhanced-batch-llamacpp-cpu.yaml)에서 확인할 수 있습니다.
 
 ### RAM과 디스크 계층형 캐시
 
-[캐시 엔진](../../src/llamacpp/enhanced/cache/engine.py)은 base의 직렬 생성 경로에 prefix 조회와 복원을 추가합니다. 입력 prefill 이후 첫 토큰을 샘플링한 시점에 입력의 native sequence KV만 저장합니다. Python scores 배열과 생성 응답은 저장하지 않습니다.
+[캐시 엔진](../../src/llamacpp/cache/engine.py)은 base의 직렬 생성 경로에 prefix 조회와 복원을 추가합니다. 입력 prefill 이후 첫 토큰을 샘플링한 시점에 입력의 native sequence KV만 저장합니다. Python scores 배열과 생성 응답은 저장하지 않습니다.
 
 조회는 토큰 ID의 최장 공통 prefix를 찾습니다. 현재 native context보다 더 긴 prefix를 재사용할 수 있을 때 복원합니다. 상태 복원 후 새 suffix를 계산하며, 입력 전체가 일치하면 마지막 입력 토큰을 다시 계산해 logits를 갱신합니다.
 
@@ -307,7 +307,7 @@ native KV 공간은 `n_ctx × max_parallel`을 기준으로 할당하며, 라이
 
 RAM 예산에는 Python 인덱스, 컨테이너와 복원 중 임시 버퍼가 포함되지 않습니다. 디스크 예산은 namespace별이며 이전 모델 namespace는 자동 삭제하지 않습니다. 인덱스는 메모리에서 선형 탐색합니다.
 
-기본값은 `PYTHONPATH=src python -m llamacpp.enhanced.cache.server --help`에서 확인할 수 있습니다.
+기본값은 `PYTHONPATH=src python -m llamacpp.cache.server --help`에서 확인할 수 있습니다.
 
 [캐시 Deployment](../../k8s/inference/profiles/enhanced-cache-llamacpp-cpu.yaml)는 `/cache`에 [PVC](../../k8s/inference/profiles/enhanced-cache-llamacpp-cpu.yaml)를 마운트합니다. 다른 구현으로 전환하거나 추론 Pod를 재시작해도 PVC는 유지됩니다. 클러스터의 기본 StorageClass가 필요합니다.
 
