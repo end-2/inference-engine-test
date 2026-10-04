@@ -25,6 +25,15 @@
 !**/artifacts/profile_export_console.txt
 # Quality checks retain the complete questions, responses, and judgments.
 !**/quality-*/**/results.json
+# MMLU accuracy checks retain aggregate summaries and reproduction manifests.
+# Per-question results.json and results.jsonl stay local.
+!**/mmlu-*/**/summary.json
+!**/mmlu-*/**/summary-subjects.csv
+!**/mmlu-*/**/conditions.json
+!**/mmlu-*/**/model.sha256
+!**/mmlu-*/**/aggregate.py
+!**/mmlu-*/**/run-suite.py
+!**/mmlu-*/**/differences.json
 # Embedded availability figures are part of the reports (only those referenced in summary.md).
 !**/availability-*/figures/observed-timeline.png
 # Grafana panels embedded in HPA summaries.

@@ -1,0 +1,27 @@
+{
+  "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+  "device": "cuda",
+  "dtype": "float16",
+  "variants": [
+    "base",
+    "enhanced-batch",
+    "enhanced-cache"
+  ],
+  "few_shot": 0,
+  "total_questions": 14042,
+  "subjects": 57,
+  "n_ctx": 2048,
+  "max_input_tokens": 1920,
+  "max_output_tokens": 128,
+  "dataset_max_input_tokens": 1085,
+  "concurrency": 1,
+  "scoring": "generated-choice-v1",
+  "gpu": "NVIDIA GeForce RTX 2060 SUPER",
+  "source_git_head": "2c800e6d68bcf0fd88fc5a614f69994a4e5bf6a2",
+  "model_revision": "12fd25f77366fa6b3b4b768ec3050bf629380bac",
+  "cache_policy": "Fresh dedicated PVC; preserve within the full sweep",
+  "batch_execution": "Sequential requests; eager GPU path, ignore_eos=false",
+  "image_build": "Base built from src/Dockerfile.gpu. Batch and cache use that exact base image plus the same source COPY and ENTRYPOINT instructions as their original targets; recipes saved per variant.",
+  "gpu_memory_mib": 8192,
+  "driver_version": "580.126.09"
+}

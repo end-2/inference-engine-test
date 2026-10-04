@@ -1,0 +1,1838 @@
+[
+  {
+    "subject": "abstract_algebra",
+    "index": 10,
+    "expected": "C",
+    "base_answer": "D. False, False",
+    "candidate_answer": "D",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "abstract_algebra",
+    "index": 26,
+    "expected": "C",
+    "base_answer": "D. False",
+    "candidate_answer": "D",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "abstract_algebra",
+    "index": 54,
+    "expected": "B",
+    "base_answer": "D",
+    "candidate_answer": "D. 3",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "anatomy",
+    "index": 14,
+    "expected": "A",
+    "base_answer": "C",
+    "candidate_answer": "A",
+    "base_status": "INCORRECT",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "anatomy",
+    "index": 97,
+    "expected": "C",
+    "base_answer": "D",
+    "candidate_answer": "A",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "anatomy",
+    "index": 128,
+    "expected": "A",
+    "base_answer": "D. Minerals",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "astronomy",
+    "index": 135,
+    "expected": "D",
+    "base_answer": "D. gamma rays X rays ultraviolet visible light infrared radio",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "business_ethics",
+    "index": 39,
+    "expected": "B",
+    "base_answer": "A",
+    "candidate_answer": "D",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "business_ethics",
+    "index": 77,
+    "expected": "C",
+    "base_answer": "D. Anti-corruption",
+    "candidate_answer": "B. Commercial performance",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "clinical_knowledge",
+    "index": 3,
+    "expected": "B",
+    "base_answer": "D. Rash",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "clinical_knowledge",
+    "index": 44,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "D",
+    "base_status": "INCORRECT",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "clinical_knowledge",
+    "index": 139,
+    "expected": "B",
+    "base_answer": "D. 0-175 degrees.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "clinical_knowledge",
+    "index": 173,
+    "expected": "A",
+    "base_answer": "D. Scaphoid, radius, ulna, cunniform, trapezius",
+    "candidate_answer": "D",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "college_biology",
+    "index": 54,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "D. Random mating",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "college_biology",
+    "index": 75,
+    "expected": "A",
+    "base_answer": "B. They include the cyanobacteria.",
+    "candidate_answer": "B",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "college_biology",
+    "index": 114,
+    "expected": "A",
+    "base_answer": "B. The polarity of tRNA becomes the opposite of that of DNA.",
+    "candidate_answer": "B",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "college_chemistry",
+    "index": 12,
+    "expected": "A",
+    "base_answer": "B. 27 G",
+    "candidate_answer": "B",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "college_computer_science",
+    "index": 46,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "D. 0.5",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "college_mathematics",
+    "index": 10,
+    "expected": "D",
+    "base_answer": "A complete graph with 10 vertices has 10 edges.",
+    "candidate_answer": "A. 20",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "college_mathematics",
+    "index": 66,
+    "expected": "C",
+    "base_answer": "B. -2",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "college_medicine",
+    "index": 66,
+    "expected": "B",
+    "base_answer": "C. Improved marriage satisfaction rates.\n\nThe data from Finland shows that the incidence of sauna use is significantly higher than most countries, and the data suggests that the prevalence of sauna use is likely to be higher in Finland than in other countries. This is because the data shows that the incidence of sauna use is higher among men than among women, and the data also shows that the incidence of sauna use is higher among men than among women.\n\nIn contrast, the data from other countries, such as the United States, the United Kingdom, and Australia, show that the incidence of sauna use is lower among men",
+    "candidate_answer": "C. Improved marriage satisfaction rates.\n\nThe data from Finland shows that the incidence of sauna use is significantly higher than most countries, and the data suggests that the prevalence of sauna use is likely to be higher in Finland than in other countries. This is because the data shows that the incidence of sauna use is higher among men than among women, and the data also shows that the incidence of sauna use is higher among younger men than among older men.\n\nIn contrast, the data from other countries, such as the United States, the United Kingdom, and Australia, show that the incidence of sauna use is lower",
+    "base_status": "ERROR",
+    "candidate_status": "ERROR"
+  },
+  {
+    "subject": "college_medicine",
+    "index": 156,
+    "expected": "B",
+    "base_answer": "B",
+    "candidate_answer": "B. exons",
+    "base_status": "CORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "college_physics",
+    "index": 99,
+    "expected": "B",
+    "base_answer": "B. 40 m/s down",
+    "candidate_answer": "B. 80 m/s down",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "computer_security",
+    "index": 1,
+    "expected": "A",
+    "base_answer": "A",
+    "candidate_answer": "True, True",
+    "base_status": "CORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "computer_security",
+    "index": 20,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "D. Unauthorized network access",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "computer_security",
+    "index": 44,
+    "expected": "A",
+    "base_answer": "True, True",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "conceptual_physics",
+    "index": 191,
+    "expected": "A",
+    "base_answer": "A",
+    "candidate_answer": "B",
+    "base_status": "CORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "elementary_mathematics",
+    "index": 46,
+    "expected": "D",
+    "base_answer": "D",
+    "candidate_answer": "A",
+    "base_status": "CORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "elementary_mathematics",
+    "index": 63,
+    "expected": "C",
+    "base_answer": "B. 5 and 12",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "elementary_mathematics",
+    "index": 225,
+    "expected": "D",
+    "base_answer": "D. −36",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "elementary_mathematics",
+    "index": 231,
+    "expected": "C",
+    "base_answer": "B. $0.60",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "elementary_mathematics",
+    "index": 312,
+    "expected": "D",
+    "base_answer": "D. 30x + 15y",
+    "candidate_answer": "D",
+    "base_status": "INVALID",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "elementary_mathematics",
+    "index": 315,
+    "expected": "C",
+    "base_answer": "D. 870",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "elementary_mathematics",
+    "index": 331,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "D. 305,610",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "formal_logic",
+    "index": 33,
+    "expected": "B",
+    "base_answer": "D. Both the Aardvarks and the Chipmunks win their first games.",
+    "candidate_answer": "D",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "formal_logic",
+    "index": 90,
+    "expected": "D",
+    "base_answer": "D. Invalid.\n\nThe argument is invalid because the conclusion \"A is true\" does not logically follow from the premises \"S is true\" and \"Q is true.\" The truth table for the argument shows that the truth table for the conditional statement \"S ∨ Q\" is not a valid one, as the truth of the consequent (S) does not guarantee the truth of the antecedent (Q). Therefore, the argument is invalid.",
+    "candidate_answer": "D. Invalid.\n\nThe argument is invalid because the conclusion \"A is true\" does not logically follow from the premises \"S is true\" and \"Q is true.\" The truth table for the argument shows that the truth table for the conditional statement \"S ∨ Q\" is not a valid one, as the truth value of \"S\" is not equal to \"Q\" in all cases. Therefore, the argument is invalid.",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "global_facts",
+    "index": 38,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "B. by 8 fold",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "global_facts",
+    "index": 76,
+    "expected": "C",
+    "base_answer": "B. 2%",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "global_facts",
+    "index": 90,
+    "expected": "D",
+    "base_answer": "B. Russia",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_biology",
+    "index": 39,
+    "expected": "B",
+    "base_answer": "A",
+    "candidate_answer": "D. Autotrophs had to convert atmospheric nitrogen to nitrate.",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_biology",
+    "index": 56,
+    "expected": "C",
+    "base_answer": "A",
+    "candidate_answer": "D. Promoter",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_biology",
+    "index": 61,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "Crossover would most likely occur in which situation?\nA. Two genes (1 and 2) are located right next to each other on chromosome A.\nB. Gene 1 is located on chromosome A, and gene 2 is on chromosome B.\nC. Gene 1 is located on chromosome A; gene 2 is on chromosome B.\nD. Gene 1 is located on chromosome A; gene 2 is on chromosome B.",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_biology",
+    "index": 101,
+    "expected": "D",
+    "base_answer": "B",
+    "candidate_answer": "B. Small birds anticipating the long drought and eating more to gain weight and, consequently, growing larger beaks.",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_biology",
+    "index": 140,
+    "expected": "A",
+    "base_answer": "D. B and C only",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "high_school_biology",
+    "index": 152,
+    "expected": "A",
+    "base_answer": "C. The DNA migrates only when the current is running.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "high_school_biology",
+    "index": 249,
+    "expected": "C",
+    "base_answer": "D. Spotted toads",
+    "candidate_answer": "B. Fruit flies",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_biology",
+    "index": 294,
+    "expected": "C",
+    "base_answer": "D",
+    "candidate_answer": "B. Chimpanzees evolved from humans millions of years ago.",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_chemistry",
+    "index": 137,
+    "expected": "A",
+    "base_answer": "B",
+    "candidate_answer": "A",
+    "base_status": "INCORRECT",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "high_school_chemistry",
+    "index": 157,
+    "expected": "C",
+    "base_answer": "B",
+    "candidate_answer": "A",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_computer_science",
+    "index": 72,
+    "expected": "C",
+    "base_answer": "A",
+    "candidate_answer": "B. 1",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_computer_science",
+    "index": 93,
+    "expected": "D",
+    "base_answer": "B",
+    "candidate_answer": "B. As soon as the value of N is entered",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_european_history",
+    "index": 27,
+    "expected": "A",
+    "base_answer": "B",
+    "candidate_answer": "B. would allow the Jews to forgive the German people",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_european_history",
+    "index": 64,
+    "expected": "D",
+    "base_answer": "B. European states sought direct access to gold and spices and luxury goods as a means to enhance personal wealth and state power.",
+    "candidate_answer": "C. Individual captains sought great glory and wealth.",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_european_history",
+    "index": 70,
+    "expected": "D",
+    "base_answer": "C. the Earth is not stationary",
+    "candidate_answer": "B. the Earth is not stationary",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_european_history",
+    "index": 118,
+    "expected": "B",
+    "base_answer": "A",
+    "candidate_answer": "B. the Balkan Question and the Triple Alliance",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_european_history",
+    "index": 156,
+    "expected": "A",
+    "base_answer": "C. Napoleon's confidence that he will be the greatest leader Europe has ever seen",
+    "candidate_answer": "D. Napoleon's appreciation of his soldiers and their collective efforts.",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_european_history",
+    "index": 162,
+    "expected": "C",
+    "base_answer": "B. scientific principles were applied to other cultures as a result of the sudden expansion of European dominance across large parts of the globe",
+    "candidate_answer": "B",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_geography",
+    "index": 84,
+    "expected": "D",
+    "base_answer": "D. Latin American",
+    "candidate_answer": "B",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_geography",
+    "index": 121,
+    "expected": "D",
+    "base_answer": "B",
+    "candidate_answer": "A",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_macroeconomics",
+    "index": 25,
+    "expected": "D",
+    "base_answer": "C. The government increases spending matched with an increase in taxes.",
+    "candidate_answer": "D. The government increases taxes and decreases spending",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_macroeconomics",
+    "index": 60,
+    "expected": "D",
+    "base_answer": "C",
+    "candidate_answer": "D. Lower reserve requirements; lower the discount rate; buy bonds",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_macroeconomics",
+    "index": 90,
+    "expected": "C",
+    "base_answer": "D. Increases",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_macroeconomics",
+    "index": 130,
+    "expected": "D",
+    "base_answer": "B",
+    "candidate_answer": "A",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_macroeconomics",
+    "index": 167,
+    "expected": "A",
+    "base_answer": "B",
+    "candidate_answer": "C",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_macroeconomics",
+    "index": 375,
+    "expected": "B",
+    "base_answer": "C",
+    "candidate_answer": "A",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_mathematics",
+    "index": 12,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "B",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_mathematics",
+    "index": 36,
+    "expected": "C",
+    "base_answer": "A",
+    "candidate_answer": "B. 4680",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_mathematics",
+    "index": 112,
+    "expected": "A",
+    "base_answer": "A",
+    "candidate_answer": "B",
+    "base_status": "CORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_mathematics",
+    "index": 206,
+    "expected": "A",
+    "base_answer": "A",
+    "candidate_answer": "B. -7",
+    "base_status": "CORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_mathematics",
+    "index": 212,
+    "expected": "C",
+    "base_answer": "A",
+    "candidate_answer": "B",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_mathematics",
+    "index": 219,
+    "expected": "B",
+    "base_answer": "B. 3",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_microeconomics",
+    "index": 59,
+    "expected": "B",
+    "base_answer": "B",
+    "candidate_answer": "A",
+    "base_status": "CORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_microeconomics",
+    "index": 141,
+    "expected": "D",
+    "base_answer": "C",
+    "candidate_answer": "A",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_microeconomics",
+    "index": 143,
+    "expected": "C",
+    "base_answer": "A",
+    "candidate_answer": "A. A positive income elasticity\n\nExplanation: In microeconomics, a positive income elasticity indicates that the demand for one good is greater than the price of the other good. This means that as the price of one good increases, the demand for the other good also increases. This is a positive relationship between the two goods, indicating that the demand for one good is directly related to the price of the other good.",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_physics",
+    "index": 104,
+    "expected": "A",
+    "base_answer": "A",
+    "candidate_answer": "C. Clockwise rotation; radius of path = eB/(mv)",
+    "base_status": "CORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_psychology",
+    "index": 127,
+    "expected": "B",
+    "base_answer": "A",
+    "candidate_answer": "D. fair",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_psychology",
+    "index": 239,
+    "expected": "D",
+    "base_answer": "B. Police officer",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_psychology",
+    "index": 276,
+    "expected": "C",
+    "base_answer": "B. stable attribution",
+    "candidate_answer": "D. fundamental attribution error",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_psychology",
+    "index": 315,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "B. potentiation",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_psychology",
+    "index": 328,
+    "expected": "B",
+    "base_answer": "B. dopamine",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_psychology",
+    "index": 485,
+    "expected": "C",
+    "base_answer": "B. The psychologist is testing the students in the two schools at two different times.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_statistics",
+    "index": 1,
+    "expected": "C",
+    "base_answer": "B. 35 minutes",
+    "candidate_answer": "B. 31.7 to 39.3 minutes",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_statistics",
+    "index": 69,
+    "expected": "B",
+    "base_answer": "B",
+    "candidate_answer": "A smaller margin of error\n\nThe answer is A. I and II",
+    "base_status": "CORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_statistics",
+    "index": 82,
+    "expected": "C",
+    "base_answer": "D. Thirty-six people scored higher than both Mary and Pam.",
+    "candidate_answer": "D. Thirty-six people scored higher than both Mary and Pam",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_statistics",
+    "index": 147,
+    "expected": "C",
+    "base_answer": "B",
+    "candidate_answer": "A",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_statistics",
+    "index": 152,
+    "expected": "A",
+    "base_answer": "A. a completely randomized design, with the currently marketed medicine and the experimental medicine as two treatments",
+    "candidate_answer": "A. a completely randomized design, with the currently marketed medicine and the experimental medicine as two treatments\n\nThe correct answer is A. a completely randomized design, with the currently marketed medicine and the experimental medicine forming a pair.",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_statistics",
+    "index": 192,
+    "expected": "C",
+    "base_answer": "B",
+    "candidate_answer": "B. Use the 88 who did respond, using 88 as the sample size in the analysis.",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_statistics",
+    "index": 209,
+    "expected": "C",
+    "base_answer": "B. 3",
+    "candidate_answer": "B",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "high_school_us_history",
+    "index": 19,
+    "expected": "D",
+    "base_answer": "D. Dawes Plan",
+    "candidate_answer": "C. Espionage Act",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_us_history",
+    "index": 22,
+    "expected": "B",
+    "base_answer": "D. Creation of a price-support system for small-scale farmers",
+    "candidate_answer": "D. Creation of a price-support system for small-scale farmers.",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_us_history",
+    "index": 49,
+    "expected": "A",
+    "base_answer": "B. The mentally ill are best left to the care of their families.",
+    "candidate_answer": "D. More democracy will help the mentally ill",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_world_history",
+    "index": 15,
+    "expected": "D",
+    "base_answer": "B. The adoption of Chinese imperial customs in the Japanese court",
+    "candidate_answer": "D. Commodore Perry forcing Japan to open its ports to trade",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_world_history",
+    "index": 101,
+    "expected": "C",
+    "base_answer": "B. That European colonizers often resorted to armed force to impose their will on imperial subjects\n\nThe passage suggests that the first two statements are generally true, but the third statement is not entirely accurate. The passage implies that European colonizers were generally eager to force their cultural norms on native populations, but it does not explicitly state that they were always willing to do so. The passage also mentions that European colonizers frequently resorted to armed force to impose their will on imperial subjects, but it does not provide any information about the extent or frequency of this practice.",
+    "candidate_answer": "B. That European colonizers often resorted to armed force to impose their will on imperial subjects\n\nThe passage suggests that the first two statements are generally true, but the third statement is not entirely accurate. The passage implies that European colonizers were generally eager to force their cultural norms on native populations, but it does not explicitly state that they were always willing to do so. The third statement is more accurate, as it suggests that European colonizers were often motivated by a desire to impose their own cultural norms on native populations, rather than simply seeking to impose their own values or customs.",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_world_history",
+    "index": 116,
+    "expected": "B",
+    "base_answer": "C. It stressed the importance of looking back to the classical past.",
+    "candidate_answer": "C. It stressed the importance of looking back to the classical past",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "high_school_world_history",
+    "index": 126,
+    "expected": "B",
+    "base_answer": "A",
+    "candidate_answer": "C. Aboriginal natives gathering the support of provincials to create constitutions",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "human_aging",
+    "index": 166,
+    "expected": "B",
+    "base_answer": "D",
+    "candidate_answer": "D. Graying of hair",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "human_sexuality",
+    "index": 89,
+    "expected": "B",
+    "base_answer": "A",
+    "candidate_answer": "B. 300 million",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "human_sexuality",
+    "index": 97,
+    "expected": "C",
+    "base_answer": "A",
+    "candidate_answer": "B. He will not be popular with his peers.",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "international_law",
+    "index": 59,
+    "expected": "A",
+    "base_answer": "C",
+    "candidate_answer": "A",
+    "base_status": "INCORRECT",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "jurisprudence",
+    "index": 6,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "B",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "jurisprudence",
+    "index": 15,
+    "expected": "A",
+    "base_answer": "A",
+    "candidate_answer": "C",
+    "base_status": "CORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "logical_fallacies",
+    "index": 1,
+    "expected": "C",
+    "base_answer": "B. Confusing figurative language with literal language.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "logical_fallacies",
+    "index": 65,
+    "expected": "A",
+    "base_answer": "D. straw person",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "machine_learning",
+    "index": 21,
+    "expected": "A",
+    "base_answer": "B",
+    "candidate_answer": "D. False",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "machine_learning",
+    "index": 109,
+    "expected": "C",
+    "base_answer": "B",
+    "candidate_answer": "D",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "marketing",
+    "index": 23,
+    "expected": "B",
+    "base_answer": "A",
+    "candidate_answer": "D. Advertising",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "marketing",
+    "index": 45,
+    "expected": "B",
+    "base_answer": "D. Advertising",
+    "candidate_answer": "D. Advertising.",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "medical_genetics",
+    "index": 22,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "D. X-linked recessive",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "miscellaneous",
+    "index": 35,
+    "expected": "C",
+    "base_answer": "A",
+    "candidate_answer": "D. to weigh fruit",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "miscellaneous",
+    "index": 38,
+    "expected": "B",
+    "base_answer": "A",
+    "candidate_answer": "D. Mainbocher",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "miscellaneous",
+    "index": 59,
+    "expected": "B",
+    "base_answer": "A",
+    "candidate_answer": "D. Charlotte North Carolina",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "miscellaneous",
+    "index": 89,
+    "expected": "C",
+    "base_answer": "A",
+    "candidate_answer": "D. Billy Martin",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "miscellaneous",
+    "index": 120,
+    "expected": "A",
+    "base_answer": "B. Vietnam",
+    "candidate_answer": "D. Philippines",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "miscellaneous",
+    "index": 216,
+    "expected": "A",
+    "base_answer": "A",
+    "candidate_answer": "B. hands",
+    "base_status": "CORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "miscellaneous",
+    "index": 272,
+    "expected": "A",
+    "base_answer": "A",
+    "candidate_answer": "D. Kingdom",
+    "base_status": "CORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "miscellaneous",
+    "index": 348,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "D. 144 square inches",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "miscellaneous",
+    "index": 371,
+    "expected": "A",
+    "base_answer": "D. Sitka Spruce",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "miscellaneous",
+    "index": 439,
+    "expected": "B",
+    "base_answer": "B. Silicon",
+    "candidate_answer": "D. Silver",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "miscellaneous",
+    "index": 470,
+    "expected": "D",
+    "base_answer": "D. Families interested in visiting Lake McDonald",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "miscellaneous",
+    "index": 600,
+    "expected": "B",
+    "base_answer": "A",
+    "candidate_answer": "A. a toaster",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "miscellaneous",
+    "index": 641,
+    "expected": "B",
+    "base_answer": "A",
+    "candidate_answer": "B",
+    "base_status": "INCORRECT",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "moral_scenarios",
+    "index": 367,
+    "expected": "A",
+    "base_answer": "B. Wrong, Not wrong",
+    "candidate_answer": "B",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "moral_scenarios",
+    "index": 706,
+    "expected": "D",
+    "base_answer": "B",
+    "candidate_answer": "B. Wrong, Not wrong",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "nutrition",
+    "index": 13,
+    "expected": "A",
+    "base_answer": "D. leucine, cysteine and glycine",
+    "candidate_answer": "D",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "nutrition",
+    "index": 62,
+    "expected": "D",
+    "base_answer": "D. all of the options given are correct",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "nutrition",
+    "index": 86,
+    "expected": "A",
+    "base_answer": "B. Second trimester of pregnancy.",
+    "candidate_answer": "B",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "nutrition",
+    "index": 112,
+    "expected": "A",
+    "base_answer": "D. isoleucine",
+    "candidate_answer": "B. Tryptophan",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "nutrition",
+    "index": 121,
+    "expected": "B",
+    "base_answer": "B",
+    "candidate_answer": "A",
+    "base_status": "CORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "nutrition",
+    "index": 262,
+    "expected": "C",
+    "base_answer": "D",
+    "candidate_answer": "D. Haemolysis due to oxidative damage to red cell membranes",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "philosophy",
+    "index": 39,
+    "expected": "B",
+    "base_answer": "D. Consistency and coherence",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "philosophy",
+    "index": 50,
+    "expected": "D",
+    "base_answer": "D. contemplating God.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "philosophy",
+    "index": 131,
+    "expected": "A",
+    "base_answer": "B",
+    "candidate_answer": "A",
+    "base_status": "INCORRECT",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "philosophy",
+    "index": 227,
+    "expected": "C",
+    "base_answer": "B. is embodied",
+    "candidate_answer": "B",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "philosophy",
+    "index": 294,
+    "expected": "B",
+    "base_answer": "A. bioethics",
+    "candidate_answer": "B. logic",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_accounting",
+    "index": 26,
+    "expected": "D",
+    "base_answer": "B",
+    "candidate_answer": "A",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_accounting",
+    "index": 58,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "B. Developing a new fixed asset system to manage the assets and related depreciation",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_accounting",
+    "index": 84,
+    "expected": "C",
+    "base_answer": "B. $7,000",
+    "candidate_answer": "D. 4667",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_accounting",
+    "index": 130,
+    "expected": "A",
+    "base_answer": "D. Efficiency of organizational structures",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 10,
+    "expected": "A",
+    "base_answer": "B.",
+    "candidate_answer": "B. Due to Kathy's prenuptial agreement, Tommy receives the pasture land, Julie gets the condominium, and Tommy and Julie split the rest of the estate.",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 67,
+    "expected": "B",
+    "base_answer": "A",
+    "candidate_answer": "D. Friend // Associate",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 92,
+    "expected": "B",
+    "base_answer": "B. Yes, because the printing company's shipping of the Thanksgiving cards on October 10 constituted a present breach of contract.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 120,
+    "expected": "C",
+    "base_answer": "B. The farmer's failure to survey the 10-acre tract excused him from further obligations under the contract.",
+    "candidate_answer": "D. The farmer's failure to survey the 10-acre tract excused him from further obligations under the contract",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 165,
+    "expected": "A",
+    "base_answer": "A",
+    "candidate_answer": "D. The agreement was unenforceable, since there was no new consideration.",
+    "base_status": "CORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 265,
+    "expected": "B",
+    "base_answer": "D. The case is not ripe.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 267,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "B. Yes, because they were trade fixtures.",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 316,
+    "expected": "C",
+    "base_answer": "B",
+    "candidate_answer": "B. Yes, as a statement of the friend's state of mind that is not testimonial under the confrontation clause.",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 353,
+    "expected": "A",
+    "base_answer": "B. Yes, because there is no basis for allocating damages against the solvent supplier. damages against the solvent supplier.",
+    "candidate_answer": "B",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 469,
+    "expected": "B",
+    "base_answer": "A. an entire contract",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 494,
+    "expected": "C",
+    "base_answer": "A",
+    "candidate_answer": "B. admissible as an admission",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 620,
+    "expected": "C",
+    "base_answer": "B. The supermarket would not be entitled to reject the operator's offer to \"cure.\"",
+    "candidate_answer": "B",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 634,
+    "expected": "B",
+    "base_answer": "B. The statute violates the equal protection clause of the Fourteenth Amendment by conditioning the availability of public funds upon the recipient's agreement to act in a way that makes more difficult the exercise by others of their fundamental constitutional rights.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 695,
+    "expected": "A",
+    "base_answer": "A",
+    "candidate_answer": "D. not succeed, because the father's promise was void.",
+    "base_status": "CORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 742,
+    "expected": "B",
+    "base_answer": "B. The evidence is barred, because the oral agreement is within the statute of frauds.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 843,
+    "expected": "B",
+    "base_answer": "A",
+    "candidate_answer": "D",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 956,
+    "expected": "A",
+    "base_answer": "A",
+    "candidate_answer": "D. uphold the injunction, because the inference of guilt in any prejudicial coverage would deny the defendant his constitutional right of a fair trial.",
+    "base_status": "CORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 990,
+    "expected": "D",
+    "base_answer": "D. The disqualifying provision is reasonably related to legitimate congressional objectives under its immigration, citizenship, and spending powers.",
+    "candidate_answer": "B. The disqualifying provision does not unduly burden either interstate commerce or the right of aliens to travel freely from state to state.",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 996,
+    "expected": "B",
+    "base_answer": "B. No, because the woman did not disclose the true value of the misprinted bill.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1009,
+    "expected": "B",
+    "base_answer": "C. Exclude the testimony for substantive use, because the witness made the inconsistent statement under oath at a formal proceeding.",
+    "candidate_answer": "D. Exclude the testimony for substantive use, because the witness made the inconsistent statement under oath at a formal proceeding.",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1011,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "D. invalid, because the federal government may not compel state legislatures to enact and enforce a federal regulatory program.",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1049,
+    "expected": "B",
+    "base_answer": "B. Damages for personal injuries to the neighbor were not within the contemplation of the woman and the handyman at the time they entered into their agreement.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1079,
+    "expected": "C",
+    "base_answer": "B. No, this was a unilateral contract in which the offeree acted upon the offer by performing the terms of the offer, thus creating a binding contract.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1120,
+    "expected": "C",
+    "base_answer": "B. Yes, because the neighbor did not explicitly state that he accepted the agreement.",
+    "candidate_answer": "B",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1170,
+    "expected": "C",
+    "base_answer": "A",
+    "candidate_answer": "B. Yes, the evidence indicates that the sellers made knowingly false representations of material fact to induce the buyers to rely thereon and buy the property.",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1249,
+    "expected": "D",
+    "base_answer": "B. The truck driver recovers $5,000, and the car driver recovers nothing",
+    "candidate_answer": "B. The truck driver recovers $5,000, and the car driver recovers nothing.",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1271,
+    "expected": "B",
+    "base_answer": "B",
+    "candidate_answer": "B. Yes, because the man indirectly set fire to the friend's cabin.",
+    "base_status": "CORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1274,
+    "expected": "C",
+    "base_answer": "B. Yes, because at the time of contracting, both parties were mistaken about a basic assumption on which the contract was based.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1293,
+    "expected": "D",
+    "base_answer": "B. Battery.",
+    "candidate_answer": "A. Assault.",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1295,
+    "expected": "A",
+    "base_answer": "B. not enjoin the aunt's experiments because the brother does not own the space above his land",
+    "candidate_answer": "B",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1307,
+    "expected": "C",
+    "base_answer": "B. Payment of the $10,000 by the homeowner would be an express condition precedent to the house painter's duty of performance.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1382,
+    "expected": "A",
+    "base_answer": "D. recover $35,000",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1413,
+    "expected": "A",
+    "base_answer": "B. No, because the people voted to take a provision out of the existing constitution and when that is done by public vote it cannot be altered.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1420,
+    "expected": "D",
+    "base_answer": "B. The contract is enforceable, because of indefiniteness.",
+    "candidate_answer": "B. The contract is enforceable with reasonable price being fixed at time of delivery.",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1459,
+    "expected": "A",
+    "base_answer": "B",
+    "candidate_answer": "B. The Second Amendment prohibits all forms of gun control because of the need for a strong militia, and the man's lawsuit will be successful.",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_law",
+    "index": 1502,
+    "expected": "B",
+    "base_answer": "B. Because the charge constitutes a lien, there is no personal obligation on the landscaper's part.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_medicine",
+    "index": 51,
+    "expected": "D",
+    "base_answer": "D",
+    "candidate_answer": "C. Vitamin B6 (pyridoxine)",
+    "base_status": "CORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_medicine",
+    "index": 92,
+    "expected": "B",
+    "base_answer": "C. Impaired contractility of the left ventricle",
+    "candidate_answer": "C. Prolapse of the mitral valve",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_medicine",
+    "index": 153,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "D. Systemic sclerosis (scleroderma)",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_medicine",
+    "index": 175,
+    "expected": "A",
+    "base_answer": "D. Endoscopic retrograde cholangiopancreatography",
+    "candidate_answer": "A. Abdominal ultrasonography of the right upper quadrant\n\nThe most appropriate next step in management for this patient is to perform an abdominal ultrasonography of the right upper quadrant, which is a non-invasive and non-invasive procedure that can provide valuable information about the location and extent of the pain, as well as the presence of any other abnormalities. This test can help determine the location of the pain and guide the next steps in treatment.",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_medicine",
+    "index": 209,
+    "expected": "D",
+    "base_answer": "A. Chronic mitral regurgitation secondary to rheumatic heart disease",
+    "candidate_answer": "D. Mitral stenosis complicated by atrial fibrillation",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_medicine",
+    "index": 240,
+    "expected": "D",
+    "base_answer": "B. The patient's CFTR mutation is unrelated to her clinical phenotype",
+    "candidate_answer": "B",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_psychology",
+    "index": 31,
+    "expected": "C",
+    "base_answer": "A",
+    "candidate_answer": "B. Provide the data to an appropriately qualified psychologist as indicated on the release form",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_psychology",
+    "index": 96,
+    "expected": "D",
+    "base_answer": "D. Norm-referenced tests",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_psychology",
+    "index": 144,
+    "expected": "C",
+    "base_answer": "A",
+    "candidate_answer": "D",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_psychology",
+    "index": 158,
+    "expected": "B",
+    "base_answer": "A",
+    "candidate_answer": "B",
+    "base_status": "INCORRECT",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "professional_psychology",
+    "index": 294,
+    "expected": "B",
+    "base_answer": "A",
+    "candidate_answer": "D",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "professional_psychology",
+    "index": 390,
+    "expected": "A",
+    "base_answer": "B. Alpha→ power increases as alpha level increases",
+    "candidate_answer": "D. as differences between populations means increase, power increases",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_psychology",
+    "index": 496,
+    "expected": "D",
+    "base_answer": "D",
+    "candidate_answer": "D. Cure rare for current treatment modalities",
+    "base_status": "CORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_psychology",
+    "index": 510,
+    "expected": "A",
+    "base_answer": "A",
+    "candidate_answer": "D. Legal defensibility",
+    "base_status": "CORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_psychology",
+    "index": 571,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "A. mustabatory thinking",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "professional_psychology",
+    "index": 604,
+    "expected": "A",
+    "base_answer": "A",
+    "candidate_answer": "D. Exchange of symbols",
+    "base_status": "CORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "public_relations",
+    "index": 73,
+    "expected": "C",
+    "base_answer": "B. People should be treated as an end, not a means to an end.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "public_relations",
+    "index": 90,
+    "expected": "B",
+    "base_answer": "A",
+    "candidate_answer": "D. the number of messages and activities implemented",
+    "base_status": "INCORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "security_studies",
+    "index": 94,
+    "expected": "C",
+    "base_answer": "D. Societal groups are multiple-identity units.",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "security_studies",
+    "index": 104,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "B",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "security_studies",
+    "index": 196,
+    "expected": "A",
+    "base_answer": "B",
+    "candidate_answer": "D",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "security_studies",
+    "index": 210,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "C",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "security_studies",
+    "index": 238,
+    "expected": "C",
+    "base_answer": "B",
+    "candidate_answer": "C",
+    "base_status": "INCORRECT",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "security_studies",
+    "index": 241,
+    "expected": "D",
+    "base_answer": "A",
+    "candidate_answer": "D",
+    "base_status": "INCORRECT",
+    "candidate_status": "CORRECT"
+  },
+  {
+    "subject": "sociology",
+    "index": 168,
+    "expected": "A",
+    "base_answer": "A",
+    "candidate_answer": "B. imposing restrictions on picketing",
+    "base_status": "CORRECT",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "us_foreign_policy",
+    "index": 39,
+    "expected": "A",
+    "base_answer": "D. None of the above",
+    "candidate_answer": "B",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "us_foreign_policy",
+    "index": 61,
+    "expected": "C",
+    "base_answer": "A",
+    "candidate_answer": "B",
+    "base_status": "INCORRECT",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "virology",
+    "index": 69,
+    "expected": "C",
+    "base_answer": "C. Extracellular replication",
+    "candidate_answer": "D",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  },
+  {
+    "subject": "virology",
+    "index": 102,
+    "expected": "B",
+    "base_answer": "D. Native Americans",
+    "candidate_answer": "B. Higher than all other ethnic groups except African-Americans and\n\nThe answer is B. Higher than all other ethnic groups except African-Americans and\n\nThe answer is A.",
+    "base_status": "INVALID",
+    "candidate_status": "INVALID"
+  },
+  {
+    "subject": "world_religions",
+    "index": 53,
+    "expected": "C",
+    "base_answer": "B. Indonesia",
+    "candidate_answer": "A",
+    "base_status": "INVALID",
+    "candidate_status": "INCORRECT"
+  }
+]

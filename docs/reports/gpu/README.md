@@ -16,6 +16,8 @@ For Transformers batch `max-parallel` setting experiments see the [setting exper
 
 For comparison of actual model outputs at high GPU batch concurrency see the [output validation report](transformers/batch-gpu-output-validation-20260929.md).
 
+For MMLU accuracy of base, batch, and cache on the same model and GPU see the [MMLU evaluation](transformers/mmlu-suite-20261004-052403/summary.md).
+
 For Mamba-130M prefix state cache implementation, correctness checks, and concurrency-1 AIPerf comparison see [Mamba GPU test results](mamba/README.md).
 
 For base, batch, and GPU/RAM/disk HiCache comparison on the same Jamba-tiny-dev weights see [Jamba hybrid GPU results](hybrid/README.md). These results are engine measurements excluding HTTP.

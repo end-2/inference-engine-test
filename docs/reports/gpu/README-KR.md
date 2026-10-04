@@ -15,6 +15,8 @@ Transformers batch의 `max-parallel` 설정 실험은 [설정 실험 보고서](
 
 GPU batch의 높은 동시성에서 실제 모델 출력을 대조한 결과는 [출력 검증 보고서](transformers/batch-gpu-output-validation-20260929-KR.md)에 있습니다.
 
+같은 모델과 GPU에서 base, batch, cache의 MMLU 정확도는 [MMLU 평가](transformers/mmlu-suite-20261004-052403/summary.md)를 참고하세요.
+
 Mamba-130M의 prefix 상태 캐시 구현, 정확성 검사와 동시성 1의 AIPerf 비교는 [Mamba GPU 테스트 결과](mamba/README-KR.md)를 참고하세요.
 
 같은 Jamba-tiny-dev 가중치의 base, 배치와 GPU/RAM/디스크 HiCache 비교는 [Jamba hybrid GPU 결과](hybrid/README-KR.md)를 참고하세요. 이 결과는 HTTP를 제외한 엔진 측정입니다.

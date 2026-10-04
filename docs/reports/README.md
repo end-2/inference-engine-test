@@ -5,7 +5,9 @@ Reports are separated by measured inference backend.
 
 - [llama.cpp results](llamacpp/README.md): Qwen2.5 GGUF, base, batch, cache, stability and HPA experiments
 - [Transformers results](transformers/README.md): SmolLM2-135M-Instruct FP32, base, batch, cache performance comparison, node failure recovery and CPU HPA experiments
+- [Transformers MMLU accuracy](transformers/mmlu-cpu-comparison-20261004-103125/summary.md): base, batch, cache answers on all 14,042 questions
 - [GPU results](gpu/README.md): Transformers and llama.cpp throughput, Mamba state cache and Jamba hybrid engine comparisons
+- [GPU Transformers MMLU accuracy](gpu/transformers/mmlu-suite-20261004-052403/summary.md): base, batch, cache answers on all 14,042 questions
 - [MPS model co-execution check](gpu/mps-check-20260930/summary.md): CUDA creation check for 6 model combinations on the same GPU
 - [GPU Prefill/Decode experiment summary](gpu/pd/README.md): 2-way and 4-way split performance, Router memory, token budget and SLO results
 

@@ -65,3 +65,7 @@ kind control-plane 1개에서 base, enhanced-batch, enhanced-cache를 동시성 
 ![Grafana: 서버 outcome별 완료 요청 처리량](hpa-20260921-124439-448222/figures/grafana-requests.png)
 
 ![Grafana: 서버 TTFT p95](hpa-20260921-124439-448222/figures/grafana-ttft.png)
+
+## MMLU 정확도
+
+base, enhanced-batch, enhanced-cache를 전체 14,042문항에 0-shot으로 각 1회 평가했습니다. 세 구현 모두 2,071문항 정답으로 정확도 14.75%를 기록했으며 답안이 서로 일치했습니다. 조건과 재실행 명령은 [MMLU 비교](mmlu-cpu-comparison-20261004-103125/summary.md)를 참고하세요.

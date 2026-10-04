@@ -4,7 +4,9 @@
 
 - [llama.cpp 결과](llamacpp/README-KR.md): Qwen2.5 GGUF, base, batch, cache, 안정성 및 HPA 실험
 - [Transformers 결과](transformers/README-KR.md): SmolLM2-135M-Instruct FP32, base, batch, cache 성능 비교, 노드 장애 복구 및 CPU HPA 실험
+- [Transformers MMLU 정확도](transformers/mmlu-cpu-comparison-20261004-103125/summary.md): 전체 14,042문항에 대한 base, batch, cache 답안
 - [GPU 결과](gpu/README-KR.md): Transformers와 llama.cpp 처리량, Mamba 상태 캐시와 Jamba hybrid 엔진 비교
+- [GPU Transformers MMLU 정확도](gpu/transformers/mmlu-suite-20261004-052403/summary.md): 전체 14,042문항에 대한 base, batch, cache 답안
 - [MPS 모델 동시 실행 검증](gpu/mps-check-20260930/summary-KR.md): 같은 GPU에서 모델 조합 6개의 CUDA 생성 확인
 - [GPU Prefill/Decode 실험 종합](gpu/pd/README-KR.md): 2분할과 4분할 성능, Router 메모리, token budget 및 SLO별 결과
 

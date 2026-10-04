@@ -1,0 +1,478 @@
+{
+    "apiVersion": "v1",
+    "items": [
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "annotations": {
+                    "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Pod\",\"metadata\":{\"annotations\":{},\"labels\":{\"mmlu-run\":\"mmlu-20261004-053721-719136\"},\"name\":\"mmlu-20261004-053721-719136-reader\",\"namespace\":\"default\"},\"spec\":{\"automountServiceAccountToken\":false,\"containers\":[{\"command\":[\"python3\",\"-c\",\"import time; time.sleep(604800)\"],\"image\":\"local/mmlu:0.1.0\",\"imagePullPolicy\":\"Never\",\"name\":\"reader\",\"resources\":{\"limits\":{\"cpu\":\"1\",\"memory\":\"128Mi\"},\"requests\":{\"cpu\":\"10m\",\"memory\":\"32Mi\"}},\"securityContext\":{\"allowPrivilegeEscalation\":false,\"capabilities\":{\"drop\":[\"ALL\"]},\"readOnlyRootFilesystem\":true},\"volumeMounts\":[{\"mountPath\":\"/work\",\"name\":\"work\"}]}],\"nodeSelector\":{\"kubernetes.io/hostname\":\"local-k8s-gpu-control-plane\"},\"restartPolicy\":\"Never\",\"securityContext\":{\"fsGroup\":1000,\"runAsGroup\":1000,\"runAsNonRoot\":true,\"runAsUser\":1000},\"tolerations\":[{\"effect\":\"NoSchedule\",\"key\":\"node-role.kubernetes.io/control-plane\",\"operator\":\"Exists\"}],\"volumes\":[{\"name\":\"work\",\"persistentVolumeClaim\":{\"claimName\":\"mmlu-20261004-053721-719136\"}}]}}\n"
+                },
+                "creationTimestamp": "2026-10-04T05:37:22Z",
+                "generation": 1,
+                "labels": {
+                    "mmlu-run": "mmlu-20261004-053721-719136"
+                },
+                "name": "mmlu-20261004-053721-719136-reader",
+                "namespace": "default",
+                "resourceVersion": "122185",
+                "uid": "7ee76cf1-2ef2-45e3-9f97-216d9818f353"
+            },
+            "spec": {
+                "automountServiceAccountToken": false,
+                "containers": [
+                    {
+                        "command": [
+                            "python3",
+                            "-c",
+                            "import time; time.sleep(604800)"
+                        ],
+                        "image": "local/mmlu:0.1.0",
+                        "imagePullPolicy": "Never",
+                        "name": "reader",
+                        "resources": {
+                            "limits": {
+                                "cpu": "1",
+                                "memory": "128Mi"
+                            },
+                            "requests": {
+                                "cpu": "10m",
+                                "memory": "32Mi"
+                            }
+                        },
+                        "securityContext": {
+                            "allowPrivilegeEscalation": false,
+                            "capabilities": {
+                                "drop": [
+                                    "ALL"
+                                ]
+                            },
+                            "readOnlyRootFilesystem": true
+                        },
+                        "terminationMessagePath": "/dev/termination-log",
+                        "terminationMessagePolicy": "File",
+                        "volumeMounts": [
+                            {
+                                "mountPath": "/work",
+                                "name": "work"
+                            }
+                        ]
+                    }
+                ],
+                "dnsPolicy": "ClusterFirst",
+                "enableServiceLinks": true,
+                "nodeName": "local-k8s-gpu-control-plane",
+                "nodeSelector": {
+                    "kubernetes.io/hostname": "local-k8s-gpu-control-plane"
+                },
+                "preemptionPolicy": "PreemptLowerPriority",
+                "priority": 0,
+                "restartPolicy": "Never",
+                "schedulerName": "default-scheduler",
+                "securityContext": {
+                    "fsGroup": 1000,
+                    "runAsGroup": 1000,
+                    "runAsNonRoot": true,
+                    "runAsUser": 1000
+                },
+                "serviceAccount": "default",
+                "serviceAccountName": "default",
+                "terminationGracePeriodSeconds": 30,
+                "tolerations": [
+                    {
+                        "effect": "NoSchedule",
+                        "key": "node-role.kubernetes.io/control-plane",
+                        "operator": "Exists"
+                    },
+                    {
+                        "effect": "NoExecute",
+                        "key": "node.kubernetes.io/not-ready",
+                        "operator": "Exists",
+                        "tolerationSeconds": 300
+                    },
+                    {
+                        "effect": "NoExecute",
+                        "key": "node.kubernetes.io/unreachable",
+                        "operator": "Exists",
+                        "tolerationSeconds": 300
+                    }
+                ],
+                "volumes": [
+                    {
+                        "name": "work",
+                        "persistentVolumeClaim": {
+                            "claimName": "mmlu-20261004-053721-719136"
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "allocatedResources": {
+                    "cpu": "10m",
+                    "memory": "32Mi"
+                },
+                "conditions": [
+                    {
+                        "lastProbeTime": null,
+                        "lastTransitionTime": "2026-10-04T05:37:25Z",
+                        "observedGeneration": 1,
+                        "status": "True",
+                        "type": "PodReadyToStartContainers"
+                    },
+                    {
+                        "lastProbeTime": null,
+                        "lastTransitionTime": "2026-10-04T05:37:25Z",
+                        "observedGeneration": 1,
+                        "status": "True",
+                        "type": "Initialized"
+                    },
+                    {
+                        "lastProbeTime": null,
+                        "lastTransitionTime": "2026-10-04T05:37:25Z",
+                        "observedGeneration": 1,
+                        "status": "True",
+                        "type": "Ready"
+                    },
+                    {
+                        "lastProbeTime": null,
+                        "lastTransitionTime": "2026-10-04T05:37:25Z",
+                        "observedGeneration": 1,
+                        "status": "True",
+                        "type": "ContainersReady"
+                    },
+                    {
+                        "lastProbeTime": null,
+                        "lastTransitionTime": "2026-10-04T05:37:25Z",
+                        "observedGeneration": 1,
+                        "status": "True",
+                        "type": "PodScheduled"
+                    }
+                ],
+                "containerStatuses": [
+                    {
+                        "allocatedResources": {
+                            "cpu": "10m",
+                            "memory": "32Mi"
+                        },
+                        "containerID": "containerd://1b23790ac73429b2ccda0cda421caf39acc7e8a9ac03e18e4c80e30d2770b52d",
+                        "image": "docker.io/local/mmlu:0.1.0",
+                        "imageID": "docker.io/library/import-2026-10-04@sha256:afc2fb564acd99f4502466ad8abd419080eab47c9c30cef8fc0bf2d1150dcee7",
+                        "lastState": {},
+                        "name": "reader",
+                        "ready": true,
+                        "resources": {
+                            "limits": {
+                                "cpu": "1",
+                                "memory": "128Mi"
+                            },
+                            "requests": {
+                                "cpu": "10m",
+                                "memory": "32Mi"
+                            }
+                        },
+                        "restartCount": 0,
+                        "started": true,
+                        "state": {
+                            "running": {
+                                "startedAt": "2026-10-04T05:37:25Z"
+                            }
+                        },
+                        "user": {
+                            "linux": {
+                                "gid": 1000,
+                                "supplementalGroups": [
+                                    1000
+                                ],
+                                "uid": 1000
+                            }
+                        },
+                        "volumeMounts": [
+                            {
+                                "mountPath": "/work",
+                                "name": "work"
+                            }
+                        ]
+                    }
+                ],
+                "hostIP": "172.23.0.3",
+                "hostIPs": [
+                    {
+                        "ip": "172.23.0.3"
+                    }
+                ],
+                "observedGeneration": 1,
+                "phase": "Running",
+                "podIP": "10.244.0.10",
+                "podIPs": [
+                    {
+                        "ip": "10.244.0.10"
+                    }
+                ],
+                "qosClass": "Burstable",
+                "resources": {
+                    "limits": {
+                        "cpu": "1",
+                        "memory": "128Mi"
+                    },
+                    "requests": {
+                        "memory": "32Mi"
+                    }
+                },
+                "startTime": "2026-10-04T05:37:25Z"
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "creationTimestamp": "2026-10-04T05:37:26Z",
+                "generateName": "mmlu-20261004-053721-719136-",
+                "generation": 1,
+                "labels": {
+                    "batch.kubernetes.io/controller-uid": "1c6fbdb1-0ba5-4a98-9074-1d02a167a745",
+                    "batch.kubernetes.io/job-name": "mmlu-20261004-053721-719136",
+                    "controller-uid": "1c6fbdb1-0ba5-4a98-9074-1d02a167a745",
+                    "job-name": "mmlu-20261004-053721-719136",
+                    "mmlu-run": "mmlu-20261004-053721-719136"
+                },
+                "name": "mmlu-20261004-053721-719136-zrgz8",
+                "namespace": "default",
+                "ownerReferences": [
+                    {
+                        "apiVersion": "batch/v1",
+                        "blockOwnerDeletion": true,
+                        "controller": true,
+                        "kind": "Job",
+                        "name": "mmlu-20261004-053721-719136",
+                        "uid": "1c6fbdb1-0ba5-4a98-9074-1d02a167a745"
+                    }
+                ],
+                "resourceVersion": "125193",
+                "uid": "88204584-85ba-418b-b93c-59f03894e22c"
+            },
+            "spec": {
+                "automountServiceAccountToken": false,
+                "containers": [
+                    {
+                        "args": [
+                            "--backend",
+                            "transformers",
+                            "--url",
+                            "http://transformers-base:8000",
+                            "--model",
+                            "HuggingFaceTB/SmolLM2-135M-Instruct",
+                            "--data-dir",
+                            "/work/data",
+                            "--output",
+                            "/work/results/summary.json",
+                            "--few-shot",
+                            "0",
+                            "--seed",
+                            "0",
+                            "--max-tokens",
+                            "128",
+                            "--timeout",
+                            "60.0"
+                        ],
+                        "image": "local/mmlu:0.1.0",
+                        "imagePullPolicy": "Never",
+                        "name": "mmlu",
+                        "resources": {
+                            "limits": {
+                                "cpu": "1",
+                                "memory": "512Mi"
+                            },
+                            "requests": {
+                                "cpu": "1",
+                                "memory": "512Mi"
+                            }
+                        },
+                        "securityContext": {
+                            "allowPrivilegeEscalation": false,
+                            "capabilities": {
+                                "drop": [
+                                    "ALL"
+                                ]
+                            },
+                            "readOnlyRootFilesystem": true
+                        },
+                        "terminationMessagePath": "/dev/termination-log",
+                        "terminationMessagePolicy": "File",
+                        "volumeMounts": [
+                            {
+                                "mountPath": "/work",
+                                "name": "work"
+                            }
+                        ]
+                    }
+                ],
+                "dnsPolicy": "ClusterFirst",
+                "enableServiceLinks": true,
+                "nodeName": "local-k8s-gpu-control-plane",
+                "nodeSelector": {
+                    "kubernetes.io/hostname": "local-k8s-gpu-control-plane"
+                },
+                "preemptionPolicy": "PreemptLowerPriority",
+                "priority": 0,
+                "restartPolicy": "Never",
+                "schedulerName": "default-scheduler",
+                "securityContext": {
+                    "fsGroup": 1000,
+                    "runAsGroup": 1000,
+                    "runAsNonRoot": true,
+                    "runAsUser": 1000
+                },
+                "serviceAccount": "default",
+                "serviceAccountName": "default",
+                "terminationGracePeriodSeconds": 30,
+                "tolerations": [
+                    {
+                        "effect": "NoSchedule",
+                        "key": "node-role.kubernetes.io/control-plane",
+                        "operator": "Exists"
+                    },
+                    {
+                        "effect": "NoExecute",
+                        "key": "node.kubernetes.io/not-ready",
+                        "operator": "Exists",
+                        "tolerationSeconds": 300
+                    },
+                    {
+                        "effect": "NoExecute",
+                        "key": "node.kubernetes.io/unreachable",
+                        "operator": "Exists",
+                        "tolerationSeconds": 300
+                    }
+                ],
+                "volumes": [
+                    {
+                        "name": "work",
+                        "persistentVolumeClaim": {
+                            "claimName": "mmlu-20261004-053721-719136"
+                        }
+                    }
+                ]
+            },
+            "status": {
+                "allocatedResources": {
+                    "cpu": "1",
+                    "memory": "512Mi"
+                },
+                "conditions": [
+                    {
+                        "lastProbeTime": null,
+                        "lastTransitionTime": "2026-10-04T06:12:05Z",
+                        "observedGeneration": 1,
+                        "status": "False",
+                        "type": "PodReadyToStartContainers"
+                    },
+                    {
+                        "lastProbeTime": null,
+                        "lastTransitionTime": "2026-10-04T05:37:26Z",
+                        "observedGeneration": 1,
+                        "status": "True",
+                        "type": "Initialized"
+                    },
+                    {
+                        "lastProbeTime": null,
+                        "lastTransitionTime": "2026-10-04T06:12:04Z",
+                        "observedGeneration": 1,
+                        "reason": "PodFailed",
+                        "status": "False",
+                        "type": "Ready"
+                    },
+                    {
+                        "lastProbeTime": null,
+                        "lastTransitionTime": "2026-10-04T06:12:04Z",
+                        "observedGeneration": 1,
+                        "reason": "PodFailed",
+                        "status": "False",
+                        "type": "ContainersReady"
+                    },
+                    {
+                        "lastProbeTime": null,
+                        "lastTransitionTime": "2026-10-04T05:37:26Z",
+                        "observedGeneration": 1,
+                        "status": "True",
+                        "type": "PodScheduled"
+                    }
+                ],
+                "containerStatuses": [
+                    {
+                        "allocatedResources": {
+                            "cpu": "1",
+                            "memory": "512Mi"
+                        },
+                        "containerID": "containerd://4e8eca5c3554b0ba14e11f219159df3c15dd955502e12ebaf7e8c5fcac5410b7",
+                        "image": "docker.io/local/mmlu:0.1.0",
+                        "imageID": "docker.io/library/import-2026-10-04@sha256:afc2fb564acd99f4502466ad8abd419080eab47c9c30cef8fc0bf2d1150dcee7",
+                        "lastState": {},
+                        "name": "mmlu",
+                        "ready": false,
+                        "resources": {
+                            "limits": {
+                                "cpu": "1",
+                                "memory": "512Mi"
+                            },
+                            "requests": {
+                                "cpu": "1",
+                                "memory": "512Mi"
+                            }
+                        },
+                        "restartCount": 0,
+                        "started": false,
+                        "state": {
+                            "terminated": {
+                                "containerID": "containerd://4e8eca5c3554b0ba14e11f219159df3c15dd955502e12ebaf7e8c5fcac5410b7",
+                                "exitCode": 1,
+                                "finishedAt": "2026-10-04T06:12:03Z",
+                                "reason": "Error",
+                                "startedAt": "2026-10-04T05:37:27Z"
+                            }
+                        },
+                        "user": {
+                            "linux": {
+                                "gid": 1000,
+                                "supplementalGroups": [
+                                    1000
+                                ],
+                                "uid": 1000
+                            }
+                        },
+                        "volumeMounts": [
+                            {
+                                "mountPath": "/work",
+                                "name": "work"
+                            }
+                        ]
+                    }
+                ],
+                "hostIP": "172.23.0.3",
+                "hostIPs": [
+                    {
+                        "ip": "172.23.0.3"
+                    }
+                ],
+                "observedGeneration": 1,
+                "phase": "Failed",
+                "podIP": "10.244.0.11",
+                "podIPs": [
+                    {
+                        "ip": "10.244.0.11"
+                    }
+                ],
+                "qosClass": "Guaranteed",
+                "resources": {
+                    "requests": {
+                        "memory": "512Mi"
+                    }
+                },
+                "startTime": "2026-10-04T05:37:26Z"
+            }
+        }
+    ],
+    "kind": "List",
+    "metadata": {
+        "resourceVersion": ""
+    }
+}

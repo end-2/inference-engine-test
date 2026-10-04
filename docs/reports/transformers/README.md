@@ -66,3 +66,7 @@ For decision conditions and Grafana graphs see the [HPA report](hpa-20260921-124
 ![Grafana: completed request throughput by server outcome](hpa-20260921-124439-448222/figures/grafana-requests.png)
 
 ![Grafana: server TTFT p95](hpa-20260921-124439-448222/figures/grafana-ttft.png)
+
+## MMLU accuracy
+
+Evaluated base, enhanced-batch, and enhanced-cache once each on all 14,042 test questions with 0-shot prompts. Each variant answered 2,071 correctly for 14.75% accuracy with identical answers across variants. For conditions and rerun commands see the [MMLU comparison](mmlu-cpu-comparison-20261004-103125/summary.md).
