@@ -6,6 +6,8 @@ Compare throughput and latency of base, batch, and prefix KV cache implementatio
 
 For inference implementation and API, see the [inference engine guide](inference-engine.md).
 
+For model accuracy alongside performance measurements, run the [MMLU check](mmlu-check.md) against the deployed server with `make mmlu-check`.
+
 For source boundaries, adding comparison conditions and isolating CUDA Graph performance, see [feature experiments](feature-experiments.md).
 
 ## Configuration

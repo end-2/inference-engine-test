@@ -36,5 +36,5 @@ After collecting results, `make down` deletes the CPU cluster and its node-local
 - [Cluster setup](docs/guides/local-k8s.md), [model management](docs/guides/models.md), [AIPerf](docs/guides/aiperf.md)
 - [Mamba state cache](docs/guides/mamba-cache.md), [Jamba hybrid batching and HiCache](docs/guides/hybrid-cache.md)
 - [MPS GPU sharing](docs/guides/gpu-mps.md), [distributed Prefill/Decode](docs/guides/prefill-decode.md)
-- [Quality checks](docs/guides/quality-check.md), [availability tests](docs/guides/availability-test.md), [HPA tests](docs/guides/hpa-test.md)
+- [Quality checks](docs/guides/quality-check.md), [MMLU accuracy](docs/guides/mmlu-check.md), [availability tests](docs/guides/availability-test.md), [HPA tests](docs/guides/hpa-test.md)
 - [Test results](docs/reports/README.md), [Transformers CPU report](docs/reports-transformers.md)

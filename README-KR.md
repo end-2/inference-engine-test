@@ -36,5 +36,5 @@ make benchmark VARIANT=transformers-enhanced-batch
 - [클러스터 구성](docs/guides/local-k8s-KR.md), [모델 관리](docs/guides/models-KR.md), [AIPerf](docs/guides/aiperf-KR.md)
 - [Mamba 상태 캐시](docs/guides/mamba-cache-KR.md), [Jamba hybrid 배치와 HiCache](docs/guides/hybrid-cache-KR.md)
 - [MPS GPU 공유](docs/guides/gpu-mps-KR.md), [분산 Prefill/Decode](docs/guides/prefill-decode-KR.md)
-- [품질 검사](docs/guides/quality-check-KR.md), [가용성 테스트](docs/guides/availability-test-KR.md), [HPA 테스트](docs/guides/hpa-test-KR.md)
+- [품질 검사](docs/guides/quality-check-KR.md), [MMLU 정확도](docs/guides/mmlu-check-KR.md), [가용성 테스트](docs/guides/availability-test-KR.md), [HPA 테스트](docs/guides/hpa-test-KR.md)
 - [테스트 결과](docs/reports/README-KR.md), [Transformers CPU 보고서](docs/reports-transformers-KR.md)
