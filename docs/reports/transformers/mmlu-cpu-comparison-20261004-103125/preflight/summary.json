@@ -1,0 +1,454 @@
+{
+  "suite": "mmlu",
+  "scoring": "generated-choice-v1",
+  "backend": "transformers",
+  "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+  "url": "http://transformers-base:8000",
+  "started_at": "2026-10-04T10:33:53.015394+00:00",
+  "finished_at": "2026-10-04T10:33:54.461056+00:00",
+  "complete": true,
+  "passed": true,
+  "dataset": {
+    "directory": "/work/data",
+    "file_sha256": {
+      "test/abstract_algebra_test.csv": "4be89c0fb1d2419722e88880f6da3da95750367185ecd36f6492a6f74785cf64"
+    },
+    "subjects": [
+      "abstract_algebra"
+    ],
+    "split": "test",
+    "few_shot_split": "dev",
+    "planned_questions": 10
+  },
+  "settings": {
+    "few_shot": 0,
+    "limit_per_subject": 10,
+    "seed": 0,
+    "max_tokens": 16,
+    "temperature": 0,
+    "top_p": 1,
+    "ignore_eos": false,
+    "timeout_seconds": 60.0,
+    "min_accuracy": null
+  },
+  "summary": {
+    "total": 10,
+    "correct": 2,
+    "incorrect": 5,
+    "invalid": 3,
+    "errors": 0,
+    "accuracy": 0.2
+  },
+  "per_subject": {
+    "abstract_algebra": {
+      "total": 10,
+      "correct": 2,
+      "incorrect": 5,
+      "invalid": 3,
+      "errors": 0,
+      "accuracy": 0.2
+    }
+  },
+  "results": [
+    {
+      "subject": "abstract_algebra",
+      "index": 11,
+      "question": "If A = {1, 2, 3} then relation S = {(1, 1), (2, 2)} is",
+      "choices": [
+        "symmetric only",
+        "anti-symmetric only",
+        "both symmetric and anti-symmetric",
+        "an equivalence relation"
+      ],
+      "expected": "C",
+      "prompt": "Answer the multiple choice question about abstract algebra. Reply with only one letter: A, B, C, or D.\n\nIf A = {1, 2, 3} then relation S = {(1, 1), (2, 2)} is\nA. symmetric only\nB. anti-symmetric only\nC. both symmetric and anti-symmetric\nD. an equivalence relation\nAnswer:",
+      "prediction": "A",
+      "correct": false,
+      "status": "INCORRECT",
+      "response": {
+        "id": "chatcmpl-c0fdbe5a452b40129dc155edb9bfb9cc",
+        "created": 1791110033,
+        "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "A"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 119,
+          "completion_tokens": 1,
+          "total_tokens": 120
+        }
+      },
+      "answer": "A",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.302
+    },
+    {
+      "subject": "abstract_algebra",
+      "index": 14,
+      "question": "Find the maximum possible order for an element of S_n for n = 10.",
+      "choices": [
+        "6",
+        "12",
+        "30",
+        "105"
+      ],
+      "expected": "C",
+      "prompt": "Answer the multiple choice question about abstract algebra. Reply with only one letter: A, B, C, or D.\n\nFind the maximum possible order for an element of S_n for n = 10.\nA. 6\nB. 12\nC. 30\nD. 105\nAnswer:",
+      "prediction": "A",
+      "correct": false,
+      "status": "INCORRECT",
+      "response": {
+        "id": "chatcmpl-f50f1c3efb2a499793c826b904376902",
+        "created": 1791110033,
+        "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "A"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 103,
+          "completion_tokens": 1,
+          "total_tokens": 104
+        }
+      },
+      "answer": "A",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.094
+    },
+    {
+      "subject": "abstract_algebra",
+      "index": 34,
+      "question": "Statement 1 | If T: V -> W is a linear transformation and dim(V ) < dim(W) < 1, then T must be injective. Statement 2 | Let dim(V) = n and suppose that T: V -> V is linear. If T is injective, then it is a bijection.",
+      "choices": [
+        "True, True",
+        "False, False",
+        "True, False",
+        "False, True"
+      ],
+      "expected": "A",
+      "prompt": "Answer the multiple choice question about abstract algebra. Reply with only one letter: A, B, C, or D.\n\nStatement 1 | If T: V -> W is a linear transformation and dim(V ) < dim(W) < 1, then T must be injective. Statement 2 | Let dim(V) = n and suppose that T: V -> V is linear. If T is injective, then it is a bijection.\nA. True, True\nB. False, False\nC. True, False\nD. False, True\nAnswer:",
+      "prediction": "D",
+      "correct": false,
+      "status": "INCORRECT",
+      "response": {
+        "id": "chatcmpl-ce4ffe83bb4048b7bdd0fbc32ee85ee7",
+        "created": 1791110033,
+        "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "D"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 154,
+          "completion_tokens": 1,
+          "total_tokens": 155
+        }
+      },
+      "answer": "D",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.121
+    },
+    {
+      "subject": "abstract_algebra",
+      "index": 50,
+      "question": "Statement 1 | Every solvable group is of prime-power order. Statement 2 | Every group of prime-power order is solvable.",
+      "choices": [
+        "True, True",
+        "False, False",
+        "True, False",
+        "False, True"
+      ],
+      "expected": "D",
+      "prompt": "Answer the multiple choice question about abstract algebra. Reply with only one letter: A, B, C, or D.\n\nStatement 1 | Every solvable group is of prime-power order. Statement 2 | Every group of prime-power order is solvable.\nA. True, True\nB. False, False\nC. True, False\nD. False, True\nAnswer:",
+      "prediction": null,
+      "correct": false,
+      "status": "INVALID",
+      "response": {
+        "id": "chatcmpl-70368c83b27f46b5977814a796148f38",
+        "created": 1791110033,
+        "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "D. False, True"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 114,
+          "completion_tokens": 5,
+          "total_tokens": 119
+        }
+      },
+      "answer": "D. False, True",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.181
+    },
+    {
+      "subject": "abstract_algebra",
+      "index": 61,
+      "question": "Statement 1 | The set of 2 x 2 matrices with integer entries and nonzero determinant is a group under matrix multiplication. Statement 2 | The set of 2 x 2 matrices with integer entries and determinant 1 is a group under matrix multiplication.",
+      "choices": [
+        "True, True",
+        "False, False",
+        "True, False",
+        "False, True"
+      ],
+      "expected": "D",
+      "prompt": "Answer the multiple choice question about abstract algebra. Reply with only one letter: A, B, C, or D.\n\nStatement 1 | The set of 2 x 2 matrices with integer entries and nonzero determinant is a group under matrix multiplication. Statement 2 | The set of 2 x 2 matrices with integer entries and determinant 1 is a group under matrix multiplication.\nA. True, True\nB. False, False\nC. True, False\nD. False, True\nAnswer:",
+      "prediction": null,
+      "correct": false,
+      "status": "INVALID",
+      "response": {
+        "id": "chatcmpl-22c8d81e69374318a2e49e8e81435b0f",
+        "created": 1791110033,
+        "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "D. False, False"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 138,
+          "completion_tokens": 5,
+          "total_tokens": 143
+        }
+      },
+      "answer": "D. False, False",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.198
+    },
+    {
+      "subject": "abstract_algebra",
+      "index": 74,
+      "question": "Statement 1 | If a and b are elements of a group and a is not equal to b, then a^2 is not equal to b^2. Statement 2 | The set of rotations in a dihedral group form a cyclic subgroup.",
+      "choices": [
+        "True, True",
+        "False, False",
+        "True, False",
+        "False, True"
+      ],
+      "expected": "D",
+      "prompt": "Answer the multiple choice question about abstract algebra. Reply with only one letter: A, B, C, or D.\n\nStatement 1 | If a and b are elements of a group and a is not equal to b, then a^2 is not equal to b^2. Statement 2 | The set of rotations in a dihedral group form a cyclic subgroup.\nA. True, True\nB. False, False\nC. True, False\nD. False, True\nAnswer:",
+      "prediction": "D",
+      "correct": true,
+      "status": "CORRECT",
+      "response": {
+        "id": "chatcmpl-866f89873fca47429795eead53615990",
+        "created": 1791110033,
+        "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "D"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 135,
+          "completion_tokens": 1,
+          "total_tokens": 136
+        }
+      },
+      "answer": "D",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.111
+    },
+    {
+      "subject": "abstract_algebra",
+      "index": 79,
+      "question": "Statement 1 | If K is a nonzero subgroup of a finitely generated free abelian group, then K is free abelian. Statement 2 | If K is a nonzero subgroup of a finitely generated free abelian group, then G / K is free abelian.",
+      "choices": [
+        "True, True",
+        "False, False",
+        "True, False",
+        "False, True"
+      ],
+      "expected": "C",
+      "prompt": "Answer the multiple choice question about abstract algebra. Reply with only one letter: A, B, C, or D.\n\nStatement 1 | If K is a nonzero subgroup of a finitely generated free abelian group, then K is free abelian. Statement 2 | If K is a nonzero subgroup of a finitely generated free abelian group, then G / K is free abelian.\nA. True, True\nB. False, False\nC. True, False\nD. False, True\nAnswer:",
+      "prediction": null,
+      "correct": false,
+      "status": "INVALID",
+      "response": {
+        "id": "chatcmpl-f0f65763487741dcb3c53c684a950fc2",
+        "created": 1791110034,
+        "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "D. False"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 142,
+          "completion_tokens": 3,
+          "total_tokens": 145
+        }
+      },
+      "answer": "D. False",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.155
+    },
+    {
+      "subject": "abstract_algebra",
+      "index": 87,
+      "question": "For T: Z x Z -> Z where T(1, 0) = 3 and T(0, 1) = -5, find T(-3,2).",
+      "choices": [
+        "-19",
+        "-10",
+        "19",
+        "10"
+      ],
+      "expected": "A",
+      "prompt": "Answer the multiple choice question about abstract algebra. Reply with only one letter: A, B, C, or D.\n\nFor T: Z x Z -> Z where T(1, 0) = 3 and T(0, 1) = -5, find T(-3,2).\nA. -19\nB. -10\nC. 19\nD. 10\nAnswer:",
+      "prediction": "A",
+      "correct": true,
+      "status": "CORRECT",
+      "response": {
+        "id": "chatcmpl-bcca8a478f884590914985aeaac44fd8",
+        "created": 1791110034,
+        "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "A"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 122,
+          "completion_tokens": 1,
+          "total_tokens": 123
+        }
+      },
+      "answer": "A",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.101
+    },
+    {
+      "subject": "abstract_algebra",
+      "index": 96,
+      "question": "Find all zeros in the indicated finite field of the given polynomial with coefficients in that field. x^2 + 1 in Z_2",
+      "choices": [
+        "0",
+        "1",
+        "0,1",
+        "2"
+      ],
+      "expected": "B",
+      "prompt": "Answer the multiple choice question about abstract algebra. Reply with only one letter: A, B, C, or D.\n\nFind all zeros in the indicated finite field of the given polynomial with coefficients in that field. x^2 + 1 in Z_2\nA. 0\nB. 1\nC. 0,1\nD. 2\nAnswer:",
+      "prediction": "A",
+      "correct": false,
+      "status": "INCORRECT",
+      "response": {
+        "id": "chatcmpl-a8ebbb4e56d54c65a53f912582dd69c6",
+        "created": 1791110034,
+        "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "A"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 110,
+          "completion_tokens": 1,
+          "total_tokens": 111
+        }
+      },
+      "answer": "A",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.095
+    },
+    {
+      "subject": "abstract_algebra",
+      "index": 98,
+      "question": "The element (4, 2) of Z_12 x Z_8 has order",
+      "choices": [
+        "4",
+        "8",
+        "12",
+        "6"
+      ],
+      "expected": "C",
+      "prompt": "Answer the multiple choice question about abstract algebra. Reply with only one letter: A, B, C, or D.\n\nThe element (4, 2) of Z_12 x Z_8 has order\nA. 4\nB. 8\nC. 12\nD. 6\nAnswer:",
+      "prediction": "A",
+      "correct": false,
+      "status": "INCORRECT",
+      "response": {
+        "id": "chatcmpl-9f8029e36f0a49c7b00304b6ac453ce1",
+        "created": 1791110034,
+        "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+        "object": "chat.completion",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "A"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 100,
+          "completion_tokens": 1,
+          "total_tokens": 101
+        }
+      },
+      "answer": "A",
+      "finish_reason": "stop",
+      "elapsed_seconds": 0.088
+    }
+  ]
+}

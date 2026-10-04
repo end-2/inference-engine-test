@@ -1,0 +1,208 @@
+{
+  "suite": "mmlu-cpu-comparison",
+  "scoring": "generated-choice-v1",
+  "variant_order": [
+    "base",
+    "batch",
+    "cache"
+  ],
+  "model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+  "model_revision": "12fd25f77366fa6b3b4b768ec3050bf629380bac",
+  "model_safetensors_sha256": "5af571cbf074e6d21a03528d2330792e532ca608f24ac70a143f6b369968ab8c",
+  "git_revision": "a30b0d2bc225ec44db36eeaf1dc780b5664cc3ff",
+  "device": "cpu",
+  "dtype": "float32",
+  "n_threads": 4,
+  "pod_cpu": 8,
+  "pod_memory_gib": 16,
+  "server_n_ctx": 1024,
+  "server_max_input_tokens": 768,
+  "server_max_output_tokens": 128,
+  "settings": {
+    "few_shot": 0,
+    "max_tokens": 16,
+    "temperature": 0,
+    "top_p": 1,
+    "ignore_eos": false,
+    "request_timeout_seconds": 60,
+    "limit_per_subject": null
+  },
+  "cache_policy": "clear-before-full-evaluation, preserve-between-questions",
+  "prompt_lengths": {
+    "questions": 14042,
+    "maximum_prompt_tokens": 1085,
+    "over_768_input_tokens": 10,
+    "over_8176_input_tokens": 0
+  },
+  "variants": [
+    {
+      "variant": "base",
+      "image": "local/transformers-base:0.1.0",
+      "complete": true,
+      "passed": false,
+      "make_exit_code": 2,
+      "summary": {
+        "total": 14042,
+        "correct": 2071,
+        "incorrect": 6821,
+        "invalid": 4470,
+        "errors": 680,
+        "accuracy": 0.1474861130893035
+      },
+      "report": "/Users/sejong/workspace/inference-engine-test/docs/reports/transformers/mmlu-cpu-comparison-20261004-103125/base/summary.json",
+      "started_at": "2026-10-04T10:36:41.744109+00:00",
+      "finished_at": "2026-10-04T11:21:42.978433+00:00",
+      "evaluation_elapsed_seconds": 2701.234324,
+      "latency_seconds": {
+        "mean": 0.19230237857855007,
+        "median": 0.138,
+        "p95": 0.5,
+        "total": 2700.31
+      },
+      "error_counts": {
+        "Incomplete response: finish_reason='length'": 670,
+        "HTTP 400: {\"error\":{\"message\":\"Input exceeds --max-input-tokens; prompts are not truncated.\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":null}}": 10
+      }
+    },
+    {
+      "variant": "batch",
+      "image": "local/transformers-enhanced-batch:0.1.0",
+      "complete": true,
+      "passed": false,
+      "make_exit_code": 2,
+      "summary": {
+        "total": 14042,
+        "correct": 2071,
+        "incorrect": 6821,
+        "invalid": 4470,
+        "errors": 680,
+        "accuracy": 0.1474861130893035
+      },
+      "report": "/Users/sejong/workspace/inference-engine-test/docs/reports/transformers/mmlu-cpu-comparison-20261004-103125/batch/summary.json",
+      "started_at": "2026-10-04T11:23:34.209602+00:00",
+      "finished_at": "2026-10-04T12:09:42.237420+00:00",
+      "evaluation_elapsed_seconds": 2768.027818,
+      "latency_seconds": {
+        "mean": 0.19706587380715,
+        "median": 0.144,
+        "p95": 0.501,
+        "total": 2767.199
+      },
+      "error_counts": {
+        "Incomplete response: finish_reason='length'": 670,
+        "HTTP 400: {\"error\":{\"message\":\"Input exceeds --max-input-tokens; prompts are not truncated.\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":null}}": 10
+      }
+    },
+    {
+      "variant": "cache",
+      "image": "local/transformers-enhanced-cache:0.1.0",
+      "complete": true,
+      "passed": false,
+      "make_exit_code": 2,
+      "summary": {
+        "total": 14042,
+        "correct": 2071,
+        "incorrect": 6821,
+        "invalid": 4470,
+        "errors": 680,
+        "accuracy": 0.1474861130893035
+      },
+      "report": "/Users/sejong/workspace/inference-engine-test/docs/reports/transformers/mmlu-cpu-comparison-20261004-103125/cache/summary.json",
+      "started_at": "2026-10-04T12:11:37.367877+00:00",
+      "finished_at": "2026-10-04T12:53:36.135895+00:00",
+      "evaluation_elapsed_seconds": 2518.768018,
+      "latency_seconds": {
+        "mean": 0.17931163651901438,
+        "median": 0.129,
+        "p95": 0.472,
+        "total": 2517.894
+      },
+      "error_counts": {
+        "Incomplete response: finish_reason='length'": 670,
+        "HTTP 400: {\"error\":{\"message\":\"Input exceeds --max-input-tokens; prompts are not truncated.\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":null}}": 10
+      }
+    }
+  ],
+  "complete": true,
+  "pairwise_comparison": [
+    {
+      "variants": [
+        "base",
+        "batch"
+      ],
+      "questions": 14042,
+      "same_dataset_and_prompts": true,
+      "same_answer_and_status_count": 14042,
+      "mismatches": []
+    },
+    {
+      "variants": [
+        "base",
+        "cache"
+      ],
+      "questions": 14042,
+      "same_dataset_and_prompts": true,
+      "same_answer_and_status_count": 14042,
+      "mismatches": []
+    }
+  ],
+  "environment": {
+    "cpu_brand": "Apple M5 Pro",
+    "host_logical_cpus": 15,
+    "host_memory_bytes": 51539607552,
+    "docker_server_version": "29.5.3",
+    "docker_operating_system": "Docker Desktop",
+    "docker_cpus": 15,
+    "docker_memory_bytes": 25688301568,
+    "node_capacity": {
+      "cpu": "15",
+      "ephemeral-storage": "954925484Ki",
+      "hugepages-1Gi": "0",
+      "hugepages-2Mi": "0",
+      "hugepages-32Mi": "0",
+      "hugepages-64Ki": "0",
+      "memory": "25086232Ki",
+      "pods": "110"
+    },
+    "node_allocatable": {
+      "cpu": "15",
+      "ephemeral-storage": "954925484Ki",
+      "hugepages-1Gi": "0",
+      "hugepages-2Mi": "0",
+      "hugepages-32Mi": "0",
+      "hugepages-64Ki": "0",
+      "memory": "25086232Ki",
+      "pods": "110"
+    },
+    "node_info": {
+      "architecture": "arm64",
+      "bootID": "329f587f-bf43-4fe6-b5f9-cc30e1e63eeb",
+      "containerRuntimeVersion": "containerd://2.3.4",
+      "kernelVersion": "6.12.76-linuxkit",
+      "kubeProxyVersion": "",
+      "kubeletVersion": "v1.36.4",
+      "machineID": "1e9127781cc846dd906e85cfd556f36b",
+      "operatingSystem": "linux",
+      "osImage": "Debian GNU/Linux 13 (trixie)",
+      "swap": {
+        "capacity": 1073737728
+      },
+      "systemUUID": "1e9127781cc846dd906e85cfd556f36b"
+    }
+  },
+  "latency_aggregation": "All attempted questions, including invalid answers and errors; p95 uses the nearest-rank method.",
+  "checks": {
+    "complete_reports": 3,
+    "questions_per_variant": 14042,
+    "subjects_per_variant": 57,
+    "same_dataset_hashes": true,
+    "same_prompts": true,
+    "same_generation_settings": true,
+    "no_inference_pod_restarts": true,
+    "cache_cleared_before_evaluation": true,
+    "original_deployment_spec_restored": true,
+    "restored_server_ready": true,
+    "cache_internal_error_log_entries": 0,
+    "evaluation_resources_removed": true
+  }
+}
