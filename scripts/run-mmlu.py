@@ -91,7 +91,7 @@ def main(argv=None):
         raise ValueError(f"Unknown evaluation node: {node}")
     hostname = available[node]["metadata"]["labels"]["kubernetes.io/hostname"]
     run_id = "mmlu-" + datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
-    output = (args.output or ROOT / "reports" / ("gpu" if args.device == "gpu" else "")
+    output = (args.output or ROOT / "docs" / "reports" / ("gpu" if args.device == "gpu" else "")
               / args.backend / run_id / "summary.json").resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     diagnostics = output.parent / f"{output.stem}-run"

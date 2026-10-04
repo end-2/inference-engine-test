@@ -27,7 +27,7 @@ make mmlu-check
 make mmlu-check VARIANT=base-llamacpp MMLU_ARGS='--subjects abstract_algebra --limit 10'
 make mmlu-check DEVICE=gpu MMLU_ARGS='--subjects abstract_algebra --limit 10'
 make mmlu-check MMLU_ARGS='--url http://my-server:8000 --model my-model --min-accuracy 0.3'
-make mmlu-check MMLU_ARGS='--few-shot 5 --output reports/transformers/mmlu-base.json'
+make mmlu-check MMLU_ARGS='--few-shot 5 --output docs/reports/transformers/mmlu-base.json'
 ```
 
 `VARIANT`는 [inference.json](../../benchmarks/inference.json)에 정의된 백엔드 기본 서비스와 모델을 선택합니다. 평가할 구현은 먼저 배포해야 합니다. `DEVICE`는 CPU 또는 GPU 클러스터를 선택합니다. 다른 서비스를 사용하려면 `--url`에 Pod에서 접근 가능한 주소를, `--model`에 서버의 served model 이름을 지정합니다. `127.0.0.1`은 평가 Pod 자신을 가리킵니다. 환경 변수 `API_SERVER_URL`과 `SERVED_MODEL_NAME`으로도 지정할 수 있습니다.
@@ -60,7 +60,7 @@ make mmlu-check MMLU_ARGS='--few-shot 5 --output reports/transformers/mmlu-base.
 
 정확도는 정답 수를 시도한 모든 문항 수로 나누며 형식 오류와 요청 오류도 분모에 포함합니다. 과목별 정확도도 같은 규칙을 적용합니다. 전체 정확도는 과목별 백분율의 단순 평균이 아니라 문항 수에 따른 가중 평균입니다.
 
-기본 결과 경로는 `reports/<backend>/mmlu-<UTC>/summary.json`이며 GPU 결과는 `reports/gpu/<backend>/` 아래에 저장합니다. `--output`으로 다른 호스트 JSON 파일을 지정하면 해당 경로의 기존 결과를 덮어씁니다. 전체와 과목별 점수, 실행 조건, 데이터 파일 SHA-256 해시, 표본 행 번호, 프롬프트, 정답과 예측, 원본 API 응답과 오류를 저장합니다. PVC의 `.jsonl` 파일에 완료한 문항을 즉시 기록하고 결과 수집 시 호스트로 가져옵니다. `<output-stem>-run/`에는 렌더링한 워크로드, 실행 정보, Pod 정보와 로그를 저장합니다.
+기본 결과 경로는 `docs/reports/<backend>/mmlu-<UTC>/summary.json`이며 GPU 결과는 `docs/reports/gpu/<backend>/` 아래에 저장합니다. `--output`으로 다른 호스트 JSON 파일을 지정하면 해당 경로의 기존 결과를 덮어씁니다. 전체와 과목별 점수, 실행 조건, 데이터 파일 SHA-256 해시, 표본 행 번호, 프롬프트, 정답과 예측, 원본 API 응답과 오류를 저장합니다. PVC의 `.jsonl` 파일에 완료한 문항을 즉시 기록하고 결과 수집 시 호스트로 가져옵니다. `<output-stem>-run/`에는 렌더링한 워크로드, 실행 정보, Pod 정보와 로그를 저장합니다.
 
 Job이 정확도 기준 미달이나 API 오류로 실패해도 결과를 수집합니다. 완전한 JSON 결과를 가져오지 못하면 PVC와 전송용 Pod를 보존하고 가능한 JSONL을 수집한 뒤 실행 라벨을 출력합니다. Ctrl+C는 Job을 중단하고 부분 결과 수집을 시도한 후 종료 코드 130을 반환합니다. 중단된 Job은 JSONL만 남을 수 있습니다. 보존된 리소스는 해당 클러스터 스크립트와 네임스페이스를 지정해 삭제합니다.
 
@@ -86,4 +86,4 @@ python3 -m unittest discover -s tests -p 'test_mmlu*.py'
 python3 scripts/check-mmlu.py --url http://127.0.0.1:8000 --subjects abstract_algebra --limit 10
 ```
 
-접근 가능한 서버나 포트 포워딩이 필요합니다. 기본 결과 경로는 `reports/<backend>/mmlu-<UTC>.json`이며 Ctrl+C는 부분 JSON 결과를 저장합니다.
+접근 가능한 서버나 포트 포워딩이 필요합니다. 기본 결과 경로는 `docs/reports/<backend>/mmlu-<UTC>.json`이며 Ctrl+C는 부분 JSON 결과를 저장합니다.

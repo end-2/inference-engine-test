@@ -6,7 +6,12 @@
 !README.md
 !summary.md
 !summary.csv
+!summary.json
 !summary.jsonl
+!mmlu-*.json
+!mmlu-*.jsonl
+!**/mmlu-*/summary-run/values.json
+!**/mmlu-*/summary-run/workloads.yaml
 !runs.csv
 !run.json
 !inference.json

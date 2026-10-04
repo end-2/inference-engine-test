@@ -76,7 +76,7 @@ class MMLUCheckTests(unittest.TestCase):
                     + ([] if default_output else ["--output", str(output)]) + list(extra),
                     capture_output=True, text=True, timeout=15, cwd=root, env=env)
                 if default_output:
-                    outputs = list(root.glob("reports/*/mmlu-*.json"))
+                    outputs = list(root.glob("docs/reports/*/mmlu-*.json"))
                     self.assertEqual(len(outputs), 1, process.stderr)
                     output = outputs[0]
                 self.assertTrue(output.exists(), process.stderr)

@@ -27,7 +27,7 @@ make mmlu-check
 make mmlu-check VARIANT=base-llamacpp MMLU_ARGS='--subjects abstract_algebra --limit 10'
 make mmlu-check DEVICE=gpu MMLU_ARGS='--subjects abstract_algebra --limit 10'
 make mmlu-check MMLU_ARGS='--url http://my-server:8000 --model my-model --min-accuracy 0.3'
-make mmlu-check MMLU_ARGS='--few-shot 5 --output reports/transformers/mmlu-base.json'
+make mmlu-check MMLU_ARGS='--few-shot 5 --output docs/reports/transformers/mmlu-base.json'
 ```
 
 `VARIANT` selects the backend's default service and model through [inference.json](../../benchmarks/inference.json). Deploy the requested implementation before evaluation. `DEVICE` selects the CPU or GPU cluster. For another service, set `--url` to an address reachable from the Pod and `--model` to its served model name. `127.0.0.1` refers to the evaluation Pod itself. Environment variables `API_SERVER_URL` and `SERVED_MODEL_NAME` also set these values.
@@ -60,7 +60,7 @@ Leading and trailing whitespace, an optional `Answer:` prefix, and one trailing 
 
 Accuracy is correct answers divided by all attempted questions, including invalid answers and errors. Subject accuracy uses the same rule. Overall accuracy is weighted by question count, not an average of subject percentages.
 
-Results default to `reports/<backend>/mmlu-<UTC>/summary.json`, with GPU results under `reports/gpu/<backend>/`. `--output` specifies another host JSON file and overwrites existing results at that path. Reports contain overall and subject scores, settings, dataset file SHA-256 hashes, sampled row indices, prompts, expected and predicted choices, raw API responses, and errors. A sibling `.jsonl` file is flushed on the PVC after each completed question and copied back during collection. `<output-stem>-run/` contains the rendered workloads, run metadata, Pod details and logs.
+Results default to `docs/reports/<backend>/mmlu-<UTC>/summary.json`, with GPU results under `docs/reports/gpu/<backend>/`. `--output` specifies another host JSON file and overwrites existing results at that path. Reports contain overall and subject scores, settings, dataset file SHA-256 hashes, sampled row indices, prompts, expected and predicted choices, raw API responses, and errors. A sibling `.jsonl` file is flushed on the PVC after each completed question and copied back during collection. `<output-stem>-run/` contains the rendered workloads, run metadata, Pod details and logs.
 
 The runner also collects results when the Job fails an accuracy threshold or encounters API errors. If no complete JSON report can be collected, it retains the PVC and transfer Pod, collects any available JSONL, and prints the run label. Ctrl+C stops the Job and attempts partial result collection, then exits with code 130. A terminated Job may have only JSONL results. To remove retained resources, use the matching cluster script and namespace:
 
@@ -86,4 +86,4 @@ For an externally accessible API, the standard-library evaluator can also run di
 python3 scripts/check-mmlu.py --url http://127.0.0.1:8000 --subjects abstract_algebra --limit 10
 ```
 
-This requires a reachable server or port forward. It defaults to `reports/<backend>/mmlu-<UTC>.json` and saves a partial JSON report on Ctrl+C.
+This requires a reachable server or port forward. It defaults to `docs/reports/<backend>/mmlu-<UTC>.json` and saves a partial JSON report on Ctrl+C.

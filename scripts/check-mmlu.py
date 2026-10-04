@@ -207,7 +207,7 @@ def main(argv=None):
         download_data(args.data_dir, args.timeout)
     dataset, hashes = load_dataset(args)
     now = datetime.now(timezone.utc)
-    output = args.output or Path("reports") / args.backend / f"mmlu-{now:%Y%m%d-%H%M%S-%f}.json"
+    output = args.output or Path("docs/reports") / args.backend / f"mmlu-{now:%Y%m%d-%H%M%S-%f}.json"
     output.parent.mkdir(parents=True, exist_ok=True)
     results = []
     interrupted = False
