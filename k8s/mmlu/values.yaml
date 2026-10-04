@@ -1,0 +1,15 @@
+name: mmlu
+image: local/mmlu:0.1.0
+node: ''
+storageClassName: standard
+storageSize: 1Gi
+job:
+  enabled: true
+  activeDeadlineSeconds: 14400
+args:
+- --url
+- http://transformers-base:8000
+- --data-dir
+- /work/data
+- --output
+- /work/results/summary.json

@@ -1,6 +1,7 @@
 /.bin/
 /.local-k8s/
 /.models/
+/.datasets/
 
 __pycache__/
 

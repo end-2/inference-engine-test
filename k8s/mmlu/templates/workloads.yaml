@@ -1,0 +1,115 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.name }}
+  labels:
+    mmlu-run: {{ .Values.name }}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: {{ .Values.storageClassName | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.storageSize }}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Values.name }}-reader
+  labels:
+    mmlu-run: {{ .Values.name }}
+spec:
+  automountServiceAccountToken: false
+  restartPolicy: Never
+  {{- if .Values.node }}
+  nodeSelector:
+    kubernetes.io/hostname: {{ .Values.node | quote }}
+  {{- end }}
+  tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  containers:
+  - name: reader
+    image: {{ .Values.image }}
+    imagePullPolicy: Never
+    command: [python3, -c, 'import time; time.sleep(604800)']
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: '1'
+        memory: 128Mi
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: [ALL]
+    volumeMounts:
+    - name: work
+      mountPath: /work
+  volumes:
+  - name: work
+    persistentVolumeClaim:
+      claimName: {{ .Values.name }}
+{{- if .Values.job.enabled }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.name }}
+  labels:
+    mmlu-run: {{ .Values.name }}
+spec:
+  activeDeadlineSeconds: {{ .Values.job.activeDeadlineSeconds }}
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        mmlu-run: {{ .Values.name }}
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      {{- if .Values.node }}
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.node | quote }}
+      {{- end }}
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: mmlu
+        image: {{ .Values.image }}
+        imagePullPolicy: Never
+        args: {{ .Values.args | toYaml | nindent 10 }}
+        resources:
+          requests:
+            cpu: '1'
+            memory: 512Mi
+          limits:
+            cpu: '1'
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: [ALL]
+        volumeMounts:
+        - name: work
+          mountPath: /work
+      volumes:
+      - name: work
+        persistentVolumeClaim:
+          claimName: {{ .Values.name }}
+{{- end }}

@@ -438,14 +438,14 @@ def export_requests(source, destination):
         writer.writerows(rows)
 
 
-def wait_job(name, timeout, sampler=None, sample_interval=5, gpu_sampler=None):
+def wait_job(name, timeout, sampler=None, sample_interval=5, gpu_sampler=None, namespace=None):
     deadline = time.monotonic() + timeout + 30
     while time.monotonic() < deadline:
         if sampler:
             sampler.sample()
         if gpu_sampler:
             gpu_sampler.sample()
-        job = kube_json("get", "job", name)
+        job = kube_json("get", "job", name, *(("--namespace", namespace) if namespace else ()))
         for condition in job.get("status", {}).get("conditions", []):
             if condition["status"] == "True":
                 if condition["type"] in {"Failed", "FailureTarget"}:

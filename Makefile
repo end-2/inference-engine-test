@@ -1,4 +1,4 @@
-.PHONY: help install up down test status download-model download-tokenizer build-image load-image build-benchmark-image load-benchmark-image render deploy benchmark benchmark-suite pd-deploy pd-benchmark
+.PHONY: help install up down test status download-model download-tokenizer build-image load-image build-benchmark-image load-benchmark-image render deploy benchmark benchmark-suite mmlu-check pd-deploy pd-benchmark
 
 IMAGE_TAG ?= 0.1.0
 DEVICE ?= cpu
@@ -20,6 +20,7 @@ REPETITIONS ?= 3
 BENCHMARK_CONFIG ?=
 BENCHMARK_ARGS ?=
 BENCHMARK_SUITE_ARGS ?=
+MMLU_ARGS ?=
 CUDA_GRAPH ?=
 INFERENCE_NODE ?=
 BENCHMARK_NODE ?=
@@ -76,6 +77,9 @@ benchmark: ## Measure the selected VARIANT
 	INFERENCE_MANIFESTS="$(INFERENCE_MANIFESTS)" AIPERF_IMAGE_TAG="$(AIPERF_IMAGE_TAG)" \
 	BENCHMARK_CACHE_POLICY="$(CACHE_POLICY)" \
 	./scripts/run-benchmark.py $(if $(CUDA_GRAPH),--cuda-graph "$(CUDA_GRAPH)") $(BENCHMARK_ARGS)
+
+mmlu-check: ## Evaluate MMLU in a Pod against a running inference server
+	python3 scripts/run-mmlu.py --backend "$(INFERENCE_BACKEND)" --device "$(DEVICE)" $(MMLU_ARGS)
 
 benchmark-suite: ## Measure all variants, REPETITIONS=3
 	python3 scripts/run-benchmark-suite.py --backend "$(INFERENCE_BACKEND)" --device "$(DEVICE)" --repetitions "$(REPETITIONS)" \

@@ -1,0 +1,5 @@
+apiVersion: v2
+name: mmlu
+description: MMLU evaluation Job and result storage
+type: application
+version: 0.1.0
